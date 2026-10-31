@@ -12,17 +12,8 @@
   const K = KasuriCore;
   const { clamp, lerp, smoothstep, fbm, noise2, hash2, parseColor: P, mixColor } = K;
 
-  const SKY = [
-    { h: 0, top: '#070a16', low: '#1d2340', amb: '#6a7398', haze: '#262c4c' },
-    { h: 5, top: '#0e1230', low: '#3e3658', amb: '#76708f', haze: '#3a3555' },
-    { h: 6.5, top: '#2f4777', low: '#e9966a', amb: '#d0a594', haze: '#b98a86' },
-    { h: 9, top: '#3f6fa8', low: '#b9d0dc', amb: '#f2f0ea', haze: '#a7b9c6' },
-    { h: 15, top: '#3a6aa4', low: '#c4d6de', amb: '#ffffff', haze: '#b0c2cc' },
-    { h: 17.5, top: '#34457a', low: '#f0954f', amb: '#f5c69c', haze: '#c98a6a' },
-    { h: 19, top: '#191d40', low: '#9c4d63', amb: '#9e8193', haze: '#5c3f5e' },
-    { h: 21, top: '#090c1c', low: '#272846', amb: '#717a9e', haze: '#2a2d4c' },
-  ];
-  const TIMES = { dawn: 6.6, day: 12.5, dusk: 17.9, night: 23 };
+  const Sky = KasuriSky;
+
 
   // Canopy colours run shadow → mid → highlight.
   const SEASONS = {
@@ -87,13 +78,6 @@
   const css = (c, k = 1) =>
     `rgb(${(c[0] * amb[0] * k) | 0},${(c[1] * amb[1] * k) | 0},${(c[2] * amb[2] * k) | 0})`;
   const raw = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
-
-  function nightness(h) {
-    if (h < 5 || h >= 20.5) return 1;
-    if (h < 7) return 1 - smoothstep(5, 7, h);
-    if (h < 17.5) return 0;
-    return smoothstep(17.5, 20.5, h);
-  }
 
   function poly(ctx, pts) {
     ctx.beginPath();
@@ -177,7 +161,7 @@
     ctx.fillStyle = sk;
     ctx.fillRect(0, 0, g.W, g.H);
 
-    const night = nightness(hour);
+    const night = Sky.nightness(hour);
     const dayT = clamp((hour - 6) / 13.5, 0, 1);
     if (night < 0.98) {
       const sx = lerp(0.12, 0.88, dayT) * g.W;
@@ -536,7 +520,7 @@
   const state = { key: '', refreshIn: 0, parts: [], crows: [], nextCrow: 8, night: 0 };
 
   function resolveHour(props) {
-    return TIMES[props.time] ?? K.hourOf(new Date());
+    return Sky.hour(props.time);
   }
 
   function resolveSeason(props) {
@@ -546,10 +530,10 @@
   function rebuild(api) {
     const g = state.g;
     const hour = resolveHour(api.props);
-    const sky = K.paletteAt(hour, SKY);
+    const sky = K.paletteAt(hour, Sky.STOPS);
     const season = resolveSeason(api.props);
     amb = sky.amb.map((c) => c / 255);
-    state.night = nightness(hour);
+    state.night = Sky.nightness(hour);
     state.season = season;
     state.ridge = paintFar(state.far.getContext('2d'), g, sky, hour, state.seed);
     paintNear(state.near.getContext('2d'), g, SEASONS[season], state);
