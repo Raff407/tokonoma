@@ -1,0 +1,17 @@
+{
+  "id": "koi",
+  "name": "Koi",
+  "title": "鯉",
+  "description": "A dark pond from above. Koi drift on their own and scatter when your cursor comes near.",
+  "entry": "index.html",
+  "version": 1,
+  "interactive": true,
+  "properties": [
+    { "key": "fish", "label": "fish", "type": "range", "min": 1, "max": 16, "step": 1, "default": 7 },
+    { "key": "rain", "label": "rain on the water", "type": "range", "min": 0, "max": 4, "step": 0.1, "default": 0.6 },
+    { "key": "mode", "label": "weave", "type": "choice", "options": ["block", "glyph", "dot", "raw"], "default": "block" },
+    { "key": "ramp", "label": "glyphs", "type": "choice", "options": ["ascii", "lines", "kana", "dense"], "default": "ascii" },
+    { "key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 11 },
+    { "key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1 }
+  ]
+}

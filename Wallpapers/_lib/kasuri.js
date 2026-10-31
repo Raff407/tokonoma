@@ -75,8 +75,8 @@ void main() {
     a = texture(uAtlas, vec2((gi + local.x) / uGlyphs, local.y)).r;
   } else if (uMode == 1) {
     vec2 q = abs(local - 0.5);
-    float edge = 0.5 - 1.2 / uCell;
-    a = step(max(q.x, q.y), edge) * step(0.06, l);
+    float edge = 0.5 - max(1.2 / uCell, 0.1);
+    a = step(max(q.x, q.y), edge) * step(0.16, l);
   } else {
     float r = 0.52 * sqrt(l);
     a = 1.0 - smoothstep(r - 1.0 / uCell, r + 1.0 / uCell, length(local - 0.5));
