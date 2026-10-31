@@ -18,6 +18,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var playback: [String: Playback] = [:]
     @Published private(set) var thumbnails: [String: NSImage] = [:]
     @Published var notice: String?
+    @Published private(set) var importing = 0
 
     static let builtInOrder = ["torii", "koi", "sumi", "fuji"]
 
@@ -88,6 +89,7 @@ final class AppModel: ObservableObject {
     }
 
     var summary: String {
+        if importing > 0 { return "Importing…" }
         if settings.userPaused { return "Paused" }
         let states = Array(playback.values)
         if states.isEmpty { return "Starting" }
@@ -135,28 +137,35 @@ final class AppModel: ObservableObject {
         show(next)
     }
 
+    /// Copies happen off the main thread, so a big video never freezes the
+    /// menu, the library or the desktop while it lands.
     @discardableResult
-    func importFiles(_ urls: [URL]) -> [String] {
+    func importFiles(_ urls: [URL]) async -> [String] {
         guard let template = try? String(contentsOf: paths.mediaTemplate, encoding: .utf8) else {
             notice = ImportError.badTemplate.description
             return []
         }
-        var added: [String] = []
-        var failures: [String] = []
-        for url in urls {
-            do {
-                let wallpaper = try MediaImporter.importMedia(from: url, into: paths.library, template: template)
-                added.append(wallpaper.id)
-            } catch let error as ImportError {
-                failures.append("\(url.lastPathComponent): \(error.description)")
-            } catch {
-                failures.append("\(url.lastPathComponent): \(error.localizedDescription)")
+        importing += urls.count
+        defer { importing -= urls.count }
+        let library = paths.library
+        let outcome = await Task.detached(priority: .userInitiated) { () -> (added: [String], failures: [String]) in
+            var added: [String] = []
+            var failures: [String] = []
+            for url in urls {
+                do {
+                    added.append(try MediaImporter.importMedia(from: url, into: library, template: template).id)
+                } catch let error as ImportError {
+                    failures.append("\(url.lastPathComponent): \(error.description)")
+                } catch {
+                    failures.append("\(url.lastPathComponent): \(error.localizedDescription)")
+                }
             }
-        }
+            return (added, failures)
+        }.value
         rescan()
-        thumbnailer.render(wallpapers.filter { added.contains($0.id) })
-        if !failures.isEmpty { notice = failures.joined(separator: "\n") }
-        return added
+        thumbnailer.render(wallpapers.filter { outcome.added.contains($0.id) })
+        if !outcome.failures.isEmpty { notice = outcome.failures.joined(separator: "\n") }
+        return outcome.added
     }
 
     func remove(_ id: String) {

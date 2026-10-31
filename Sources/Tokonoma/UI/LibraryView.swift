@@ -100,7 +100,8 @@ struct LibraryView: View {
         panel.allowedContentTypes = MediaImporter.acceptedExtensions.compactMap { UTType(filenameExtension: $0) }
         panel.message = "Videos, gifs and pictures become wallpapers, woven like the rest"
         guard panel.runModal() == .OK else { return }
-        if let first = model.importFiles(panel.urls).first { selection = first }
+        let urls = panel.urls
+        Task { if let first = await model.importFiles(urls).first { selection = first } }
     }
 
     private func drop(_ providers: [NSItemProvider]) -> Bool {
@@ -119,7 +120,7 @@ struct LibraryView: View {
             }
         }
         group.notify(queue: .main) {
-            if let first = model.importFiles(urls).first { selection = first }
+            Task { if let first = await model.importFiles(urls).first { selection = first } }
         }
         return true
     }
