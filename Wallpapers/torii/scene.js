@@ -13,14 +13,14 @@
   const { clamp, lerp, smoothstep, fbm, noise2, hash2, parseColor: P, mixColor } = K;
 
   const SKY = [
-    { h: 0, top: '#05070f', low: '#161b34', amb: '#3f4868', haze: '#1d2240' },
-    { h: 5, top: '#0e1230', low: '#3e3658', amb: '#5a5676', haze: '#3a3555' },
+    { h: 0, top: '#070a16', low: '#1d2340', amb: '#6a7398', haze: '#262c4c' },
+    { h: 5, top: '#0e1230', low: '#3e3658', amb: '#76708f', haze: '#3a3555' },
     { h: 6.5, top: '#2f4777', low: '#e9966a', amb: '#d0a594', haze: '#b98a86' },
     { h: 9, top: '#3f6fa8', low: '#b9d0dc', amb: '#f2f0ea', haze: '#a7b9c6' },
     { h: 15, top: '#3a6aa4', low: '#c4d6de', amb: '#ffffff', haze: '#b0c2cc' },
     { h: 17.5, top: '#34457a', low: '#f0954f', amb: '#f5c69c', haze: '#c98a6a' },
     { h: 19, top: '#191d40', low: '#9c4d63', amb: '#9e8193', haze: '#5c3f5e' },
-    { h: 21, top: '#070a18', low: '#22223f', amb: '#4c5474', haze: '#232641' },
+    { h: 21, top: '#090c1c', low: '#272846', amb: '#717a9e', haze: '#2a2d4c' },
   ];
   const TIMES = { dawn: 6.6, day: 12.5, dusk: 17.9, night: 23 };
 
@@ -195,15 +195,17 @@
       const nightT = ((hour - 19 + 24) % 24) / 11;
       const mx = lerp(0.15, 0.85, clamp(nightT, 0, 1)) * g.W;
       const my = g.H * 0.08 + (1 - Math.sin(clamp(nightT, 0, 1) * Math.PI)) * g.H * 0.22;
-      const halo = ctx.createRadialGradient(mx, my, 0, mx, my, 12 * g.U);
-      halo.addColorStop(0, raw(P('#e9e4cf'), 0.35 * night));
+      const halo = ctx.createRadialGradient(mx, my, 0, mx, my, 16 * g.U);
+      halo.addColorStop(0, raw(P('#e9e4cf'), 0.45 * night));
       halo.addColorStop(1, raw(P('#e9e4cf'), 0));
       ctx.fillStyle = halo;
       ctx.fillRect(0, 0, g.W, g.H);
       ctx.fillStyle = raw(P('#f4eed8'), night);
       disc(ctx, mx, my, 3.2 * g.U);
-      ctx.fillStyle = raw(sky.top, night * 0.9);
-      disc(ctx, mx + 1.3 * g.U, my - 0.6 * g.U, 2.8 * g.U);
+      // Maria: a couple of soft grey patches so the moon reads as a moon, not a dot.
+      ctx.fillStyle = raw(P('#cfc8b0'), night * 0.8);
+      disc(ctx, mx - 0.9 * g.U, my - 0.5 * g.U, 1.1 * g.U);
+      disc(ctx, mx + 0.8 * g.U, my + 0.9 * g.U, 0.8 * g.U);
     }
 
     const ridge = new Float32Array(Math.ceil(g.W) + 1);
@@ -451,11 +453,12 @@
       const w = lanternWindow(l);
       const cx = w.x + w.w / 2;
       const cy = w.y + w.h / 2;
-      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, 9 * l.s);
-      glow.addColorStop(0, `rgba(255,170,80,${0.45 * lit * flicker})`);
+      const reach = 13 * l.s;
+      const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, reach);
+      glow.addColorStop(0, `rgba(255,170,80,${0.6 * lit * flicker})`);
       glow.addColorStop(1, 'rgba(255,170,80,0)');
       ctx.fillStyle = glow;
-      ctx.fillRect(cx - 9 * l.s, cy - 9 * l.s, 18 * l.s, 18 * l.s);
+      ctx.fillRect(cx - reach, cy - reach, reach * 2, reach * 2);
     }
     ctx.globalCompositeOperation = 'source-over';
     for (const l of state.lanterns) {
