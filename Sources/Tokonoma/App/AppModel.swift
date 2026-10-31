@@ -59,6 +59,8 @@ final class AppModel: ObservableObject {
         followCursorIfUseful()
         scheduleRotation()
         thumbnailer.render(wallpapers)
+        // Write defaults once so the library only greets you on the very first launch.
+        if isFirstRun { saveNow() }
     }
 
     func stop() {
