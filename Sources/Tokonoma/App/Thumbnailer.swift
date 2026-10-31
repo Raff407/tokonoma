@@ -47,6 +47,8 @@ final class Thumbnailer {
             let wallpaper = queue.removeFirst()
             await renderOne(wallpaper)
         }
+        // Nothing left to photograph: don't keep a scene running in a hidden view.
+        host.unload()
     }
 
     private func renderOne(_ wallpaper: Wallpaper) async {
@@ -74,8 +76,12 @@ final class Thumbnailer {
         deliver(wallpaper.id, image)
     }
 
-    /// Keyed by version so an updated built-in gets a fresh still.
+    /// Keyed by version and by when the folder's files last changed, so an edited
+    /// scene or a new import that reuses an old name never shows a stale still.
     private func file(for wallpaper: Wallpaper) -> URL {
-        paths.thumbnails.appendingPathComponent("\(wallpaper.id)@\(wallpaper.manifest.version).jpg")
+        let stamps = [wallpaper.entryURL, wallpaper.folder.appendingPathComponent(WallpaperLibrary.manifestName)]
+            .compactMap { try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate }
+        let changed = Int(stamps.max()?.timeIntervalSince1970 ?? 0)
+        return paths.thumbnails.appendingPathComponent("\(wallpaper.id)@\(wallpaper.manifest.version)-\(changed).jpg")
     }
 }

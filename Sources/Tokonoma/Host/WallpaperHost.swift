@@ -73,13 +73,36 @@ final class WallpaperHost: NSObject {
         call(String(format: "pointer(%.4f,%.4f,%@)", x, y, active ? "true" : "false"))
     }
 
-    /// JPEG data URL of the current scene; nil if the page can't make one.
-    func capture(width: Int) async -> String? {
-        let result = try? await webView.callAsyncJavaScript(
-            "return window.tokonoma ? await window.tokonoma.capture(w) : null",
-            arguments: ["w": width], in: nil, contentWorld: .page
-        )
-        return result as? String
+    /// JPEG data URL of the current scene; nil if the page can't make one in time.
+    func capture(width: Int, timeout: Duration = .seconds(8)) async -> String? {
+        await withCheckedContinuation { continuation in
+            var finished = false
+            let finish: (String?) -> Void = { value in
+                guard !finished else { return }
+                finished = true
+                continuation.resume(returning: value)
+            }
+            Task { @MainActor in
+                let result = try? await self.webView.callAsyncJavaScript(
+                    "return window.tokonoma ? await window.tokonoma.capture(w) : null",
+                    arguments: ["w": width], in: nil, contentWorld: .page
+                )
+                finish(result as? String)
+            }
+            Task { @MainActor in
+                try? await Task.sleep(for: timeout)
+                finish(nil)
+            }
+        }
+    }
+
+    /// Drop the page entirely: frees its web process, GPU context and any timers.
+    func unload() {
+        wallpaperID = nil
+        ready = false
+        lastLoad = nil
+        webView.configuration.userContentController.removeAllUserScripts()
+        webView.loadHTMLString("", baseURL: nil)
     }
 
     var isReady: Bool { ready }
