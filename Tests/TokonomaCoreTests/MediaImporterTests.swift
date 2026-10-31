@@ -16,6 +16,23 @@ private let template = """
         #expect(MediaImporter.slug(for: "夜桜.mp4", taken: []) == "media")
     }
 
+    @Test func slugsIgnoreCaseLikeTheDiskDoes() {
+        #expect(MediaImporter.slug(for: "aurora.mp4", taken: ["Aurora"]) == "aurora-2")
+    }
+
+    @Test func importNeverTouchesAFolderThatDiffersOnlyByCase() throws {
+        let root = try makeTempDir()
+        try writeWallpaper(root, id: "Aurora", json: #"{"id":"Aurora","name":"Mine","entry":"index.html"}"#)
+        let source = try makeTempDir().appendingPathComponent("aurora.mp4")
+        try Data([1]).write(to: source)
+
+        let imported = try MediaImporter.importMedia(from: source, into: root, template: template)
+
+        #expect(imported.id == "aurora-2")
+        let original = try String(contentsOf: root.appendingPathComponent("Aurora/wallpaper.json"), encoding: .utf8)
+        #expect(original.contains(#""name":"Mine""#))
+    }
+
     @Test func acceptsCommonFormatsOnly() {
         #expect(MediaImporter.kind(of: URL(fileURLWithPath: "/a/b.MP4")) == .video)
         #expect(MediaImporter.kind(of: URL(fileURLWithPath: "/a/b.gif")) == .image)

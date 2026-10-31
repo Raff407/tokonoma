@@ -36,9 +36,11 @@ public enum MediaImporter {
         let stem = (filename as NSString).deletingPathExtension.lowercased()
         let words = stem.split { !($0.isASCII && ($0.isLetter || $0.isNumber)) }
         let base = words.isEmpty ? "media" : words.joined(separator: "-")
-        guard taken.contains(base) else { return base }
+        // APFS is case-insensitive by default: "Aurora" and "aurora" are one folder.
+        let used = Set(taken.map { $0.lowercased() })
+        guard used.contains(base) else { return base }
         var n = 2
-        while taken.contains("\(base)-\(n)") { n += 1 }
+        while used.contains("\(base)-\(n)") { n += 1 }
         return "\(base)-\(n)"
     }
 
@@ -60,13 +62,15 @@ public enum MediaImporter {
             properties: properties(for: kind)
         )
 
+        // Not intermediate: if the folder somehow exists, fail rather than write into it.
+        try fm.createDirectory(at: folder, withIntermediateDirectories: false)
         do {
-            try fm.createDirectory(at: folder, withIntermediateDirectories: true)
             try fm.copyItem(at: source, to: folder.appendingPathComponent(mediaName))
             let html = template.replacingOccurrences(of: marker, with: #"data-media="\#(mediaName)""#)
             try Data(html.utf8).write(to: folder.appendingPathComponent("index.html"))
             try manifest.encoded().write(to: folder.appendingPathComponent(WallpaperLibrary.manifestName))
         } catch {
+            // Only ever removes the folder this call just created.
             try? fm.removeItem(at: folder)
             throw error
         }
