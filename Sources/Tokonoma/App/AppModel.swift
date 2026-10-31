@@ -29,6 +29,7 @@ final class AppModel: ObservableObject {
     private let pointer = PointerTracker()
     private var builtIns: [String] = []
     private var rotationTimer: Timer?
+    private var pendingSave: DispatchWorkItem?
     private var pointerDisplay: String?
     private lazy var thumbnailer = Thumbnailer(paths: paths) { [weak self] id, image in
         self?.thumbnails[id] = image
@@ -61,6 +62,7 @@ final class AppModel: ObservableObject {
     }
 
     func stop() {
+        if pendingSave != nil { saveNow() }
         pointer.stop()
         desktop.tearDown()
     }
@@ -184,14 +186,30 @@ final class AppModel: ObservableObject {
         let next = change(settings)
         guard next != settings else { return }
         settings = next
-        do {
-            try store.save(next)
-        } catch {
-            notice = "Your settings couldn't be saved: \(error.localizedDescription)"
-        }
+        scheduleSave()
         refreshDesks()
         followCursorIfUseful()
         scheduleRotation()
+    }
+
+    /// Slider drags change settings many times a second; write the file once they settle.
+    private func scheduleSave() {
+        pendingSave?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            MainActor.assumeIsolated { self?.saveNow() }
+        }
+        pendingSave = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4, execute: work)
+    }
+
+    func saveNow() {
+        pendingSave?.cancel()
+        pendingSave = nil
+        do {
+            try store.save(settings)
+        } catch {
+            notice = "Your settings couldn't be saved: \(error.localizedDescription)"
+        }
     }
 
     private func refreshDesks() {
