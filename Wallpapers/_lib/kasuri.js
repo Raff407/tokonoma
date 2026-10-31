@@ -242,7 +242,15 @@ void main() {
     const injected = (root.__tokonoma && root.__tokonoma.properties) || {};
     let props = C.mergeProps(defaults, Object.assign({}, injected, C.propsFromQuery(root.location.search)));
 
+    // Anything that throws inside a scene reaches the host instead of dying quietly.
+    root.addEventListener('error', (e) => post({ type: 'error', message: String(e.message || e) }));
+    root.addEventListener('unhandledrejection', (e) => post({ type: 'error', message: String(e.reason) }));
+
     const out = mountCanvas();
+    // GPU resets (sleep, hot-plugging a display) can take the GL context away.
+    // Ask for it back, and start clean once it returns.
+    out.addEventListener('webglcontextlost', (e) => e.preventDefault());
+    out.addEventListener('webglcontextrestored', () => root.location.reload());
     const scene = document.createElement('canvas');
     const ctx = scene.getContext('2d', { alpha: false });
     let renderer;
