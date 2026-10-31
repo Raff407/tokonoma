@@ -16,6 +16,7 @@ final class WallpaperHost: NSObject {
     private var paused = false
     private var fps = 30
     private var lastLoad: (wallpaper: Wallpaper, root: URL)?
+    private var crashes: [Date] = []
     var onError: ((String) -> Void)?
 
     override init() {
@@ -67,7 +68,8 @@ final class WallpaperHost: NSObject {
     }
 
     func pointer(x: Double, y: Double, active: Bool) {
-        guard ready, !paused else { return }
+        // A "cursor left" always goes through, even paused, or the page keeps a phantom cursor.
+        guard ready, !paused || !active else { return }
         call(String(format: "pointer(%.4f,%.4f,%@)", x, y, active ? "true" : "false"))
     }
 
@@ -110,17 +112,32 @@ final class WallpaperHost: NSObject {
 
 extension WallpaperHost: WKNavigationDelegate {
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
-        // The web process can die under memory pressure; bring the wallpaper back.
+        // The web process can die under memory pressure; bring the wallpaper back,
+        // but give up on a page that keeps dying rather than thrash.
+        let now = Date()
+        crashes = crashes.filter { now.timeIntervalSince($0) < 60 } + [now]
+        guard crashes.count <= 3 else {
+            onError?("\(wallpaperID ?? "This wallpaper") keeps crashing, so it has been stopped. Pick it again to retry.")
+            return
+        }
         NSLog("tokonoma: web process ended for \(wallpaperID ?? "?"), reloading")
         if let last = lastLoad { load(last.wallpaper, properties: properties, root: last.root) }
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        onError?(error.localizedDescription)
+        report(error)
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-        onError?(error.localizedDescription)
+        report(error)
+    }
+
+    /// A new load interrupting an old one is normal, not something to show the user.
+    private func report(_ error: Error) {
+        let ns = error as NSError
+        let cancelled = (ns.domain == NSURLErrorDomain && ns.code == NSURLErrorCancelled)
+            || (ns.domain == "WebKitErrorDomain" && ns.code == 102)
+        if !cancelled { onError?(error.localizedDescription) }
     }
 }
 
