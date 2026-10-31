@@ -50,6 +50,7 @@ final class Thumbnailer {
     }
 
     private func renderOne(_ wallpaper: Wallpaper) async {
+        await Poster.ensure(for: wallpaper)
         let defaults = PropertyResolver.resolve(wallpaper.manifest.properties, overrides: [:])
         host.load(wallpaper, properties: defaults, root: paths.library)
         for _ in 0..<50 where !host.isReady {

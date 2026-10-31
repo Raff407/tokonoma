@@ -11,12 +11,24 @@
   const VIDEO = /\.(mp4|m4v|mov|webm)$/i;
 
   const src = document.body.dataset.media || new URLSearchParams(location.search).get('src') || '';
-  const state = { el: null, ready: false, w: 0, h: 0 };
+  const state = { el: null, poster: null, ready: false, w: 0, h: 0 };
   let markReady;
   const loaded = new Promise((resolve) => { markReady = resolve; });
 
+  // Videos get a poster.jpg beside them (the app writes it on import). It
+  // stands in until the first frame decodes, and for hidden thumbnail renders.
+  function loadPoster() {
+    const poster = new Image();
+    poster.onload = () => {
+      state.poster = poster;
+      markReady();
+    };
+    poster.src = document.body.dataset.poster || 'poster.jpg';
+  }
+
   function load() {
     if (VIDEO.test(src)) {
+      loadPoster();
       const v = document.createElement('video');
       Object.assign(v, { muted: true, loop: true, playsInline: true, autoplay: true, preload: 'auto' });
       v.addEventListener('loadeddata', () => {
@@ -51,16 +63,17 @@
     const props = api.props;
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, api.cols, api.rows);
-    if (!state.ready) return;
+    const el = state.ready ? state.el : state.poster;
+    if (!el) return;
+    const w = state.ready ? state.w : el.naturalWidth;
+    const h = state.ready ? state.h : el.naturalHeight;
     ctx.filter = filter(props);
     if (props.fit === 'contain') {
-      const scale = Math.min(api.cols / state.w, api.rows / state.h);
-      const w = state.w * scale;
-      const h = state.h * scale;
-      ctx.drawImage(state.el, (api.cols - w) / 2, (api.rows - h) / 2, w, h);
+      const scale = Math.min(api.cols / w, api.rows / h);
+      ctx.drawImage(el, (api.cols - w * scale) / 2, (api.rows - h * scale) / 2, w * scale, h * scale);
     } else {
-      const r = K.coverRect(state.w, state.h, api.cols, api.rows);
-      ctx.drawImage(state.el, r.sx, r.sy, r.sw, r.sh, 0, 0, api.cols, api.rows);
+      const r = K.coverRect(w, h, api.cols, api.rows);
+      ctx.drawImage(el, r.sx, r.sy, r.sw, r.sh, 0, 0, api.cols, api.rows);
     }
     ctx.filter = 'none';
   }
