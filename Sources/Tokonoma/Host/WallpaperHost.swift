@@ -10,6 +10,8 @@ final class WallpaperHost: NSObject {
     let webView: WKWebView
     private(set) var wallpaperID: String?
     private(set) var properties: [String: PropertyValue] = [:]
+    /// What the page booted with; anything newer is sent once it's ready.
+    private var bootProperties: [String: PropertyValue] = [:]
     private var ready = false
     private var paused = false
     private var fps = 30
@@ -34,6 +36,7 @@ final class WallpaperHost: NSObject {
     func load(_ wallpaper: Wallpaper, properties: [String: PropertyValue], root: URL) {
         wallpaperID = wallpaper.id
         self.properties = properties
+        bootProperties = properties
         ready = false
         lastLoad = (wallpaper, root)
         let controller = webView.configuration.userContentController
@@ -92,6 +95,9 @@ final class WallpaperHost: NSObject {
             ready = true
             call("setFps(\(fps))")
             if paused { call("setPaused(true)") }
+            if properties != bootProperties, let json = try? PropertyResolver.javascriptObject(properties) {
+                call("apply(\(json))")
+            }
         case "error":
             let text = message["message"] as? String ?? "unknown error"
             NSLog("tokonoma: wallpaper \(wallpaperID ?? "?") reported: \(text)")
