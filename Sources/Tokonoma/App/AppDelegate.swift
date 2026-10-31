@@ -8,10 +8,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var libraryWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.setActivationPolicy(.accessory)
+        NSApp.setActivationPolicy(.regular)
         model = AppModel()
         model.start()
         menu = StatusMenu(model: model) { [weak self] in self?.openLibrary() }
+        NSApp.mainMenu = MainMenu.make(target: self)
+        // Quiet at login: the window only opens by itself the very first time.
         if model.isFirstRun { openLibrary() }
     }
 
@@ -19,6 +21,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         openLibrary()
         return false
     }
+
+    /// Right-click on the Dock icon.
+    func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        let dock = NSMenu()
+        dock.addItem(withTitle: model.settings.userPaused ? "Resume" : "Pause", action: #selector(togglePause), keyEquivalent: "").target = self
+        dock.addItem(withTitle: "Next Wallpaper", action: #selector(nextWallpaper), keyEquivalent: "").target = self
+        return dock
+    }
+
+    @objc func togglePause() { model.togglePause() }
+    @objc func nextWallpaper() { model.showNext() }
+    @objc func showLibrary() { openLibrary() }
 
     func applicationWillTerminate(_ notification: Notification) {
         model.stop()
