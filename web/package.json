@@ -1,0 +1,9 @@
+{
+  "name": "tokonoma-web",
+  "private": true,
+  "description": "Tests for the kasuri glyph renderer and the wallpaper scenes",
+  "scripts": {
+    "test": "node --test 'test/*.test.js'",
+    "coverage": "node --test --experimental-test-coverage 'test/*.test.js'"
+  }
+}
