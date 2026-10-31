@@ -31,6 +31,7 @@ final class AppModel: ObservableObject {
     private var builtIns: [String] = []
     private var rotationTimer: Timer?
     private var pendingSave: DispatchWorkItem?
+    private var scheduledMinutes: Int?
     private var pointerDisplay: String?
     private lazy var thumbnailer = Thumbnailer(paths: paths) { [weak self] id, image in
         self?.thumbnails[id] = image
@@ -132,9 +133,10 @@ final class AppModel: ObservableObject {
         update(transform)
     }
 
+    /// Moves the shared scene along. Displays you gave their own scene keep it.
     func showNext() {
         guard let next = Rotation.next(after: settings.fallbackWallpaper, in: wallpapers.map(\.id)) else { return }
-        show(next)
+        update { $0.with(\.fallbackWallpaper, next) }
     }
 
     /// Copies happen off the main thread, so a big video never freezes the
@@ -224,7 +226,7 @@ final class AppModel: ObservableObject {
     }
 
     private func refreshDesks() {
-        displays = desktop.desks.map { DisplayInfo(id: $0.key, name: $0.value.name) }.sorted { $0.name < $1.name }
+        displays = desktop.displays
         for (display, desk) in desktop.desks {
             guard let wallpaper = wallpaper(settings.wallpaper(for: display)) ?? wallpapers.first else { continue }
             let props = properties(for: wallpaper)
@@ -255,7 +257,13 @@ final class AppModel: ObservableObject {
 
     private func followCursorIfUseful() {
         let interactive = desktop.desks.keys.contains { wallpaper(settings.wallpaper(for: $0))?.manifest.interactive == true }
-        if settings.followCursor && interactive { pointer.start() } else { pointer.stop() }
+        if settings.followCursor && interactive {
+            pointer.start()
+        } else {
+            pointer.stop()
+            for desk in desktop.desks.values { desk.host.pointer(x: -1, y: -1, active: false) }
+            pointerDisplay = nil
+        }
     }
 
     private func forwardPointer(_ point: NSPoint) {
@@ -269,7 +277,11 @@ final class AppModel: ObservableObject {
         desk.host.pointer(x: hit.x, y: hit.y, active: true)
     }
 
+    /// Only restarts the countdown when the interval itself changes, so
+    /// tweaking a slider doesn't keep pushing the next scene away.
     private func scheduleRotation() {
+        guard settings.rotateMinutes != scheduledMinutes else { return }
+        scheduledMinutes = settings.rotateMinutes
         rotationTimer?.invalidate()
         rotationTimer = nil
         guard settings.rotateMinutes > 0 else { return }
