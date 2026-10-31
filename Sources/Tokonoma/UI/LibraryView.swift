@@ -1,0 +1,147 @@
+import SwiftUI
+import TokonomaCore
+import UniformTypeIdentifiers
+
+enum Tab: String, CaseIterable {
+    case library, settings
+}
+
+/// The one window: a grid of scenes on the left, the chosen one alive on the right.
+struct LibraryView: View {
+    @EnvironmentObject private var model: AppModel
+    @State private var tab: Tab = .library
+    @State private var selection: String?
+    @State private var dropping = false
+
+    var body: some View {
+        VStack(spacing: 0) {
+            header
+            if let notice = model.notice { NoticeBar(text: notice) { model.notice = nil } }
+            Divider().overlay(Ink.hairline)
+            switch tab {
+            case .library: library
+            case .settings: SettingsView()
+            }
+        }
+        .background(Ink.page)
+        .preferredColorScheme(.dark)
+        .onAppear { if selection == nil { selection = model.settings.fallbackWallpaper } }
+    }
+
+    private var header: some View {
+        HStack(spacing: Space.xl) {
+            HStack(spacing: Space.s) {
+                Text("Tokonoma").font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.text)
+                Text("床の間").font(Face.kanji(13)).foregroundStyle(Ink.muted)
+            }
+            HStack(spacing: Space.l) {
+                ForEach(Tab.allCases, id: \.self) { item in
+                    Button { withAnimation(Motion.quick) { tab = item } } label: {
+                        Text(item.rawValue)
+                            .font(Face.meta)
+                            .foregroundStyle(tab == item ? Ink.text : Ink.muted)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            Spacer()
+            Text(model.summary.lowercased())
+                .font(Face.meta)
+                .foregroundStyle(Ink.muted)
+            Button(model.settings.userPaused ? "Resume" : "Pause") { model.togglePause() }
+                .buttonStyle(QuietButtonStyle())
+            Button("Import…", action: chooseFiles)
+                .buttonStyle(QuietButtonStyle())
+        }
+        .padding(.leading, 84) // clear the traffic lights in the transparent title bar
+        .padding(.trailing, Space.l)
+        .frame(height: 52)
+    }
+
+    private var library: some View {
+        HStack(spacing: 0) {
+            ScrollView {
+                WallpaperGrid(selection: $selection)
+                    .padding(Space.xl)
+            }
+            .background(Ink.page)
+            .overlay {
+                if dropping {
+                    RoundedRectangle(cornerRadius: Radius.panel, style: .continuous)
+                        .strokeBorder(Ink.ring, style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                        .padding(Space.m)
+                        .overlay(Text("Drop to add to your library").font(Face.label).foregroundStyle(Ink.secondary))
+                        .background(Ink.page.opacity(0.85))
+                }
+            }
+            .onDrop(of: [.fileURL], isTargeted: $dropping, perform: drop)
+
+            Divider().overlay(Ink.hairline)
+
+            Group {
+                if let id = selection, let wallpaper = model.wallpaper(id) {
+                    InspectorView(wallpaper: wallpaper) { selection = model.settings.fallbackWallpaper }
+                        .id(wallpaper.id)
+                } else {
+                    Text("Pick a scene").font(Face.body).foregroundStyle(Ink.muted)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .frame(width: 380)
+            .background(Ink.deepest)
+        }
+    }
+
+    private func chooseFiles() {
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        panel.allowedContentTypes = MediaImporter.acceptedExtensions.compactMap { UTType(filenameExtension: $0) }
+        panel.message = "Videos, gifs and pictures become wallpapers, woven like the rest"
+        guard panel.runModal() == .OK else { return }
+        if let first = model.importFiles(panel.urls).first { selection = first }
+    }
+
+    private func drop(_ providers: [NSItemProvider]) -> Bool {
+        let group = DispatchGroup()
+        var urls: [URL] = []
+        let lock = NSLock()
+        for provider in providers {
+            group.enter()
+            _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                if let url {
+                    lock.lock()
+                    urls.append(url)
+                    lock.unlock()
+                }
+                group.leave()
+            }
+        }
+        group.notify(queue: .main) {
+            if let first = model.importFiles(urls).first { selection = first }
+        }
+        return true
+    }
+}
+
+struct NoticeBar: View {
+    let text: String
+    let dismiss: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: Space.m) {
+            Image(systemName: "exclamationmark.circle")
+                .font(.system(size: 13))
+                .foregroundStyle(Ink.secondary)
+            Text(text)
+                .font(Face.body)
+                .foregroundStyle(Ink.text)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled)
+            Button("Dismiss", action: dismiss).buttonStyle(.plain).font(Face.meta).foregroundStyle(Ink.muted)
+        }
+        .padding(.horizontal, Space.l)
+        .padding(.vertical, Space.m)
+        .background(Ink.raised)
+    }
+}
