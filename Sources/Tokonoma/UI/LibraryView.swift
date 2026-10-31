@@ -24,6 +24,7 @@ struct LibraryView: View {
             }
         }
         .background(Ink.page)
+        .tint(Ink.control)
         .preferredColorScheme(.dark)
         .onAppear { if selection == nil { selection = model.settings.fallbackWallpaper } }
     }

@@ -37,9 +37,9 @@ struct PropertyRow: View {
             set: { onChange(.number($0)) }
         )
         return HStack(spacing: Space.m) {
-            Slider(value: binding, in: lo...hi, step: spec.step ?? 0.01)
+            // No `step:` here: macOS would draw a tick for every step. The model snaps instead.
+            Slider(value: binding, in: lo...hi)
                 .controlSize(.small)
-                .tint(Ink.secondary)
             Text(format(binding.wrappedValue))
                 .font(Face.meta)
                 .monospacedDigit()

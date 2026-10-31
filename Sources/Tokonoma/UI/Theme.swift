@@ -18,6 +18,8 @@ enum Ink {
     static let muted = Color(hex: 0x8A847A)
     static let hairline = Color(hex: 0xEFE9DE).opacity(0.08)
     static let ring = Color(hex: 0xEFE9DE).opacity(0.28)
+    /// Fill for switches, sliders and pickers: washi grey instead of system blue.
+    static let control = Color(hex: 0xB9B2A6)
     /// Shu, the vermilion of torii and seals. Used for the seal and almost nothing else.
     static let shu = Color(hex: 0xD6452C)
 }
