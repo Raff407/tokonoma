@@ -58,6 +58,23 @@ import Testing
         #expect(SettingsStore(url: url).load() == .default)
     }
 
+    @Test func aCorruptFileIsKeptAsideNotOverwritten() throws {
+        let dir = try makeTempDir()
+        let url = dir.appendingPathComponent("settings.json")
+        try Data("{ half a file".utf8).write(to: url)
+        let (settings, backup) = SettingsStore(url: url).loadRecovering()
+        #expect(settings == .default)
+        let kept = try #require(backup)
+        #expect(try String(contentsOf: kept, encoding: .utf8) == "{ half a file")
+        #expect(!FileManager.default.fileExists(atPath: url.path))
+    }
+
+    @Test func aMissingFileIsNotACorruption() throws {
+        let dir = try makeTempDir()
+        let (_, backup) = SettingsStore(url: dir.appendingPathComponent("settings.json")).loadRecovering()
+        #expect(backup == nil)
+    }
+
     @Test func olderFilesMissingKeysStillLoad() throws {
         let dir = try makeTempDir()
         let url = dir.appendingPathComponent("settings.json")

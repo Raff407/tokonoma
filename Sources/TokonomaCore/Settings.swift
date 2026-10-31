@@ -99,10 +99,23 @@ public struct SettingsStore: Sendable {
     }
 
     public func load() -> Settings {
-        guard let data = try? Data(contentsOf: url),
-              let settings = try? JSONDecoder().decode(Settings.self, from: data)
-        else { return .default }
-        return settings
+        loadRecovering().settings
+    }
+
+    /// Like `load`, but a file that exists and can't be read is moved aside
+    /// (settings.broken-<time>.json) instead of being silently overwritten later.
+    /// The second value is where it went, so the app can say so.
+    public func loadRecovering() -> (settings: Settings, backup: URL?) {
+        guard let data = try? Data(contentsOf: url) else { return (.default, nil) }
+        if let settings = try? JSONDecoder().decode(Settings.self, from: data) { return (settings, nil) }
+        let stamp = Int(Date().timeIntervalSince1970)
+        let backup = url.deletingLastPathComponent().appendingPathComponent("settings.broken-\(stamp).json")
+        do {
+            try FileManager.default.moveItem(at: url, to: backup)
+            return (.default, backup)
+        } catch {
+            return (.default, nil)
+        }
     }
 
     public func save(_ settings: Settings) throws {
