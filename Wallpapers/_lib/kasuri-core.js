@@ -173,12 +173,46 @@
     return { sx: Math.round((srcW - sw) / 2), sy: Math.round((srcH - sh) / 2), sw, sh };
   }
 
+  // Rows of characters → pixels. Characters not in the palette are see-through.
+  function parseSprite(rows, palette) {
+    const pixels = [];
+    rows.forEach((row, y) => {
+      [...row].forEach((ch, x) => {
+        if (palette[ch]) pixels.push({ x, y, color: palette[ch] });
+      });
+    });
+    return { w: Math.max(...rows.map((r) => [...r].length)), h: rows.length, pixels };
+  }
+
+  const SEASONS = ['winter', 'winter', 'spring', 'spring', 'spring', 'summer', 'summer', 'summer', 'autumn', 'autumn', 'autumn', 'winter'];
+  const seasonOf = (month) => SEASONS[((month % 12) + 12) % 12];
+
+  const hourOf = (date) => date.getHours() + date.getMinutes() / 60 + date.getSeconds() / 3600;
+
+  // Colour stops around the clock; every key except `h` is a hex colour.
+  function paletteAt(hour, stops) {
+    const sorted = [...stops].sort((a, b) => a.h - b.h);
+    const h = ((hour % 24) + 24) % 24;
+    let i = sorted.findIndex((s) => s.h > h);
+    if (i === -1) i = 0;
+    const next = sorted[i];
+    const prev = sorted[(i - 1 + sorted.length) % sorted.length];
+    const span = (next.h - prev.h + 24) % 24 || 24;
+    const t = ((h - prev.h + 24) % 24) / span;
+    const out = {};
+    for (const key of Object.keys(prev)) {
+      if (key !== 'h') out[key] = mixColor(parseColor(prev[key]), parseColor(next[key]), t);
+    }
+    return out;
+  }
+
   const api = Object.freeze({
     MIN_CELL, MAX_CELL, RAMPS,
     clamp, lerp, smoothstep, gridSize, rampIndex,
     parseColor, toHex, mixColor, luminance,
     rng, hash2, noise2, fbm, bayer4, frameGate,
     mergeProps, propsFromQuery, coverRect,
+    parseSprite, seasonOf, hourOf, paletteAt,
   });
 
   if (typeof module === 'object' && module.exports) module.exports = api;

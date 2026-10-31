@@ -355,5 +355,15 @@ void main() {
     return root.tokonoma;
   }
 
-  root.Kasuri = Object.freeze({ run, buildAtlas, MODES, BASE_DEFAULTS });
+  // Paints a parsed sprite with its top-left at (x, y); flip mirrors it sideways.
+  function drawSprite(ctx, sprite, x, y, flip = false) {
+    const ox = Math.round(x);
+    const oy = Math.round(y);
+    for (const p of sprite.pixels) {
+      ctx.fillStyle = p.color;
+      ctx.fillRect(ox + (flip ? sprite.w - 1 - p.x : p.x), oy + p.y, 1, 1);
+    }
+  }
+
+  root.Kasuri = Object.freeze({ run, buildAtlas, drawSprite, MODES, BASE_DEFAULTS });
 })(globalThis);

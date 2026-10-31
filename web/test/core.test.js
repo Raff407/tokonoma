@@ -156,3 +156,50 @@ test('coverRect fills the target and keeps aspect', () => {
   assert.equal(tall.sh, 500);
   assert.equal(tall.sy, 750);
 });
+
+test('parseSprite reads pixels and skips transparent cells', () => {
+  const s = K.parseSprite(['.a', 'b.'], { a: '#ff0000', b: '#00ff00' });
+  assert.equal(s.w, 2);
+  assert.equal(s.h, 2);
+  assert.deepEqual(s.pixels, [
+    { x: 1, y: 0, color: '#ff0000' },
+    { x: 0, y: 1, color: '#00ff00' },
+  ]);
+});
+
+test('parseSprite ignores characters missing from the palette', () => {
+  const s = K.parseSprite(['ax'], { a: '#000000' });
+  assert.equal(s.pixels.length, 1);
+});
+
+test('seasonOf follows the northern calendar', () => {
+  assert.equal(K.seasonOf(0), 'winter');
+  assert.equal(K.seasonOf(3), 'spring');
+  assert.equal(K.seasonOf(6), 'summer');
+  assert.equal(K.seasonOf(9), 'autumn');
+  assert.equal(K.seasonOf(11), 'winter');
+});
+
+test('paletteAt interpolates between stops and wraps midnight', () => {
+  const stops = [
+    { h: 0, sky: '#000000' },
+    { h: 12, sky: '#ffffff' },
+  ];
+  assert.deepEqual(K.paletteAt(0, stops).sky, [0, 0, 0]);
+  assert.deepEqual(K.paletteAt(12, stops).sky, [255, 255, 255]);
+  assert.deepEqual(K.paletteAt(6, stops).sky, [127.5, 127.5, 127.5]);
+  assert.deepEqual(K.paletteAt(18, stops).sky, [127.5, 127.5, 127.5]);
+  assert.deepEqual(K.paletteAt(24, stops).sky, [0, 0, 0]);
+});
+
+test('paletteAt works with unsorted stops', () => {
+  const stops = [
+    { h: 12, sky: '#ffffff' },
+    { h: 0, sky: '#000000' },
+  ];
+  assert.deepEqual(K.paletteAt(6, stops).sky, [127.5, 127.5, 127.5]);
+});
+
+test('hourOf reads fractional hours from a date', () => {
+  assert.equal(K.hourOf(new Date(2026, 0, 1, 6, 30)), 6.5);
+});
