@@ -319,6 +319,7 @@ void main() {
       const next = holds.host || holds.hidden;
       if (next === paused) return;
       paused = next;
+      if (spec.onPause) spec.onPause(paused, api);
       root.cancelAnimationFrame(raf);
       if (!paused) {
         last = null;
