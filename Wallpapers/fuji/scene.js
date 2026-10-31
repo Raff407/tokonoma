@@ -13,7 +13,7 @@
   const Sky = KasuriSky;
   const { clamp, lerp, fbm, noise2, hash2, parseColor: P, mixColor } = K;
 
-  const ROCK = { lit: P('#5d5a6e'), shade: P('#2f2d3d') };
+  const ROCK = { lit: P('#7a768f'), shade: P('#3e3b52') };
   const SNOW = { lit: P('#f3f1ec'), shade: P('#a9b0c4') };
   const SHORE = P('#121218');
 
@@ -114,7 +114,8 @@
         const pal = snowy ? SNOW : ROCK;
         let c = mixColor(pal.shade, pal.lit, lit);
         c = mixColor(c, sky.haze, clamp(depth * 0.55, 0, 0.55));
-        c = tint(c, amb);
+        // Moonlight: the shared night tint is tuned for close things; lift the far slope a touch.
+        c = tint(c, amb, 1 + 0.35 * sky.night);
         const i = (y * g.W + x) * 4;
         d[i] = c[0];
         d[i + 1] = c[1];
