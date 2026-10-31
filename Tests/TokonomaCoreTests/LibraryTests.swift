@@ -73,3 +73,19 @@ func writeWallpaper(_ root: URL, id: String, name: String? = nil, json: String? 
         #expect(wallpaper.entryURL.path.hasSuffix("koi/index.html"))
     }
 }
+
+@Suite struct ShippedWallpaperTests {
+    @Test func everyBuiltInPassesValidation() {
+        let repo = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let scan = WallpaperLibrary.scan(repo.appendingPathComponent("Wallpapers"), builtIn: [])
+        #expect(scan.problems.isEmpty, "\(scan.problems)")
+        #expect(Set(scan.wallpapers.map(\.id)) == ["torii", "koi", "sumi", "fuji"])
+    }
+
+    @Test func importedMediaPropertiesAreWellFormed() {
+        for kind in [MediaImporter.Kind.video, .image] {
+            #expect(MediaImporter.properties(for: kind).allSatisfy { $0.isWellFormed })
+        }
+    }
+}

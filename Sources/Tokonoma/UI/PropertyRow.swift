@@ -31,7 +31,7 @@ struct PropertyRow: View {
 
     private var range: some View {
         let lo = spec.min ?? 0
-        let hi = spec.max ?? 1
+        let hi = Swift.max(spec.max ?? 1, lo)
         let binding = Binding<Double>(
             get: { value.number ?? lo },
             set: { onChange(.number($0)) }
@@ -86,7 +86,7 @@ struct PropertyRow: View {
 
     private func format(_ n: Double) -> String {
         let step = spec.step ?? 0.01
-        return step >= 1 ? String(Int(n.rounded())) : String(format: "%.1f", n)
+        return step >= 1 ? String(format: "%.0f", n) : String(format: "%.1f", n)
     }
 }
 

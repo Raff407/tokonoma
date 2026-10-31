@@ -71,3 +71,54 @@ private let toriiJSON = """
         #expect(again == manifest)
     }
 }
+
+@Suite struct ManifestHardeningTests {
+    private func manifest(_ properties: String) -> Data {
+        Data(#"{"id":"ok","name":"X","entry":"index.html","properties":[\#(properties)]}"#.utf8)
+    }
+
+    @Test func rejectsDuplicateKeys() {
+        let json = manifest("""
+          {"key":"a","label":"a","type":"toggle","default":true},
+          {"key":"a","label":"b","type":"toggle","default":false}
+        """)
+        #expect(throws: ManifestError.self) { try Manifest.decode(json) }
+    }
+
+    @Test func rejectsEmptyKeys() {
+        #expect(throws: ManifestError.self) {
+            try Manifest.decode(manifest(#"{"key":"","label":"a","type":"toggle","default":true}"#))
+        }
+    }
+
+    @Test func rejectsBackwardsOrBrokenRanges() {
+        let bad = [
+            #"{"key":"r","label":"r","type":"range","min":5,"max":1,"default":3}"#,
+            #"{"key":"r","label":"r","type":"range","min":0,"max":1,"step":0,"default":0.5}"#,
+            #"{"key":"r","label":"r","type":"range","min":0,"max":1,"step":-1,"default":0.5}"#,
+            #"{"key":"r","label":"r","type":"range","min":0,"max":1,"default":7}"#,
+            #"{"key":"r","label":"r","type":"range","default":1e300}"#,
+            #"{"key":"r","label":"r","type":"range","min":2,"default":3}"#,
+        ]
+        for json in bad {
+            #expect(throws: ManifestError.self, "should reject \(json)") { try Manifest.decode(manifest(json)) }
+        }
+    }
+
+    @Test func acceptsAWellFormedRange() throws {
+        let ok = try Manifest.decode(manifest(#"{"key":"r","label":"r","type":"range","min":0,"max":2,"step":0.5,"default":1}"#))
+        #expect(ok.properties.count == 1)
+    }
+
+    @Test func rejectsChoicesWithoutOptions() {
+        #expect(throws: ManifestError.self) {
+            try Manifest.decode(manifest(#"{"key":"c","label":"c","type":"choice","options":[],"default":"x"}"#))
+        }
+    }
+
+    @Test func resolveSurvivesDuplicatesThatSlipThrough() {
+        let spec = PropertySpec(key: "a", label: "a", kind: .toggle, defaultValue: .flag(true))
+        let values = PropertyResolver.resolve([spec, spec], overrides: [:])
+        #expect(values == ["a": .flag(true)])
+    }
+}

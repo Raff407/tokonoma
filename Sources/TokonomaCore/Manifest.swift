@@ -5,13 +5,15 @@ public enum ManifestError: Error, Equatable, CustomStringConvertible {
     case badID(String)
     case badEntry(String)
     case badProperty(String)
+    case duplicateProperty(String)
 
     public var description: String {
         switch self {
         case let .unreadable(why): "wallpaper.json could not be read: \(why)"
         case let .badID(id): "\"\(id)\" is not a usable wallpaper id"
         case let .badEntry(entry): "entry \"\(entry)\" must be a file inside the wallpaper folder"
-        case let .badProperty(key): "property \"\(key)\" has a default that does not match its type"
+        case let .badProperty(key): "property \"\(key)\" is malformed (check its type, range and default)"
+        case let .duplicateProperty(key): "property \"\(key)\" is declared twice"
         }
     }
 }
@@ -46,6 +48,18 @@ public struct PropertySpec: Codable, Equatable, Hashable, Sendable {
         self.step = step
         self.options = options
         self.defaultValue = defaultValue
+    }
+
+    /// Everything the UI and the resolver rely on: a usable key, a sane range
+    /// (both ends, finite, low ≤ high, positive step, default inside), and a
+    /// default of the right type. Anything else could crash a Slider.
+    var isWellFormed: Bool {
+        guard !key.isEmpty, defaultMatchesKind else { return false }
+        guard kind == .range else { return true }
+        guard let lo = min, let hi = max, let d = defaultValue.number,
+              lo.isFinite, hi.isFinite, d.isFinite, lo <= hi, (lo...hi).contains(d)
+        else { return false }
+        return step.map { $0.isFinite && $0 > 0 } ?? true
     }
 
     var defaultMatchesKind: Bool {
@@ -125,8 +139,12 @@ public struct Manifest: Codable, Equatable, Hashable, Sendable {
     func validate() throws {
         guard Manifest.isSafeName(id) else { throw ManifestError.badID(id) }
         guard Manifest.isSafeRelativePath(entry) else { throw ManifestError.badEntry(entry) }
-        if let bad = properties.first(where: { !$0.defaultMatchesKind }) {
+        if let bad = properties.first(where: { !$0.isWellFormed }) {
             throw ManifestError.badProperty(bad.key)
+        }
+        var seen = Set<String>()
+        for spec in properties where !seen.insert(spec.key).inserted {
+            throw ManifestError.duplicateProperty(spec.key)
         }
     }
 

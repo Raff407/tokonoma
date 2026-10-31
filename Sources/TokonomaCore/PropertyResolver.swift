@@ -5,9 +5,10 @@ import Foundation
 /// the wrong shape quietly becomes the default rather than reaching the page.
 public enum PropertyResolver {
     public static func resolve(_ specs: [PropertySpec], overrides: [String: PropertyValue]) -> [String: PropertyValue] {
-        Dictionary(uniqueKeysWithValues: specs.map { spec in
+        // First declaration wins; never trap on a duplicate that slipped past validation.
+        Dictionary(specs.map { spec in
             (spec.key, overrides[spec.key].map { sanitize($0, for: spec) } ?? spec.defaultValue)
-        })
+        }, uniquingKeysWith: { first, _ in first })
     }
 
     public static func sanitize(_ value: PropertyValue, for spec: PropertySpec) -> PropertyValue {
