@@ -1,0 +1,114 @@
+import Foundation
+
+/// Everything the user has chosen. Value type; every change returns a copy.
+public struct Settings: Codable, Equatable, Sendable {
+    /// Display UUID → wallpaper id. Displays not listed show `fallbackWallpaper`.
+    public var assignments: [String: String]
+    public var fallbackWallpaper: String
+    /// Wallpaper id → property key → value.
+    public var overrides: [String: [String: PropertyValue]]
+    public var pauseWhenCovered: Bool
+    public var pauseOnBattery: Bool
+    public var pauseInLowPower: Bool
+    public var fpsCap: Int
+    public var batteryFps: Int
+    /// 0 means never rotate.
+    public var rotateMinutes: Int
+    public var followCursor: Bool
+    public var userPaused: Bool
+
+    public static let `default` = Settings(
+        assignments: [:],
+        fallbackWallpaper: "torii",
+        overrides: [:],
+        pauseWhenCovered: true,
+        pauseOnBattery: false,
+        pauseInLowPower: true,
+        fpsCap: 30,
+        batteryFps: 15,
+        rotateMinutes: 0,
+        followCursor: true,
+        userPaused: false
+    )
+
+    public func wallpaper(for display: String) -> String {
+        assignments[display] ?? fallbackWallpaper
+    }
+
+    public func with<T>(_ key: WritableKeyPath<Settings, T>, _ value: T) -> Settings {
+        var copy = self
+        copy[keyPath: key] = value
+        return copy
+    }
+
+    public func assigning(_ wallpaper: String, to display: String) -> Settings {
+        with(\.assignments, assignments.merging([display: wallpaper]) { _, new in new })
+    }
+
+    public func assigningEverywhere(_ wallpaper: String) -> Settings {
+        with(\.assignments, [:]).with(\.fallbackWallpaper, wallpaper)
+    }
+
+    public func setting(_ key: String, to value: PropertyValue, for wallpaper: String) -> Settings {
+        let current = overrides[wallpaper] ?? [:]
+        return with(\.overrides, overrides.merging([wallpaper: current.merging([key: value]) { _, new in new }]) { _, new in new })
+    }
+
+    public func resetting(_ wallpaper: String) -> Settings {
+        with(\.overrides, overrides.filter { $0.key != wallpaper })
+    }
+
+    /// After a wallpaper is deleted: point anything that showed it somewhere else.
+    public func forgetting(_ wallpaper: String, fallback: String) -> Settings {
+        resetting(wallpaper)
+            .with(\.assignments, assignments.filter { $0.value != wallpaper })
+            .with(\.fallbackWallpaper, fallbackWallpaper == wallpaper ? fallback : fallbackWallpaper)
+    }
+}
+
+extension Settings {
+    private enum Keys: String, CodingKey {
+        case assignments, fallbackWallpaper, overrides, pauseWhenCovered, pauseOnBattery, pauseInLowPower
+        case fpsCap, batteryFps, rotateMinutes, followCursor, userPaused
+    }
+
+    // Tolerant decoding: a settings file from an older build fills gaps with defaults.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: Keys.self)
+        let d = Settings.default
+        assignments = try c.decodeIfPresent([String: String].self, forKey: .assignments) ?? d.assignments
+        fallbackWallpaper = try c.decodeIfPresent(String.self, forKey: .fallbackWallpaper) ?? d.fallbackWallpaper
+        overrides = try c.decodeIfPresent([String: [String: PropertyValue]].self, forKey: .overrides) ?? d.overrides
+        pauseWhenCovered = try c.decodeIfPresent(Bool.self, forKey: .pauseWhenCovered) ?? d.pauseWhenCovered
+        pauseOnBattery = try c.decodeIfPresent(Bool.self, forKey: .pauseOnBattery) ?? d.pauseOnBattery
+        pauseInLowPower = try c.decodeIfPresent(Bool.self, forKey: .pauseInLowPower) ?? d.pauseInLowPower
+        fpsCap = try c.decodeIfPresent(Int.self, forKey: .fpsCap) ?? d.fpsCap
+        batteryFps = try c.decodeIfPresent(Int.self, forKey: .batteryFps) ?? d.batteryFps
+        rotateMinutes = try c.decodeIfPresent(Int.self, forKey: .rotateMinutes) ?? d.rotateMinutes
+        followCursor = try c.decodeIfPresent(Bool.self, forKey: .followCursor) ?? d.followCursor
+        userPaused = try c.decodeIfPresent(Bool.self, forKey: .userPaused) ?? d.userPaused
+    }
+}
+
+/// Reads and writes settings.json. Corrupt or missing files fall back to defaults.
+public struct SettingsStore: Sendable {
+    public let url: URL
+
+    public init(url: URL) {
+        self.url = url
+    }
+
+    public func load() -> Settings {
+        guard let data = try? Data(contentsOf: url),
+              let settings = try? JSONDecoder().decode(Settings.self, from: data)
+        else { return .default }
+        return settings
+    }
+
+    public func save(_ settings: Settings) throws {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try encoder.encode(settings).write(to: url, options: .atomic)
+    }
+}
