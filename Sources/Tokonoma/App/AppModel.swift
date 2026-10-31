@@ -41,12 +41,23 @@ final class AppModel: ObservableObject {
         self.paths = paths
         store = SettingsStore(url: paths.settings)
         isFirstRun = !FileManager.default.fileExists(atPath: paths.settings.path)
-        settings = store.load()
+        let (loaded, backup) = store.loadRecovering()
+        settings = loaded
+        if let backup {
+            notice = "Your settings file couldn't be read, so Tokonoma started fresh. The old file is at \(backup.path)."
+        }
     }
 
     func start() {
+        // Built-in-ness comes from the bundle, so a failed copy can never make a
+        // shipped scene look like an import that "Remove" would delete.
+        builtIns = BundleSync.builtInIDs(in: paths.bundledWallpapers)
         do {
-            builtIns = try BundleSync.install(from: paths.bundledWallpapers, into: paths.library)
+            let installed = try BundleSync.install(from: paths.bundledWallpapers, into: paths.library)
+            if !installed.failures.isEmpty {
+                NSLog("tokonoma: some built-ins failed to update: \(installed.failures)")
+                notice = "Some built-in scenes couldn't be updated: \(installed.failures.keys.sorted().joined(separator: ", ")). The previous copies are still in place."
+            }
         } catch {
             NSLog("tokonoma: could not install built-in wallpapers: \(error)")
             notice = "The built-in wallpapers couldn't be copied into your library. \(error.localizedDescription)"

@@ -105,13 +105,21 @@ private let template = """
         try FileManager.default.createDirectory(at: root.appendingPathComponent("_lib"), withIntermediateDirectories: true)
         try Data("v1".utf8).write(to: root.appendingPathComponent("_lib/kasuri.js"))
 
-        let ids = try BundleSync.install(from: bundled, into: root)
+        let result = try BundleSync.install(from: bundled, into: root)
 
-        #expect(ids == ["torii"])
+        #expect(result.ids == ["torii"])
+        #expect(result.failures.isEmpty)
         let lib = try String(contentsOf: root.appendingPathComponent("_lib/kasuri.js"), encoding: .utf8)
         #expect(lib == "v2")
         #expect(FileManager.default.fileExists(atPath: root.appendingPathComponent("my-clip/wallpaper.json").path))
         #expect(FileManager.default.fileExists(atPath: root.appendingPathComponent("torii/index.html").path))
+    }
+
+    @Test func builtInIDsComeFromTheBundleEvenIfInstallFails() throws {
+        let bundled = try makeTempDir()
+        try writeWallpaper(bundled, id: "koi")
+        try writeWallpaper(bundled, id: "torii")
+        #expect(BundleSync.builtInIDs(in: bundled) == ["koi", "torii"])
     }
 
     @Test func skipsScratchFolders() throws {

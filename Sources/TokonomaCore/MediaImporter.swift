@@ -100,26 +100,54 @@ public enum MediaImporter {
 }
 
 /// Copies the wallpapers that ship inside the app into the user's library
-/// folder, replacing older copies and leaving imported ones alone.
+/// folder, replacing older copies and leaving imported ones alone. Each folder
+/// lands beside its target first and is swapped in, so a failure halfway
+/// never leaves a scene missing, and one bad folder doesn't stop the rest.
 public enum BundleSync {
     static let skipped: Set<String> = ["_sample"]
 
+    public struct Installation: Equatable, Sendable {
+        public let ids: [String]
+        public let failures: [String: String]
+    }
+
+    /// Which wallpapers ship with the app, read from the bundle itself.
+    public static func builtInIDs(in bundled: URL) -> [String] {
+        folders(in: bundled)
+            .filter { FileManager.default.fileExists(atPath: $0.appendingPathComponent(WallpaperLibrary.manifestName).path) }
+            .map(\.lastPathComponent)
+            .sorted()
+    }
+
     @discardableResult
-    public static func install(from bundled: URL, into root: URL) throws -> [String] {
+    public static func install(from bundled: URL, into root: URL) throws -> Installation {
         let fm = FileManager.default
         try fm.createDirectory(at: root, withIntermediateDirectories: true)
-        let folders = try fm.contentsOfDirectory(at: bundled, includingPropertiesForKeys: [.isDirectoryKey])
-            .filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true }
-            .filter { !skipped.contains($0.lastPathComponent) && !$0.lastPathComponent.hasPrefix(".") }
-        var ids: [String] = []
-        for folder in folders {
-            let target = root.appendingPathComponent(folder.lastPathComponent)
-            if fm.fileExists(atPath: target.path) { try fm.removeItem(at: target) }
-            try fm.copyItem(at: folder, to: target)
-            if fm.fileExists(atPath: folder.appendingPathComponent(WallpaperLibrary.manifestName).path) {
-                ids.append(folder.lastPathComponent)
+        var failures: [String: String] = [:]
+        for folder in folders(in: bundled) {
+            let name = folder.lastPathComponent
+            let target = root.appendingPathComponent(name)
+            let incoming = root.appendingPathComponent(".\(name).incoming")
+            do {
+                try? fm.removeItem(at: incoming)
+                try fm.copyItem(at: folder, to: incoming)
+                if fm.fileExists(atPath: target.path) {
+                    _ = try fm.replaceItemAt(target, withItemAt: incoming)
+                } else {
+                    try fm.moveItem(at: incoming, to: target)
+                }
+            } catch {
+                try? fm.removeItem(at: incoming)
+                failures[name] = error.localizedDescription
             }
         }
-        return ids.sorted()
+        let ids = builtInIDs(in: bundled).filter { failures[$0] == nil }
+        return Installation(ids: ids, failures: failures)
+    }
+
+    private static func folders(in bundled: URL) -> [URL] {
+        ((try? FileManager.default.contentsOfDirectory(at: bundled, includingPropertiesForKeys: [.isDirectoryKey])) ?? [])
+            .filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true }
+            .filter { !skipped.contains($0.lastPathComponent) && !$0.lastPathComponent.hasPrefix(".") }
     }
 }
