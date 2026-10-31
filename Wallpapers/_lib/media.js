@@ -63,6 +63,11 @@
     const props = api.props;
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, api.cols, api.rows);
+    // Saved speed applies from the first frame, not only after a slider moves.
+    if (state.ready && 'playbackRate' in state.el) {
+      const rate = K.clamp(props.speed, 0.1, 4);
+      if (state.el.playbackRate !== rate) state.el.playbackRate = rate;
+    }
     const el = state.ready ? state.el : state.poster;
     if (!el) return;
     const w = state.ready ? state.w : el.naturalWidth;
