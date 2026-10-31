@@ -24,6 +24,7 @@
     gain: 1,
     dither: 0.6,
     boost: 0.35,
+    tint: 0.55,
     invert: false,
     bg: '#0b0b0a',
     speed: 1,
@@ -48,6 +49,7 @@ uniform vec3 uBg;
 uniform float uGain;
 uniform float uDither;
 uniform float uBoost;
+uniform float uTint;
 uniform bool uInvert;
 out vec4 outColor;
 
@@ -61,7 +63,8 @@ void main() {
   if (uMode == 3) { outColor = vec4(col, 1.0); return; }
 
   float lum = dot(col, vec3(0.299, 0.587, 0.114));
-  float l = uInvert ? 1.0 - lum : lum;
+  // A gentle lift so mid-tones still get glyphs worth reading.
+  float l = pow(uInvert ? 1.0 - lum : lum, 0.72);
   ivec2 b = ivec2(mod(cell, 4.0));
   float threshold = BAYER[b.y * 4 + b.x] / 16.0 - 0.5;
   l = clamp(l * uGain + threshold * uDither / uGlyphs, 0.0, 1.0);
@@ -83,7 +86,9 @@ void main() {
   vec3 vivid = col / max(peak, 0.08);
   vec3 ink = uInvert ? col : min(mix(col, vivid * mix(0.55, 1.0, l), uBoost), 1.0);
   if (uMode == 1) ink = col;
-  outColor = vec4(mix(uBg, ink, a), 1.0);
+  // Each cell sits on a dim wash of its own colour, like dyed thread under the weave.
+  vec3 ground = mix(uBg, uInvert ? mix(uBg, col, 0.35) : col * 0.3, uTint);
+  outColor = vec4(mix(ground, ink, a), 1.0);
 }`;
 
   function buildAtlas(chars, cellPx) {
@@ -158,7 +163,7 @@ void main() {
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
 
     const u = {};
-    for (const name of ['uScene', 'uAtlas', 'uRes', 'uCell', 'uGlyphs', 'uMode', 'uBg', 'uGain', 'uDither', 'uBoost', 'uInvert']) {
+    for (const name of ['uScene', 'uAtlas', 'uRes', 'uCell', 'uGlyphs', 'uMode', 'uBg', 'uGain', 'uDither', 'uBoost', 'uTint', 'uInvert']) {
       u[name] = gl.getUniformLocation(program, name);
     }
     const sceneTex = texture(gl);
@@ -190,6 +195,7 @@ void main() {
         gl.uniform1f(u.uGain, props.gain);
         gl.uniform1f(u.uDither, props.dither);
         gl.uniform1f(u.uBoost, props.boost);
+        gl.uniform1f(u.uTint, props.tint);
         gl.uniform1i(u.uInvert, props.invert ? 1 : 0);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
       },
@@ -287,16 +293,25 @@ void main() {
       if (spec.setup) spec.setup(ctx, api);
     }
 
+    function render(dt) {
+      const step = dt * props.speed;
+      time += step;
+      spec.draw(ctx, time, step, api);
+      renderer.draw(scene, props, api.cellPx);
+    }
+
     function frame(now) {
       if (paused) return;
       raf = root.requestAnimationFrame(frame);
       if (!gate(now)) return;
       const dt = last === null ? 1 / 60 : Math.min((now - last) / 1000, 0.1);
       last = now;
-      const step = dt * props.speed;
-      time += step;
-      spec.draw(ctx, time, step, api);
-      renderer.draw(scene, props, api.cellPx);
+      render(dt);
+    }
+
+    // Advance by hand, for thumbnails and for hosts that are not painting.
+    function step(seconds = 1 / 30, frames = 1) {
+      for (let i = 0; i < frames; i++) render(seconds);
     }
 
     function setHold(key, value) {
@@ -318,10 +333,7 @@ void main() {
       api.props = next;
       if (relayout) layout();
       if (spec.onProps) spec.onProps(next, api);
-      if (paused) {
-        spec.draw(ctx, time, 0, api);
-        renderer.draw(scene, props, api.cellPx);
-      }
+      if (paused) render(0);
     }
 
     function pointer(nx, ny, active) {
@@ -333,6 +345,7 @@ void main() {
       setPaused: (value) => setHold('host', Boolean(value)),
       setFps(fps) { gate = C.frameGate(fps); },
       pointer,
+      step,
       get props() { return props; },
       get renderer() { return renderer.kind; },
     };
