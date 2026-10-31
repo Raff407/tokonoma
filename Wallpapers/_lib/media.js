@@ -12,6 +12,8 @@
 
   const src = document.body.dataset.media || new URLSearchParams(location.search).get('src') || '';
   const state = { el: null, ready: false, w: 0, h: 0 };
+  let markReady;
+  const loaded = new Promise((resolve) => { markReady = resolve; });
 
   function load() {
     if (VIDEO.test(src)) {
@@ -21,6 +23,7 @@
         state.ready = true;
         state.w = v.videoWidth;
         state.h = v.videoHeight;
+        markReady();
       });
       v.src = src;
       v.play().catch(() => {});
@@ -32,7 +35,9 @@
         state.ready = true;
         state.w = img.naturalWidth;
         state.h = img.naturalHeight;
+        markReady();
       };
+      img.onerror = () => markReady();
       img.src = src;
       state.el = img;
     }
@@ -71,6 +76,7 @@
       ramp: 'lines',
     },
     draw,
+    ready: () => loaded,
     onProps(props) {
       if (state.el && 'playbackRate' in state.el) state.el.playbackRate = K.clamp(props.speed, 0.1, 4);
     },

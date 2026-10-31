@@ -337,6 +337,20 @@ void main() {
       if (paused) render(0);
     }
 
+    // A still of the scene a moment in, for library thumbnails. Steps by hand,
+    // so it works even when the page is hidden and not animating.
+    async function capture(width = 480, warmup = 1.5) {
+      if (spec.ready) {
+        await Promise.race([spec.ready(), new Promise((resolve) => setTimeout(resolve, 4000))]);
+      }
+      step(1 / 30, Math.round(warmup * 30));
+      const still = document.createElement('canvas');
+      still.width = width;
+      still.height = Math.round((width * out.height) / out.width);
+      still.getContext('2d').drawImage(out, 0, 0, still.width, still.height);
+      return still.toDataURL('image/jpeg', 0.86);
+    }
+
     function pointer(nx, ny, active) {
       api.pointer = { x: nx * api.cols, y: ny * api.rows, active: active !== false };
     }
@@ -347,6 +361,7 @@ void main() {
       setFps(fps) { gate = C.frameGate(fps); },
       pointer,
       step,
+      capture,
       get props() { return props; },
       get renderer() { return renderer.kind; },
     };
