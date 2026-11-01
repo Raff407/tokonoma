@@ -202,7 +202,7 @@ final class AppModel: ObservableObject {
             var failures: [String] = []
             for url in urls {
                 do {
-                    added.append(try MediaImporter.importMedia(from: url, into: library, template: template).id)
+                    added.append(try await MediaImporter.importMedia(from: url, into: library, template: template).id)
                 } catch let error as ImportError {
                     failures.append("\(url.lastPathComponent): \(error.description)")
                 } catch {

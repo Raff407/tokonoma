@@ -7,7 +7,7 @@ public enum ImportError: Error, Equatable, CustomStringConvertible {
 
     public var description: String {
         switch self {
-        case let .unsupported(ext): "Tokonoma can't play .\(ext) files. Try mp4, mov, webm, gif, png, jpg or webp."
+        case let .unsupported(ext): "Tokonoma can't play .\(ext) files. Try a video (mp4, mov, webm) or a picture (gif, png, jpg, webp, heic, avif, tiff…)."
         case .badTemplate: "The media template is damaged. Reinstalling Tokonoma will put it back."
         case .builtIn: "Built-in wallpapers can't be removed."
         }
@@ -20,7 +20,11 @@ public enum MediaImporter {
     public enum Kind: Equatable, Sendable { case video, image }
 
     static let videoTypes: Set<String> = ["mp4", "m4v", "mov", "webm"]
-    static let imageTypes: Set<String> = ["gif", "png", "jpg", "jpeg", "webp", "heic"]
+    /// Anything ImageIO reads. Animated ones become clips, odd stills become JPEG/PNG (see MediaPrep).
+    static let imageTypes: Set<String> = [
+        "gif", "png", "apng", "jpg", "jpeg", "jpe", "webp", "heic", "heif", "heics", "avif",
+        "tif", "tiff", "bmp", "jp2", "psd", "tga", "ico", "dng",
+    ]
     static let marker = #"data-media="""#
 
     public static var acceptedExtensions: [String] { (videoTypes.union(imageTypes)).sorted() }
@@ -44,37 +48,52 @@ public enum MediaImporter {
         return "\(base)-\(n)"
     }
 
-    public static func importMedia(from source: URL, into root: URL, template: String) throws -> Wallpaper {
+    public static func importMedia(from source: URL, into root: URL, template: String) async throws -> Wallpaper {
         let ext = source.pathExtension.lowercased()
-        guard let kind = kind(of: source) else { throw ImportError.unsupported(ext) }
+        guard let picked = kind(of: source) else { throw ImportError.unsupported(ext) }
         guard template.contains(marker) else { throw ImportError.badTemplate }
 
         let fm = FileManager.default
         let taken = Set((try? fm.contentsOfDirectory(atPath: root.path)) ?? [])
         let id = slug(for: source.lastPathComponent, taken: taken)
         let folder = root.appendingPathComponent(id)
-        let mediaName = "media.\(ext)"
-        let manifest = Manifest(
-            id: id,
-            name: (source.lastPathComponent as NSString).deletingPathExtension,
-            description: kind == .video ? "Imported video" : "Imported image",
-            media: mediaName,
-            properties: properties(for: kind)
-        )
 
         // Not intermediate: if the folder somehow exists, fail rather than write into it.
         try fm.createDirectory(at: folder, withIntermediateDirectories: false)
         do {
-            try fm.copyItem(at: source, to: folder.appendingPathComponent(mediaName))
+            var mediaName = "media.\(ext)"
+            var playsAs = picked
+            if picked == .video {
+                try fm.copyItem(at: source, to: folder.appendingPathComponent(mediaName))
+            } else {
+                let prepared = try await MediaPrep.picture(source, into: folder)
+                mediaName = prepared.fileName
+                if prepared.animated { playsAs = .video }
+            }
+            let manifest = Manifest(
+                id: id,
+                name: (source.lastPathComponent as NSString).deletingPathExtension,
+                description: description(original: picked, playsAs: playsAs, ext: ext),
+                media: mediaName,
+                properties: properties(for: playsAs)
+            )
             let html = template.replacingOccurrences(of: marker, with: #"data-media="\#(mediaName)""#)
             try Data(html.utf8).write(to: folder.appendingPathComponent("index.html"))
             try manifest.encoded().write(to: folder.appendingPathComponent(WallpaperLibrary.manifestName))
+            return Wallpaper(manifest: manifest, folder: folder, isBuiltIn: false)
         } catch {
             // Only ever removes the folder this call just created.
             try? fm.removeItem(at: folder)
             throw error
         }
-        return Wallpaper(manifest: manifest, folder: folder, isBuiltIn: false)
+    }
+
+    static func description(original: Kind, playsAs: Kind, ext: String) -> String {
+        switch (original, playsAs) {
+        case (.video, _): "Imported video"
+        case (.image, .video): "Imported animation (\(ext))"
+        case (.image, .image): "Imported picture"
+        }
     }
 
     public static func remove(_ wallpaper: Wallpaper) throws {
