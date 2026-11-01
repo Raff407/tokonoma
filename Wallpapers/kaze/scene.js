@@ -316,7 +316,7 @@
     state.stalks = makeStalks(g, rand);
     state.fluff = makeFluff(g, rand);
     state.gusts = [];
-    state.sword = { x: g.W * 0.72, y: g.H * 1.08, angle: -0.24, length: g.H * 1.25 };
+    state.sword = { x: g.W * 0.72, y: g.H * 1.0, angle: -0.22, length: g.H * 0.9 };
   }
 
   function draw(ctx, t, dt, api) {
