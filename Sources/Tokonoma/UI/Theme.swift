@@ -208,6 +208,21 @@ struct SettingRow<Control: View>: View {
     }
 }
 
+/// Text entry on the sunken surface, same height and hairline as the other controls.
+struct InkField: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(.horizontal, Space.s)
+            .frame(height: 28)
+            .background(RoundedRectangle(cornerRadius: Radius.control, style: .continuous).fill(Ink.deepest))
+            .overlay(RoundedRectangle(cornerRadius: Radius.control, style: .continuous).strokeBorder(Ink.hairline))
+    }
+}
+
+extension View {
+    func inkField() -> some View { modifier(InkField()) }
+}
+
 extension String {
     /// "time of day" → "Time of day": manifests write lowercase, the UI reads in sentence case.
     var sentenceCased: String { prefix(1).uppercased() + dropFirst() }
