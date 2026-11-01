@@ -13,6 +13,17 @@
 (function (root) {
   'use strict';
 
+  // Taken before any scene script runs (kasuri loads first, or is injected at
+  // document start), so a scene that swaps these out can't fake its own checks.
+  const native = Object.freeze({
+    now: root.performance.now.bind(root.performance),
+    getImageData: root.CanvasRenderingContext2D.prototype.getImageData,
+    toDataURL: root.HTMLCanvasElement.prototype.toDataURL,
+    drawImage: root.CanvasRenderingContext2D.prototype.drawImage,
+    defineProperty: Object.defineProperty,
+    freeze: Object.freeze,
+  });
+
   const C = root.KasuriCore;
   const MODES = Object.freeze({ glyph: 0, block: 1, dot: 2, raw: 3 });
   const FONT = '"SF Mono", Menlo, ui-monospace, monospace';
@@ -360,8 +371,8 @@ void main() {
       const still = document.createElement('canvas');
       still.width = width;
       still.height = Math.round((width * out.height) / out.width);
-      still.getContext('2d').drawImage(out, 0, 0, still.width, still.height);
-      return still.toDataURL('image/jpeg', 0.86);
+      native.drawImage.call(still.getContext('2d'), out, 0, 0, still.width, still.height);
+      return native.toDataURL.call(still, 'image/jpeg', 0.86);
     }
 
     /*
@@ -373,7 +384,7 @@ void main() {
       if (spec.ready) {
         await Promise.race([spec.ready(), new Promise((resolve) => setTimeout(resolve, 4000))]);
       }
-      const read = () => ctx.getImageData(0, 0, scene.width, scene.height).data.slice();
+      const read = () => native.getImageData.call(ctx, 0, 0, scene.width, scene.height).data.slice();
       const lum = (d, i) => (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) / 255;
       const diff = (a, b) => {
         let sum = 0;
@@ -386,9 +397,9 @@ void main() {
       let flash = 0;
       let spent = 0;
       for (let i = 0; i < 60; i++) {
-        const t0 = performance.now();
+        const t0 = native.now();
         render(1 / 30);
-        spent += performance.now() - t0;
+        spent += native.now() - t0;
         const now = read();
         flash = Math.max(flash, diff(prev, now));
         prev = now;
@@ -424,7 +435,7 @@ void main() {
       api.pointer = { x: nx * api.cols, y: ny * api.rows, active: active !== false };
     }
 
-    root.tokonoma = {
+    const host = native.freeze({
       apply,
       setPaused: (value) => setHold('host', Boolean(value)),
       setFps(fps) { gate = C.frameGate(capped(fps)); },
@@ -441,7 +452,15 @@ void main() {
       inspect,
       get props() { return props; },
       get renderer() { return renderer.kind; },
-    };
+    });
+    // The app's handle on the page: frozen and fixed in place, so a scene can't
+    // replace inspect() or capture() with flattering answers. If something got
+    // there first, refuse to run rather than share the name.
+    try {
+      native.defineProperty(root, 'tokonoma', { value: host, writable: false, configurable: false, enumerable: true });
+    } catch (e) {
+      throw new Error('kasuri: window.tokonoma was taken before the weave started');
+    }
 
     if (!root.webkit || !root.webkit.messageHandlers || !root.webkit.messageHandlers.tokonoma) {
       root.addEventListener('pointermove', (e) => pointer(e.clientX / root.innerWidth, e.clientY / root.innerHeight, true));
@@ -459,7 +478,6 @@ void main() {
     layout();
     raf = root.requestAnimationFrame(frame);
     post({ type: 'ready', renderer: renderer.kind, cols: api.cols, rows: api.rows });
-    return root.tokonoma;
   }
 
   // Paints a parsed sprite with its top-left at (x, y); flip mirrors it sideways.
