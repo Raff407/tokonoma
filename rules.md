@@ -87,7 +87,8 @@ python3 -m http.server 8765 --directory Wallpapers   # preview scenes; ?mode=raw
 
 Pause when covered, asleep, locked, Low Power Mode, critically hot; half fps when hot;
 1× pixels on battery/low power/heat (`PlaybackPolicy.renderScale`). Thumbnail and
-preview web views are freed when idle. Don't add timers or polling that run while paused.
+preview web views are freed when idle. Don't add timers or polling that run while paused
+(the one exception: the 10 s power watchdog on untrusted community pages).
 
 ## Community wallpapers and agents — security model (don't weaken)
 
@@ -111,8 +112,36 @@ preview web views are freed when idle. Don't add timers or polling that run whil
    asset, and the `--inspect` render. Threshold is `SAFETY.maxNsfw` in rules.js, judged by
    `judgeScreen`. It runs at publish and again before install. If the model can't load,
    nothing is published or installed. The registry refuses media without a clean screen.
-9. Registry folder (`~/Library/Application Support/Tokonoma/Registry`) is shared by
+9. Runtime lockdown (`Lockdown.swift`, WallpaperHost): WebRTC, media devices and
+   DNS prefetch off in the engine; RTC/WebTransport/Worker constructors removed in
+   every frame; NetworkLock blocks every URL except file/data/blob/about; navigation
+   only to the page itself (no frames, popups, custom schemes); page error text never
+   reaches the app UI for community pages; capture() must be a modest real JPEG.
+10. A web process keeps every file grant it ever had: `WallpaperHost` swaps in a fresh
+   web view (own non-persistent data store) whenever the readable root changes.
+11. kasuri freezes `window.tokonoma` (non-writable, non-configurable) and runs inspect
+   and capture on native functions captured before scene code, so scenes can't fake checks.
+12. Community pages are watched from outside: `PowerWatch` stops one that keeps a core
+   busy (~30 s over budget) and restarts are capped per load.
+13. MCP `tokonoma_publish` validates before writing anything; paths must stay inside
+   scratch. Versions are integers. Downloads must match the listed sha256. An install
+   never replaces another author's wallpaper. Packages over 24 MB aren't parsed.
+14. `scripts/redteam.sh` runs a hostile scene (network, WebRTC, files, frames, popups,
+   replacing inspect, reading the library after a trusted page). Run it after touching
+   Host/, kasuri.js or NetworkLock. It must say "every escape blocked".
+15. Registry folder (`~/Library/Application Support/Tokonoma/Registry`) is shared by
    `registry.js` and `MarketRegistry.swift`; keep their index.json shapes in step.
+
+## Known limits (not fixed yet)
+
+- The marketplace is a local folder. Author names aren't accounts: a hosted registry
+  needs real sign-in and a signed index before strangers share through it.
+- Media and images from packages are decoded by ImageIO/AVFoundation inside the app
+  process (not sandboxed). A sandboxed XPC decoder would contain a decoder exploit.
+- Scenes are screened for nudity from one render at publish and their images at
+  install; a scene that draws something explicit later (by date, or after minutes)
+  isn't caught. The static checker is lint; the runtime lockdown is the real wall.
+- The HTTP MCP key can ride in the query string (for ChatGPT); prefer the header.
 
 ## Gotchas
 
