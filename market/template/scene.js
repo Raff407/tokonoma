@@ -51,19 +51,41 @@
 
   function draw(ctx, t, dt, api) {
     ctx.drawImage(state.still, 0, 0);
+
+    // Rice heads swaying in rows: the slow motion that makes it feel alive.
+    const horizon = api.rows * 0.62;
+    for (let row = 0; row < 5; row++) {
+      const y = horizon + 4 + row * ((api.rows - horizon) / 5);
+      ctx.strokeStyle = rgb(FIELD.map((c) => c + 18 + row * 6));
+      ctx.lineWidth = 1;
+      for (let x = (row * 3) % 4; x < api.cols; x += 4) {
+        const sway = Math.sin(t * 0.9 + x * 0.12 + row) * 1.6;
+        ctx.beginPath();
+        ctx.moveTo(x, y + 3);
+        ctx.quadraticCurveTo(x + sway * 0.5, y, x + sway, y - 2.5);
+        ctx.stroke();
+      }
+    }
+
+    // Fireflies: a soft halo and a bright core, blinking out of step.
     const shown = state.flies.slice(0, api.props.count);
     for (const f of shown) {
       f.x += Math.sin(t * 0.4 + f.phase) * dt * 1.2;
       f.y += Math.cos(t * 0.3 + f.phase * 1.3) * dt * 0.8;
       const glow = Math.max(0, Math.sin(t * 1.2 + f.phase * 3));
       if (glow < 0.05) continue;
+      const halo = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, 3);
+      halo.addColorStop(0, rgb(GLOW, glow * 0.5));
+      halo.addColorStop(1, rgb(GLOW, 0));
+      ctx.fillStyle = halo;
+      ctx.fillRect(f.x - 3, f.y - 3, 6, 6);
       ctx.fillStyle = rgb(GLOW, glow);
       ctx.fillRect(f.x | 0, f.y | 0, 1, 1);
     }
   }
 
   Kasuri.run({
-    defaults: { count: 40, ramp: 'lines', cell: 9 },
+    defaults: { count: 60, ramp: 'lines', cell: 9 },
     maxFps: 24,
     setup,
     draw,

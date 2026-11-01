@@ -7,7 +7,7 @@
   "version": 1,
   "entry": "index.html",
   "properties": [
-    { "key": "count", "label": "fireflies", "type": "range", "min": 0, "max": 120, "step": 1, "default": 40 },
+    { "key": "count", "label": "fireflies", "type": "range", "min": 0, "max": 120, "step": 1, "default": 60 },
     { "key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot", "raw"], "default": "glyph" },
     { "key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines" },
     { "key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 16, "step": 1, "default": 9 },
