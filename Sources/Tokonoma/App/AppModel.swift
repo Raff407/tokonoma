@@ -33,6 +33,7 @@ final class AppModel: ObservableObject {
 
     let paths: Paths
     let isFirstRun: Bool
+    let agents: AgentServer
     private let store: SettingsStore
     private let desktop = DesktopController()
     private let monitor = SystemMonitor()
@@ -61,6 +62,7 @@ final class AppModel: ObservableObject {
 
     init(paths: Paths = .standard()) {
         self.paths = paths
+        agents = AgentServer(script: paths.mcpServer)
         store = SettingsStore(url: paths.settings)
         isFirstRun = !FileManager.default.fileExists(atPath: paths.settings.path)
         let (loaded, backup) = store.loadRecovering()
@@ -101,6 +103,7 @@ final class AppModel: ObservableObject {
 
     func stop() {
         if pendingSave != nil { saveNow() }
+        agents.stop()
         pointer.stop()
         desktop.tearDown()
     }

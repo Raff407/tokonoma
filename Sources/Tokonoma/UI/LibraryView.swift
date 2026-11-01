@@ -3,7 +3,7 @@ import TokonomaCore
 import UniformTypeIdentifiers
 
 enum Tab: String, CaseIterable {
-    case library, settings
+    case library, agents, settings
 }
 
 /// The one window: a grid of scenes on the left, the chosen one alive on the right.
@@ -20,6 +20,7 @@ struct LibraryView: View {
             Divider().overlay(Ink.hairline)
             switch tab {
             case .library: library
+            case .agents: AgentsView(agents: model.agents)
             case .settings: SettingsView()
             }
         }
