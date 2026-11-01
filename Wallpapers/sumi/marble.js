@@ -69,7 +69,81 @@
     return inside;
   }
 
-  const api = Object.freeze({ circle, drop, comb, refine, contains });
+  // ---- in-place twins ----------------------------------------------------
+  // The live scene keeps ring points in Float32Arrays and edits them where
+  // they lie: thousands of points, 20+ times a second, would otherwise churn
+  // the garbage collector and stutter. Each mirrors a pure function above,
+  // and the tests hold them to the same answers.
+
+  function dropInPlace(xs, ys, n, cx, cy, r) {
+    const r2 = r * r;
+    for (let i = 0; i < n; i++) {
+      const dx = xs[i] - cx;
+      const dy = ys[i] - cy;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < 1e-12) {
+        xs[i] = cx + r;
+        ys[i] = cy;
+        continue;
+      }
+      const k = Math.sqrt(1 + r2 / d2);
+      xs[i] = cx + dx * k;
+      ys[i] = cy + dy * k;
+    }
+  }
+
+  function combInPlace(xs, ys, n, x, y, dx, dy, reach) {
+    const inv = 1 / (2 * reach * reach);
+    for (let i = 0; i < n; i++) {
+      const ox = xs[i] - x;
+      const oy = ys[i] - y;
+      const pull = Math.exp(-(ox * ox + oy * oy) * inv);
+      xs[i] += dx * pull;
+      ys[i] += dy * pull;
+    }
+  }
+
+  function refineTyped(xs, ys, n, maxEdge, budget) {
+    let total = n;
+    let spare = Math.max(0, budget - n);
+    const cuts = new Int32Array(n);
+    for (let i = 0; i < n && spare > 0; i++) {
+      const j = (i + 1) % n;
+      const len = Math.hypot(xs[j] - xs[i], ys[j] - ys[i]);
+      const c = Math.min(spare, Math.max(0, Math.ceil(len / maxEdge) - 1));
+      cuts[i] = c;
+      spare -= c;
+      total += c;
+    }
+    if (total === n) return { xs, ys, n };
+    const ox = new Float32Array(total);
+    const oy = new Float32Array(total);
+    let k = 0;
+    for (let i = 0; i < n; i++) {
+      const j = (i + 1) % n;
+      ox[k] = xs[i];
+      oy[k++] = ys[i];
+      for (let c = 1; c <= cuts[i]; c++) {
+        const t = c / (cuts[i] + 1);
+        ox[k] = xs[i] + (xs[j] - xs[i]) * t;
+        oy[k++] = ys[i] + (ys[j] - ys[i]) * t;
+      }
+    }
+    return { xs: ox, ys: oy, n: total };
+  }
+
+  function containsTyped(xs, ys, n, x, y) {
+    let inside = false;
+    for (let i = 0, j = n - 1; i < n; j = i++) {
+      if (ys[i] > y !== ys[j] > y && x < ((xs[j] - xs[i]) * (y - ys[i])) / (ys[j] - ys[i]) + xs[i]) inside = !inside;
+    }
+    return inside;
+  }
+
+  const api = Object.freeze({
+    circle, drop, comb, refine, contains,
+    dropInPlace, combInPlace, refineTyped, containsTyped,
+  });
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.Marble = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

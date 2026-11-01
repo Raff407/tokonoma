@@ -67,3 +67,48 @@ test('contains finds points inside a polygon', () => {
   assert.equal(M.contains(square, 2, 2), true);
   assert.equal(M.contains(square, 5, 2), false);
 });
+
+// The in-place variants must agree with the pure ones they speed up.
+const ring = () => {
+  const pts = M.circle(3, 4, 5, 64);
+  return { pts, xs: Float32Array.from(pts, (p) => p.x), ys: Float32Array.from(pts, (p) => p.y) };
+};
+
+test('dropInPlace matches drop', () => {
+  const r = ring();
+  const pure = M.drop(r.pts, 1, 2, 3);
+  M.dropInPlace(r.xs, r.ys, r.xs.length, 1, 2, 3);
+  pure.forEach((p, i) => {
+    assert.ok(Math.abs(p.x - r.xs[i]) < 1e-4);
+    assert.ok(Math.abs(p.y - r.ys[i]) < 1e-4);
+  });
+});
+
+test('combInPlace matches comb', () => {
+  const r = ring();
+  const pure = M.comb(r.pts, 2, 2, 1.5, -0.5, 3);
+  M.combInPlace(r.xs, r.ys, r.xs.length, 2, 2, 1.5, -0.5, 3);
+  pure.forEach((p, i) => {
+    assert.ok(Math.abs(p.x - r.xs[i]) < 1e-4);
+    assert.ok(Math.abs(p.y - r.ys[i]) < 1e-4);
+  });
+});
+
+test('refineTyped matches refine', () => {
+  const r = ring();
+  const pure = M.refine(r.pts, 0.2, 300);
+  const out = M.refineTyped(r.xs, r.ys, r.xs.length, 0.2, 300);
+  assert.equal(out.n, pure.length);
+  pure.forEach((p, i) => {
+    assert.ok(Math.abs(p.x - out.xs[i]) < 1e-4);
+    assert.ok(Math.abs(p.y - out.ys[i]) < 1e-4);
+  });
+});
+
+test('containsTyped agrees with contains', () => {
+  const square = [{ x: 0, y: 0 }, { x: 4, y: 0 }, { x: 4, y: 4 }, { x: 0, y: 4 }];
+  const xs = Float32Array.from(square, (p) => p.x);
+  const ys = Float32Array.from(square, (p) => p.y);
+  assert.equal(M.containsTyped(xs, ys, 4, 2, 2), true);
+  assert.equal(M.containsTyped(xs, ys, 4, 5, 2), false);
+});
