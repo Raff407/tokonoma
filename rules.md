@@ -8,12 +8,15 @@ when a change contradicts it, update this file in the same commit.
 A free, private Wallpaper Engine for macOS. Animated scenes are painted small
 and woven into glyphs/blocks/dots by **kasuri** (WebGL2), shown behind the
 desktop icons by a native Swift app. Agents can make new scenes through an
-MCP server; shared scenes travel as `.tokonoma` packages.
+MCP server; shared scenes and your own clips/pictures travel as `.tokonoma` packages
+through a marketplace (the Market tab; a local registry folder for now).
 
 ```
 Wallpapers/_lib/        kasuri.js, kasuri-core.js, sky.js, media.js/.html
 Wallpapers/<scene>/     wallpaper.json + index.html + scene.js (+ helpers)
-Sources/TokonomaCore/   pure logic: manifest, settings, policy, importer, community
+Sources/TokonomaCore/   pure logic: manifest, settings, policy, importer, community,
+                        media prep, nudity screen, market registry, publisher
+Resources/Models/       NSFW.mlmodel (LOVOO NSFWDetector, BSD-3) + its licence
 Sources/Tokonoma/Host/  desktop windows, WebKit bridge, monitors, network lock
 Sources/Tokonoma/App/   model, menus, thumbnails, --inspect, agent server
 Sources/Tokonoma/UI/    SwiftUI library window (Theme.swift holds the tokens)
@@ -72,6 +75,14 @@ python3 -m http.server 8765 --directory Wallpapers   # preview scenes; ?mode=raw
   `market/test/validate.test.js` calibration list, `scripts/bench.swift`, README table.
 - Official scenes must pass `market/src/validate.js` like any community scene.
 
+## Importing media
+
+- `MediaPrep`: animated gif/apng/webp/heics become an H.264 `media.mp4` (WebKit
+  freezes an off-screen animated `<img>` on frame one). Stills WebKit can't draw
+  (heic, avif, tiff, bmp, psd…) become JPEG/PNG. Clips are capped at 1920px, stills 3840px.
+- Imports are private. One file at a time gets the "Only me / Marketplace" sheet;
+  "Share to market…" in the inspector does the same later.
+
 ## Battery
 
 Pause when covered, asleep, locked, Low Power Mode, critically hot; half fps when hot;
@@ -93,6 +104,15 @@ preview web views are freed when idle. Don't add timers or polling that run whil
    size, grid, images and checks. Agents can't install silently (`tokonoma_try` opens the sheet).
 6. HTTP MCP listens on 127.0.0.1 only, checks Host, needs the key in
    `~/Library/Application Support/Tokonoma/agent-token`.
+7. Media packages (`"kind": "media"`) hold one `media.mp4|jpg|png|webp` and no code.
+   Always woven: their mode choice may only offer glyph/block/dot. ≤ 12 MB, clips
+   ≤ 1920px, 60 s and silent (`Publisher` exports a 1280×720, first-minute, no-audio copy).
+8. Nudity screen (`SafetyScreen`, on device): every media frame sampled, every image
+   asset, and the `--inspect` render. Threshold is `SAFETY.maxNsfw` in rules.js, judged by
+   `judgeScreen`. It runs at publish and again before install. If the model can't load,
+   nothing is published or installed. The registry refuses media without a clean screen.
+9. Registry folder (`~/Library/Application Support/Tokonoma/Registry`) is shared by
+   `registry.js` and `MarketRegistry.swift`; keep their index.json shapes in step.
 
 ## Gotchas
 
@@ -101,3 +121,6 @@ preview web views are freed when idle. Don't add timers or polling that run whil
   `poster.jpg` so thumbnails work.
 - `Settings` clashes with SwiftUI's `Settings`; use `TokonomaCore.Settings`.
 - The Agents pane needs Node.js on the user's Mac; say so plainly when it's missing.
+- Community media pages get kasuri + media.js injected at document start, so media.js
+  waits for DOMContentLoaded before reading `<body data-media>`.
+- Two `.sheet` modifiers sit on LibraryView (install review, share); both work on macOS 14.

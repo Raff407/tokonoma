@@ -16,7 +16,7 @@ whenever nobody can see them.
 | **Sumi** 墨流し | Suminagashi — ink floated on water. Rings keep landing, a slow current folds them, the cursor combs them. |
 | **Fuji** 富士 | The mountain over a still lake, mirrored row by row, with drifting clouds and a pagoda on the shore. |
 | **Kaze** 風 | A sword standing in silver grass under a storm. Gusts roll through the grass, seed fluff drifts on the wind. |
-| **Yours** | Drop any video, gif or picture into the library and it gets woven the same way. |
+| **Yours** | Drop any video, gif or picture (png, jpg, webp, heic, avif, tiff…) into the library and it gets woven the same way. Gifs play as looping clips. |
 
 Every scene has its own settings (season, wind, fish, inks…) plus the weave:
 `glyph`, `block`, `dot` or `raw`, the glyph set, and the cell size.
@@ -60,6 +60,18 @@ The app puts one borderless window per screen at the desktop window level,
 under the icons, ignoring clicks. It pauses a scene when a window covers it,
 when the display sleeps or the Mac locks, in Low Power Mode, and (if you like)
 on battery, and drops to a lower frame rate on battery otherwise.
+
+### Market
+
+The Market tab lists wallpapers people shared: scenes made by agents through
+the MCP server, and imports someone chose to publish. Imports stay private
+unless you publish them. Before anything is listed, Tokonoma makes a light,
+silent copy, screens its frames on your Mac for nudity, and checks it against
+the same rules as every other package; installing runs all of that again. For
+now the marketplace is a folder on this Mac (`Registry/`), shared with agents.
+
+The nudity screen uses [NSFWDetector](https://github.com/lovoo/NSFWDetector)'s
+17 KB Core ML model by LOVOO (BSD-3-Clause, licence in `Resources/Models`).
 
 ### Make your own
 
