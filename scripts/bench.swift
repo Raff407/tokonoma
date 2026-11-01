@@ -6,7 +6,7 @@ import WebKit
 
 let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
     .appendingPathComponent("Wallpapers")
-let names = CommandLine.arguments.dropFirst().isEmpty ? ["torii", "koi", "sumi", "fuji"] : Array(CommandLine.arguments.dropFirst())
+let names = CommandLine.arguments.dropFirst().isEmpty ? ["torii", "koi", "sumi", "fuji", "kaze"] : Array(CommandLine.arguments.dropFirst())
 
 @MainActor
 func bench(_ name: String) async -> String {

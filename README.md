@@ -15,6 +15,7 @@ whenever nobody can see them.
 | **Koi** 鯉 | A dark pond from above. The fish scatter when your cursor comes near. |
 | **Sumi** 墨流し | Suminagashi — ink floated on water. Rings keep landing, a slow current folds them, the cursor combs them. |
 | **Fuji** 富士 | The mountain over a still lake, mirrored row by row, with drifting clouds and a pagoda on the shore. |
+| **Kaze** 風 | A sword standing in silver grass under a storm. Gusts roll through; the grass parts for the cursor, a click sends a gust. |
 | **Yours** | Drop any video, gif or picture into the library and it gets woven the same way. |
 
 Every scene has its own settings (season, wind, fish, inks…) plus the weave:

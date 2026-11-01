@@ -29,7 +29,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var importing = 0
     @Published var pendingInstall: PendingInstall?
 
-    static let builtInOrder = ["torii", "koi", "sumi", "fuji"]
+    static let builtInOrder = ["torii", "koi", "sumi", "fuji", "kaze"]
 
     let paths: Paths
     let isFirstRun: Bool

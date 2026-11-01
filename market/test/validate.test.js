@@ -182,7 +182,7 @@ test('render metrics from the app are judged against the theme', () => {
 // Calibration: the official scenes must pass the rules community scenes face.
 const fs = require('node:fs');
 const path = require('node:path');
-for (const id of ['torii', 'koi', 'sumi', 'fuji']) {
+for (const id of ['torii', 'koi', 'sumi', 'fuji', 'kaze']) {
   test(`official ${id} passes the shared rules`, () => {
     const dir = path.join(__dirname, '../../Wallpapers', id);
     const scene = fs.readFileSync(path.join(dir, 'scene.js'), 'utf8');

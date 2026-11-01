@@ -36,7 +36,7 @@ const { LocalRegistry } = require('./registry.js');
 const KASURI_GUIDE = require('./guide.js');
 
 const SCENES = path.join(__dirname, '..', '..', 'Wallpapers');
-const EXAMPLES = ['torii', 'koi', 'sumi', 'fuji'];
+const EXAMPLES = ['torii', 'koi', 'sumi', 'fuji', 'kaze'];
 
 const registry = () => new LocalRegistry(S.registryRoot());
 
