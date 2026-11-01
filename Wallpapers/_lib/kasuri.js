@@ -364,6 +364,57 @@ void main() {
       return still.toDataURL('image/jpeg', 0.86);
     }
 
+    /*
+     * Measures the scene for the marketplace checks: how much it moves, whether
+     * it flashes, how much of the grid it fills, how few colours it leans on,
+     * and how long a frame takes. Reads the small scene canvas, so it is cheap.
+     */
+    async function inspect() {
+      if (spec.ready) {
+        await Promise.race([spec.ready(), new Promise((resolve) => setTimeout(resolve, 4000))]);
+      }
+      const read = () => ctx.getImageData(0, 0, scene.width, scene.height).data.slice();
+      const lum = (d, i) => (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) / 255;
+      const diff = (a, b) => {
+        let sum = 0;
+        for (let i = 0; i < a.length; i += 4) sum += Math.abs(lum(a, i) - lum(b, i));
+        return sum / (a.length / 4);
+      };
+      step(1 / 30, 30);
+      const first = read();
+      let prev = first;
+      let flash = 0;
+      let spent = 0;
+      for (let i = 0; i < 60; i++) {
+        const t0 = performance.now();
+        render(1 / 30);
+        spent += performance.now() - t0;
+        const now = read();
+        flash = Math.max(flash, diff(prev, now));
+        prev = now;
+      }
+      const cells = prev.length / 4;
+      let lit = 0;
+      const counts = new Map();
+      for (let i = 0; i < prev.length; i += 4) {
+        const l = props.invert ? 1 - lum(prev, i) : lum(prev, i);
+        if (l > 0.08) lit++;
+        const key = ((prev[i] >> 4) << 8) | ((prev[i + 1] >> 4) << 4) | (prev[i + 2] >> 4);
+        counts.set(key, (counts.get(key) || 0) + 1);
+      }
+      const top = [...counts.values()].sort((a, b) => b - a).slice(0, 32).reduce((s, n) => s + n, 0);
+      return {
+        motion: diff(first, prev),
+        flash,
+        coverage: lit / cells,
+        paletteShare: top / cells,
+        msPerFrame: spent / 60,
+        mode: props.mode,
+        cols: api.cols,
+        rows: api.rows,
+      };
+    }
+
     // A click on the desktop, from the host (or the mouse in a browser), in cells.
     function click(nx, ny) {
       if (spec.onClick) spec.onClick(nx * api.cols, ny * api.rows, api);
@@ -387,6 +438,7 @@ void main() {
       click,
       step,
       capture,
+      inspect,
       get props() { return props; },
       get renderer() { return renderer.kind; },
     };
