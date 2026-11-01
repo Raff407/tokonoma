@@ -6,15 +6,16 @@
  * brush moves somewhere else. A slow current folds it all, and dragging the
  * cursor across the desktop combs the surface like a fan.
  *
- * Simulation state is updated in place each frame on purpose: thousands of
- * points at 30 fps would otherwise mean thousands of throwaway objects.
+ * Built to stay light: ring points live in Float32Arrays edited in place,
+ * the current is a coarse velocity grid refreshed twice a second and sampled
+ * bilinearly, and the scene asks for 20fps because ink never moves faster.
  */
 (function () {
   'use strict';
 
   const K = KasuriCore;
   const M = Marble;
-  const { lerp, noise2, fbm, parseColor: P } = K;
+  const { lerp, noise2, fbm } = K;
 
   const PAPER = '#ece5d5';
   const INKS = {
@@ -23,11 +24,12 @@
     beni: ['#1c1a19', '#a5392a'],
     mixed: ['#1c1a19', '#23406b', '#a5392a', '#3b5a45'],
   };
-  const MAX_RINGS = 160;
-  const MAX_POINTS = 16000;
-  const RING_BUDGET = 900;
+  const MAX_RINGS = 120;
+  const MAX_POINTS = 6000;
+  const RING_BUDGET = 500;
+  const GRID = 4; // cells per flow-grid step
 
-  const state = { rings: [], base: PAPER, last: null };
+  const state = { rings: [], base: PAPER, last: null, flow: null };
 
   function paperTexture(g, seed) {
     const c = document.createElement('canvas');
@@ -54,6 +56,18 @@
     return { x: lerp(0.12, 0.88, rand()) * g.W, y: lerp(0.15, 0.85, rand()) * g.H };
   }
 
+  function makeRing(cx, cy, r, colour) {
+    const n = Math.max(24, Math.round(r * 6));
+    const xs = new Float32Array(n);
+    const ys = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2;
+      xs[i] = cx + Math.cos(a) * r;
+      ys[i] = cy + Math.sin(a) * r;
+    }
+    return { xs, ys, n, colour };
+  }
+
   function addDrop(g, props) {
     const rand = state.rand;
     const inks = INKS[props.inks] || INKS.sumi;
@@ -61,9 +75,8 @@
     const r = (clear ? 2.2 + rand() * 2.4 : 2.8 + rand() * 3.2) * g.U * props.size;
     const colour = clear ? PAPER : inks[Math.floor(state.count / 2) % inks.length];
     const c = state.centre;
-    for (const ring of state.rings) ring.pts = M.drop(ring.pts, c.x, c.y, r);
-    const n = Math.max(24, Math.round(r * 6));
-    state.rings.push({ pts: M.circle(c.x, c.y, r, n), colour });
+    for (const ring of state.rings) M.dropInPlace(ring.xs, ring.ys, ring.n, c.x, c.y, r);
+    state.rings.push(makeRing(c.x, c.y, r, colour));
     state.count++;
     state.here--;
     if (state.here <= 0) {
@@ -76,29 +89,61 @@
 
   // Old rings swell past the screen; once one covers it entirely it is the paper now.
   function trim(g) {
-    let total = state.rings.reduce((s, r) => s + r.pts.length, 0);
+    let total = state.rings.reduce((s, r) => s + r.n, 0);
     while (state.rings.length > MAX_RINGS || total > MAX_POINTS) {
       const old = state.rings.shift();
-      total -= old.pts.length;
+      total -= old.n;
       const corners = [[0, 0], [g.W, 0], [0, g.H], [g.W, g.H]];
-      if (corners.every(([x, y]) => M.contains(old.pts, x, y))) state.base = old.colour;
+      if (corners.every(([x, y]) => M.containsTyped(old.xs, old.ys, old.n, x, y))) state.base = old.colour;
     }
   }
 
-  function flow(g, t, dt, swirl) {
-    if (swirl <= 0) return;
-    const e = 0.5;
+  // Curl of a noise field, sampled on a coarse grid: divergence-free, so the
+  // ink folds without bunching, and cheap because the field changes slowly.
+  function buildFlow(g, t) {
+    const cols = Math.ceil(g.W / GRID) + 2;
+    const rows = Math.ceil(g.H / GRID) + 2;
+    const vx = new Float32Array(cols * rows);
+    const vy = new Float32Array(cols * rows);
     const s = 0.035;
-    // About half a cell a second at swirl 1: slow enough to watch, never tearing.
-    const amp = swirl * 0.5 * g.U * dt;
+    const e = 0.5;
     const n = (x, y) => noise2(x * s + t * 0.01, y * s - t * 0.008, 11);
+    for (let j = 0; j < rows; j++) {
+      for (let i = 0; i < cols; i++) {
+        const x = (i - 1) * GRID;
+        const y = (j - 1) * GRID;
+        vx[j * cols + i] = (n(x, y + e) - n(x, y - e)) / (2 * e);
+        vy[j * cols + i] = -(n(x + e, y) - n(x - e, y)) / (2 * e);
+      }
+    }
+    return { vx, vy, cols, rows };
+  }
+
+  function flow(g, dt, swirl) {
+    if (swirl <= 0 || !state.flow) return;
+    const { vx, vy, cols, rows } = state.flow;
+    // About half a cell a second at swirl 1: slow enough to watch, never tearing.
+    const amp = swirl * 0.5 * g.U * dt * 25;
+    const maxI = cols - 2;
+    const maxJ = rows - 2;
     for (const ring of state.rings) {
-      for (const p of ring.pts) {
-        // Curl of a noise field: divergence-free, so ink folds without bunching.
-        const vx = (n(p.x, p.y + e) - n(p.x, p.y - e)) / (2 * e);
-        const vy = -(n(p.x + e, p.y) - n(p.x - e, p.y)) / (2 * e);
-        p.x += vx * amp * 25;
-        p.y += vy * amp * 25;
+      const xs = ring.xs;
+      const ys = ring.ys;
+      for (let p = 0; p < ring.n; p++) {
+        let fx = xs[p] / GRID + 1;
+        let fy = ys[p] / GRID + 1;
+        fx = fx < 0 ? 0 : fx > maxI ? maxI : fx;
+        fy = fy < 0 ? 0 : fy > maxJ ? maxJ : fy;
+        const i = fx | 0;
+        const j = fy | 0;
+        const u = fx - i;
+        const v = fy - j;
+        const a = j * cols + i;
+        const b = a + cols;
+        const dx = (vx[a] * (1 - u) + vx[a + 1] * u) * (1 - v) + (vx[b] * (1 - u) + vx[b + 1] * u) * v;
+        const dy = (vy[a] * (1 - u) + vy[a + 1] * u) * (1 - v) + (vy[b] * (1 - u) + vy[b + 1] * u) * v;
+        xs[p] += dx * amp;
+        ys[p] += dy * amp;
       }
     }
   }
@@ -112,21 +157,32 @@
       const dx = pointer.x - state.last.x;
       const dy = pointer.y - state.last.y;
       if (dx * dx + dy * dy > 0.25) {
-        for (const ring of state.rings) ring.pts = M.comb(ring.pts, pointer.x, pointer.y, dx * 0.8, dy * 0.8, 3.5 * g.U);
+        for (const ring of state.rings) {
+          M.combInPlace(ring.xs, ring.ys, ring.n, pointer.x, pointer.y, dx * 0.8, dy * 0.8, 3.5 * g.U);
+        }
       }
     }
     state.last = { x: pointer.x, y: pointer.y };
+  }
+
+  function refineAll() {
+    for (const ring of state.rings) {
+      const out = M.refineTyped(ring.xs, ring.ys, ring.n, 1.5, RING_BUDGET);
+      ring.xs = out.xs;
+      ring.ys = out.ys;
+      ring.n = out.n;
+    }
   }
 
   function paint(ctx, g) {
     ctx.fillStyle = state.base;
     ctx.fillRect(0, 0, g.W, g.H);
     for (const ring of state.rings) {
-      const pts = ring.pts;
+      const { xs, ys, n } = ring;
       ctx.fillStyle = ring.colour;
       ctx.beginPath();
-      ctx.moveTo(pts[0].x, pts[0].y);
-      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+      ctx.moveTo(xs[0], ys[0]);
+      for (let i = 1; i < n; i++) ctx.lineTo(xs[i], ys[i]);
       ctx.closePath();
       ctx.fill();
     }
@@ -147,11 +203,13 @@
     state.count = 0;
     state.wait = 0;
     state.refineIn = 0;
+    state.flowIn = 0;
+    state.flow = buildFlow(g, 0);
     // Start with a page already in progress rather than a blank sheet.
-    for (let i = 0; i < 110; i++) {
+    for (let i = 0; i < 90; i++) {
       addDrop(g, api.props);
-      for (let k = 0; k < 4; k++) flow(g, i, 0.3, api.props.swirl);
-      if (i % 6 === 5) for (const ring of state.rings) ring.pts = M.refine(ring.pts, 1.2, RING_BUDGET);
+      flow(g, 1.2, api.props.swirl);
+      if (i % 6 === 5) refineAll();
     }
   }
 
@@ -163,11 +221,16 @@
       addDrop(g, props);
       state.wait = 1 / Math.max(props.pace, 0.05);
     }
-    flow(g, t, dt, props.swirl);
+    state.flowIn -= dt;
+    if (state.flowIn <= 0) {
+      state.flow = buildFlow(g, t);
+      state.flowIn = 0.5;
+    }
+    flow(g, dt, props.swirl);
     combWithPointer(g, api.pointer);
     state.refineIn -= dt;
     if (state.refineIn <= 0) {
-      for (const ring of state.rings) ring.pts = M.refine(ring.pts, 1.2, RING_BUDGET);
+      refineAll();
       state.refineIn = 0.5;
     }
     paint(ctx, g);
@@ -176,17 +239,18 @@
   Kasuri.run({
     defaults: {
       inks: 'ai',
-      pace: 0.8,
+      pace: 1,
       swirl: 1,
       size: 1,
       mode: 'glyph',
       ramp: 'kana',
-      cell: 9,
+      cell: 8,
       invert: true,
       bg: PAPER,
       tint: 0.5,
       dither: 0.3,
     },
+    maxFps: 20,
     setup,
     draw,
   });
