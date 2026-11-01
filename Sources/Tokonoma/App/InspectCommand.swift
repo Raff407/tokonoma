@@ -80,9 +80,16 @@ enum InspectCommand {
             throw InspectError.neverStarted(probe as? String ?? "page didn't answer")
         }
 
+        let cpuBefore = host.cpuSeconds()
+        let wallBefore = ProcessInfo.processInfo.systemUptime
         var metrics = try await host.webView.callAsyncJavaScript(
             "return await window.tokonoma.inspect()", arguments: [:], in: nil, contentWorld: .page
         ) as? [String: Any] ?? [:]
+        // Measured by the app on the web process, so a scene can't flatter itself.
+        if let before = cpuBefore, let after = host.cpuSeconds() {
+            metrics["cpuSeconds"] = after - before
+            metrics["wallSeconds"] = ProcessInfo.processInfo.systemUptime - wallBefore
+        }
         let still = await host.capture(width: 1024).flatMap { dataURL -> Data? in
             guard let comma = dataURL.firstIndex(of: ",") else { return nil }
             return Data(base64Encoded: String(dataURL[dataURL.index(after: comma)...]))
