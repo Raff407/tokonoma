@@ -1,4 +1,5 @@
 import AppKit
+import Darwin
 import TokonomaCore
 import WebKit
 
@@ -29,6 +30,11 @@ final class WallpaperHost: NSObject {
     private var crashes: [Date] = []
     /// One error report per page load: a page can't flood the app with notices.
     private var reportedError = false
+    /// Community pages only: CPU measured from outside, and restarts counted per load.
+    private var watch = PowerWatch()
+    private var watchTimer: Timer?
+    private var restarts = 0
+    static let restartLimit = 5
     var onError: ((String) -> Void)?
 
     override init() {
@@ -88,7 +94,9 @@ final class WallpaperHost: NSObject {
         bootProperties = properties
         ready = false
         reportedError = false
+        if lastLoad?.wallpaper.id != wallpaper.id { restarts = 0 }
         lastLoad = (wallpaper, root, isolation)
+        watchPower(isolation != nil)
         let readable = isolation == nil ? root : wallpaper.folder
         if let granted = grantedRoot, granted.standardizedFileURL != readable.standardizedFileURL { freshWebView() }
         grantedRoot = readable
@@ -176,8 +184,47 @@ final class WallpaperHost: NSObject {
         return dataURL
     }
 
+    // MARK: - Power watchdog
+
+    /// Only untrusted pages are watched (a spinning loop would ignore pause and
+    /// every battery rule), so built-ins and imports never run this timer.
+    private func watchPower(_ on: Bool) {
+        watchTimer?.invalidate()
+        watchTimer = nil
+        watch = PowerWatch()
+        guard on else { return }
+        watchTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.checkPower() }
+        }
+        watchTimer?.tolerance = 2
+    }
+
+    private func checkPower() {
+        guard let cpu = cpuSeconds() else { return }
+        _ = watch.sample(cpuSeconds: cpu, at: ProcessInfo.processInfo.systemUptime, paused: paused)
+        guard watch.shouldStop, let name = lastLoad?.wallpaper.name else { return }
+        NSLog("tokonoma: stopping \(wallpaperID ?? "?"), it kept using too much CPU")
+        unload()
+        onError?("\(name) was using too much power, so it was stopped.")
+    }
+
+    /// Total CPU time of this view's web content process, read by the app.
+    func cpuSeconds() -> Double? {
+        guard let pid = (webView.value(forKey: "_webProcessIdentifier") as? NSNumber)?.int32Value, pid > 0 else { return nil }
+        var info = rusage_info_v2()
+        let status = withUnsafeMutablePointer(to: &info) {
+            $0.withMemoryRebound(to: rusage_info_t?.self, capacity: 1) { proc_pid_rusage(pid, RUSAGE_INFO_V2, $0) }
+        }
+        guard status == 0 else { return nil }
+        var base = mach_timebase_info_data_t()
+        mach_timebase_info(&base)
+        let ticks = Double(info.ri_user_time + info.ri_system_time)
+        return ticks * Double(base.numer) / Double(base.denom) / 1_000_000_000
+    }
+
     /// Drop the page entirely: frees its web process, GPU context and any timers.
     func unload() {
+        watchPower(false)
         wallpaperID = nil
         ready = false
         lastLoad = nil
@@ -243,6 +290,13 @@ extension WallpaperHost: WKNavigationDelegate {
         crashes = crashes.filter { now.timeIntervalSince($0) < 60 } + [now]
         guard crashes.count <= 3 else {
             onError?("\(wallpaperID ?? "This wallpaper") keeps crashing, so it has been stopped. Pick it again to retry.")
+            return
+        }
+        // A page that crashes every so often would otherwise come back forever.
+        restarts += 1
+        guard restarts <= Self.restartLimit else {
+            watchPower(false)
+            onError?("\(lastLoad?.wallpaper.name ?? "This wallpaper") keeps crashing, so it has been stopped. Pick it again to retry.")
             return
         }
         NSLog("tokonoma: web process ended for \(wallpaperID ?? "?"), reloading")
