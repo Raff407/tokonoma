@@ -18,8 +18,8 @@ enum Ink {
     static let muted = Color(hex: 0x8A847A)
     static let hairline = Color(hex: 0xEFE9DE).opacity(0.08)
     static let ring = Color(hex: 0xEFE9DE).opacity(0.28)
-    /// Fill for switches, sliders and pickers: washi grey instead of system blue.
-    static let control = Color(hex: 0xB9B2A6)
+    /// The chosen option in a ChoiceBar: one step up from raised, still neutral.
+    static let selected = Color(hex: 0x37332E)
     /// Shu, the vermilion of torii and seals. Used for the seal and almost nothing else.
     static let shu = Color(hex: 0xD6452C)
 }
@@ -104,4 +104,111 @@ struct PrimaryButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed ? 0.98 : 1)
             .animation(Motion.quick, value: configuration.isPressed)
     }
+}
+
+// MARK: - Controls
+// Shu means "on": the seal, a switch that's on, a slider's filled track.
+// Selection stays neutral. System blue never appears.
+
+struct ShuToggleStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        Button { configuration.isOn.toggle() } label: {
+            ZStack(alignment: configuration.isOn ? .trailing : .leading) {
+                Capsule(style: .continuous)
+                    .fill(configuration.isOn ? Ink.shu : Ink.raised)
+                    .overlay(Capsule(style: .continuous).strokeBorder(configuration.isOn ? .clear : Ink.hairline))
+                Circle()
+                    .fill(configuration.isOn ? Ink.text : Ink.muted)
+                    .frame(width: 12, height: 12)
+                    .padding(2)
+            }
+            .frame(width: 28, height: 16)
+            .animation(Motion.quick, value: configuration.isOn)
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(.isToggle)
+        .accessibilityValue(configuration.isOn ? "On" : "Off")
+    }
+}
+
+/// A row of options; the chosen one sits on a raised tile.
+struct ChoiceBar: View {
+    let options: [String]
+    @Binding var selection: String
+    var label: (String) -> String = { $0 }
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(options, id: \.self) { option in
+                Button { selection = option } label: {
+                    Text(label(option))
+                        .font(Face.meta)
+                        .foregroundStyle(option == selection ? Ink.text : Ink.muted)
+                        .padding(.horizontal, Space.s)
+                        .frame(height: 22)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(option == selection ? Ink.selected : .clear)
+                        )
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .animation(Motion.quick, value: selection)
+            }
+        }
+        .padding(2)
+        .background(RoundedRectangle(cornerRadius: Radius.control, style: .continuous).fill(Ink.deepest))
+        .overlay(RoundedRectangle(cornerRadius: Radius.control, style: .continuous).strokeBorder(Ink.hairline))
+    }
+}
+
+/// For longer lists: shows the current value, opens a menu.
+struct MenuChoice: View {
+    let options: [String]
+    @Binding var selection: String
+    var label: (String) -> String = { $0 }
+
+    var body: some View {
+        Menu {
+            ForEach(options, id: \.self) { option in
+                Button(label(option)) { selection = option }
+            }
+        } label: {
+            HStack(spacing: 6) {
+                Text(label(selection)).font(Face.meta).foregroundStyle(Ink.text)
+                Image(systemName: "chevron.up.chevron.down").font(.system(size: 9, weight: .medium)).foregroundStyle(Ink.muted)
+            }
+            .padding(.horizontal, Space.s)
+            .frame(height: 26)
+            .background(RoundedRectangle(cornerRadius: Radius.control, style: .continuous).fill(Ink.deepest))
+            .overlay(RoundedRectangle(cornerRadius: Radius.control, style: .continuous).strokeBorder(Ink.hairline))
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+    }
+}
+
+/// Label on the left, control on the right, one height everywhere.
+struct SettingRow<Control: View>: View {
+    let label: String
+    @ViewBuilder let control: Control
+
+    var body: some View {
+        HStack(spacing: Space.m) {
+            Text(label)
+                .font(Face.body)
+                .foregroundStyle(Ink.secondary)
+                .lineLimit(1)
+            Spacer(minLength: Space.m)
+            control
+        }
+        .frame(minHeight: 36)
+    }
+}
+
+extension String {
+    /// "time of day" → "Time of day": manifests write lowercase, the UI reads in sentence case.
+    var sentenceCased: String { prefix(1).uppercased() + dropFirst() }
 }
