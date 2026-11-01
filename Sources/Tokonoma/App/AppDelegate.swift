@@ -6,15 +6,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var model: AppModel!
     private var menu: StatusMenu!
     private var libraryWindow: NSWindow?
+    private var pendingOpens: [URL] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         model = AppModel()
-        model.start()
         menu = StatusMenu(model: model) { [weak self] in self?.openLibrary() }
+        // Every web view gets the network block, so build it before the first one exists.
+        Task { @MainActor in
+            await NetworkLock.prepare()
+            self.model.start()
+            if !self.pendingOpens.isEmpty { self.openLibrary() }
+            self.pendingOpens.forEach { self.model.review($0) }
+            self.pendingOpens = []
+        }
         NSApp.mainMenu = MainMenu.make(target: self)
         // Quiet at login: the window only opens by itself the very first time.
         if model.isFirstRun { openLibrary() }
+    }
+
+    /// Double-clicked .tokonoma files (or `open -a Tokonoma x.tokonoma` from the MCP server).
+    func application(_ application: NSApplication, open urls: [URL]) {
+        let packages = urls.filter { $0.pathExtension.lowercased() == "tokonoma" }
+        guard !packages.isEmpty else { return }
+        // Opening a file can launch the app, before the model or network block exist.
+        guard model != nil, NetworkLock.isReady else {
+            pendingOpens += packages
+            return
+        }
+        openLibrary()
+        packages.forEach { model.review($0) }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

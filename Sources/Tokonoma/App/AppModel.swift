@@ -2,6 +2,14 @@ import AppKit
 import Combine
 import TokonomaCore
 
+/// A community package that passed the checks and is waiting for the user's yes.
+struct PendingInstall: Identifiable {
+    let id = UUID()
+    let package: CommunityPackage
+    let report: ValidationReport
+    let replaces: Bool
+}
+
 struct DisplayInfo: Identifiable, Equatable {
     let id: String
     let name: String
@@ -19,6 +27,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var thumbnails: [String: NSImage] = [:]
     @Published var notice: String?
     @Published private(set) var importing = 0
+    @Published var pendingInstall: PendingInstall?
 
     static let builtInOrder = ["torii", "koi", "sumi", "fuji"]
 
@@ -33,9 +42,22 @@ final class AppModel: ObservableObject {
     private var pendingSave: DispatchWorkItem?
     private var scheduledMinutes: Int?
     private var pointerDisplay: String?
-    private lazy var thumbnailer = Thumbnailer(paths: paths) { [weak self] id, image in
+    private lazy var thumbnailer = Thumbnailer(paths: paths, isolation: { [weak self] in self?.isolation(for: $0) }) { [weak self] id, image in
         self?.thumbnails[id] = image
     }
+    /// The same validate.js the MCP server and registry run, here in JavaScriptCore.
+    private lazy var validator: PackageValidator? = {
+        do {
+            return try PackageValidator(
+                rules: String(contentsOf: paths.marketScripts.appendingPathComponent("rules.js"), encoding: .utf8),
+                validate: String(contentsOf: paths.marketScripts.appendingPathComponent("validate.js"), encoding: .utf8)
+            )
+        } catch {
+            NSLog("tokonoma: package validator unavailable: \(error)")
+            return nil
+        }
+    }()
+    private lazy var kasuriSources: [String] = paths.kasuriScripts.compactMap { try? String(contentsOf: $0, encoding: .utf8) }
 
     init(paths: Paths = .standard()) {
         self.paths = paths
@@ -84,6 +106,11 @@ final class AppModel: ObservableObject {
     }
 
     // MARK: - Reading
+
+    /// Community wallpapers get kasuri injected and can read only their own folder.
+    func isolation(for wallpaper: Wallpaper) -> [String]? {
+        wallpaper.isCommunity ? kasuriSources : nil
+    }
 
     func wallpaper(_ id: String) -> Wallpaper? {
         wallpapers.first { $0.id == id }
@@ -156,6 +183,10 @@ final class AppModel: ObservableObject {
     /// menu, the library or the desktop while it lands.
     @discardableResult
     func importFiles(_ urls: [URL]) async -> [String] {
+        let packages = urls.filter { $0.pathExtension.lowercased() == "tokonoma" }
+        if let first = packages.first { review(first) }
+        let urls = urls.filter { $0.pathExtension.lowercased() != "tokonoma" }
+        guard !urls.isEmpty else { return [] }
         guard let template = try? String(contentsOf: paths.mediaTemplate, encoding: .utf8) else {
             notice = ImportError.badTemplate.description
             return []
@@ -181,6 +212,46 @@ final class AppModel: ObservableObject {
         thumbnailer.render(wallpapers.filter { outcome.added.contains($0.id) })
         if !outcome.failures.isEmpty { notice = outcome.failures.joined(separator: "\n") }
         return outcome.added
+    }
+
+    // MARK: - Community packages
+
+    /// Opens a .tokonoma, checks its fingerprint and runs every rule on it.
+    /// Nothing is installed here: a clean package waits for the user's yes.
+    func review(_ url: URL) {
+        do {
+            let package = try CommunityPackage.open(Data(contentsOf: url))
+            guard let validator else { throw CommunityError.validatorBroken("the checks are missing from this copy of Tokonoma") }
+            let report = try validator.validate(package)
+            guard report.ok else {
+                notice = "“\(package.name)” wasn't installed because it failed the checks:\n"
+                    + report.errors.map { "• \($0.message)" }.joined(separator: "\n")
+                return
+            }
+            pendingInstall = PendingInstall(package: package, report: report, replaces: wallpaper(package.id)?.isCommunity == true)
+        } catch let error as CommunityError {
+            notice = error.description
+        } catch {
+            notice = "\(url.lastPathComponent) couldn't be opened: \(error.localizedDescription)"
+        }
+    }
+
+    @discardableResult
+    func confirmInstall() -> String? {
+        guard let pending = pendingInstall else { return nil }
+        pendingInstall = nil
+        do {
+            let installed = try CommunityInstaller.install(pending.package, facts: pending.report.facts, into: paths.library, existing: wallpapers)
+            rescan()
+            thumbnailer.forget(installed.id)
+            thumbnailer.render([installed])
+            return installed.id
+        } catch let error as CommunityError {
+            notice = error.description
+        } catch {
+            notice = "“\(pending.package.name)” couldn't be installed: \(error.localizedDescription)"
+        }
+        return nil
     }
 
     func remove(_ id: String) {
@@ -246,7 +317,7 @@ final class AppModel: ObservableObject {
             if desk.host.wallpaperID == wallpaper.id {
                 desk.host.apply(props)
             } else {
-                desk.host.load(wallpaper, properties: props, root: paths.library)
+                desk.host.load(wallpaper, properties: props, root: paths.library, isolation: isolation(for: wallpaper))
             }
         }
         refreshPlayback()

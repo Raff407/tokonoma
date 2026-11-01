@@ -11,13 +11,15 @@ struct InspectorView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Space.xl) {
                 GeometryReader { box in
-                    LivePreview(wallpaper: wallpaper, properties: model.properties(for: wallpaper), root: model.paths.library, width: box.size.width)
+                    LivePreview(wallpaper: wallpaper, properties: model.properties(for: wallpaper), root: model.paths.library,
+                                isolation: model.isolation(for: wallpaper), width: box.size.width)
                 }
                     .aspectRatio(16 / 10, contentMode: .fit)
                     .clipShape(RoundedRectangle(cornerRadius: Radius.thumb, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: Radius.thumb, style: .continuous).strokeBorder(Ink.hairline))
 
                 heading
+                if let origin = wallpaper.origin { CommunityNote(origin: origin) }
                 actions
                 if !wallpaper.manifest.properties.isEmpty { properties }
                 if !wallpaper.isBuiltIn { removal }
@@ -127,6 +129,7 @@ struct LivePreview: NSViewRepresentable {
     let wallpaper: Wallpaper
     let properties: [String: PropertyValue]
     let root: URL
+    let isolation: [String]?
     let width: CGFloat
 
     /// Lay the page out as if it were this many points wide, then shrink it to
@@ -139,7 +142,7 @@ struct LivePreview: NSViewRepresentable {
         let host = context.coordinator
         host.setFps(30)
         host.webView.pageZoom = zoom
-        host.load(wallpaper, properties: properties, root: root)
+        host.load(wallpaper, properties: properties, root: root, isolation: isolation)
         return host.webView
     }
 
@@ -149,7 +152,7 @@ struct LivePreview: NSViewRepresentable {
         let host = context.coordinator
         if abs(host.webView.pageZoom - zoom) > 0.001 { host.webView.pageZoom = zoom }
         if host.wallpaperID != wallpaper.id {
-            host.load(wallpaper, properties: properties, root: root)
+            host.load(wallpaper, properties: properties, root: root, isolation: isolation)
         } else {
             host.apply(properties)
         }

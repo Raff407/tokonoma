@@ -7,6 +7,7 @@ import TokonomaCore
 final class Thumbnailer {
     private let paths: Paths
     private let deliver: (String, NSImage) -> Void
+    private let isolation: (Wallpaper) -> [String]?
     private var queue: [Wallpaper] = []
     private var busy = false
     private lazy var host: WallpaperHost = {
@@ -16,8 +17,9 @@ final class Thumbnailer {
         return host
     }()
 
-    init(paths: Paths, deliver: @escaping (String, NSImage) -> Void) {
+    init(paths: Paths, isolation: @escaping (Wallpaper) -> [String]?, deliver: @escaping (String, NSImage) -> Void) {
         self.paths = paths
+        self.isolation = isolation
         self.deliver = deliver
     }
 
@@ -54,7 +56,7 @@ final class Thumbnailer {
     private func renderOne(_ wallpaper: Wallpaper) async {
         await Poster.ensure(for: wallpaper)
         let defaults = PropertyResolver.resolve(wallpaper.manifest.properties, overrides: [:])
-        host.load(wallpaper, properties: defaults, root: paths.library)
+        host.load(wallpaper, properties: defaults, root: paths.library, isolation: isolation(wallpaper))
         for _ in 0..<50 where !host.isReady {
             try? await Task.sleep(for: .milliseconds(100))
         }
