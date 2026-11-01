@@ -10,11 +10,13 @@
   'use strict';
 
   const R = typeof module === 'object' && module.exports ? require('./rules.js') : root.TokonomaRules;
-  const { LIMITS, RENDER, WOVEN, MODES, REFERENCE } = R;
+  const { LIMITS, RENDER, SAFETY, WOVEN, MODES, REFERENCE } = R;
 
   const ID = /^[a-z0-9][a-z0-9-]{2,39}$/;
   const ASSET = /^assets\/[a-z0-9][a-z0-9._-]{0,60}\.(png|jpe?g|webp)$/;
+  const MEDIA = /^media\.(mp4|jpe?g|png|webp)$/;
   const ALLOWED = (path) => path === 'scene.js' || path === 'README.md' || ASSET.test(path);
+  const ALLOWED_MEDIA = (path) => path === 'README.md' || MEDIA.test(path);
 
   // Each pattern is checked against scene.js with comments removed.
   const FORBIDDEN = [
@@ -96,7 +98,9 @@
     if (typeof m.name !== 'string' || !m.name.trim() || m.name.length > 40) bad('name must be 1–40 characters');
     if (m.title !== undefined && (typeof m.title !== 'string' || m.title.length > 12)) bad('title must be at most 12 characters');
     if (m.description !== undefined && (typeof m.description !== 'string' || m.description.length > 240)) bad('description must be at most 240 characters');
-    if (m.media !== undefined) bad('shared wallpapers are scenes, not media files');
+    if (m.kind !== undefined && m.kind !== 'media') bad('kind must be "media" or left out for a scene');
+    if (m.kind !== 'media' && m.media !== undefined) bad('a scene can\'t carry a media file; share it as kind "media"');
+    if (m.kind === 'media' && (typeof m.media !== 'string' || !MEDIA.test(m.media))) bad('media must be media.mp4, media.jpg, media.png or media.webp');
     const author = m.author || {};
     if (typeof author.name !== 'string' || !author.name.trim() || author.name.length > 40) bad('author.name is required (1–40 characters)');
     if (author.url !== undefined && !/^https:\/\/[^\s]{3,200}$/.test(author.url)) bad('author.url must be an https:// link');
@@ -111,10 +115,16 @@
     return props;
   }
 
-  function checkTheme(props, scene, errors, warnings) {
+  function checkTheme(props, scene, errors, warnings, isMedia) {
     const mode = props.find((p) => p.key === 'mode');
-    if (!mode || mode.type !== 'choice' || !mode.options.every((o) => MODES.includes(o)) || !WOVEN.includes(mode.default)) {
-      errors.push({ code: 'off-theme-mode', message: 'declare a "mode" choice whose default is glyph, block or dot' });
+    const offered = isMedia ? WOVEN : MODES;
+    if (!mode || mode.type !== 'choice' || !mode.options.every((o) => offered.includes(o)) || !WOVEN.includes(mode.default)) {
+      errors.push({
+        code: 'off-theme-mode',
+        message: isMedia
+          ? 'shared media is always woven: the "mode" choice may only offer glyph, block or dot'
+          : 'declare a "mode" choice whose default is glyph, block or dot',
+      });
     }
     const cell = props.find((p) => p.key === 'cell');
     if (!cell) warnings.push({ code: 'no-cell', message: 'add a "cell" range so people can choose the grain' });
@@ -226,27 +236,99 @@
     return { assets, total };
   }
 
+  // ---- media --------------------------------------------------------------
+
+  /** Duration and frame size from an MP4/MOV header (moov must come first). */
+  function clipInfo(bytes) {
+    const b = bytes;
+    const u32 = (i) => ((b[i] << 24) | (b[i + 1] << 16) | (b[i + 2] << 8) | b[i + 3]) >>> 0;
+    const tag = (i) => String.fromCharCode(b[i], b[i + 1], b[i + 2], b[i + 3]);
+    if (b.length < 12 || tag(4) !== 'ftyp') return null;
+    const info = { width: 0, height: 0, seconds: null, sound: false };
+    const walk = (start, end) => {
+      let i = start;
+      while (i + 8 <= end) {
+        let size = u32(i);
+        const type = tag(i + 4);
+        let body = i + 8;
+        if (size === 1) { size = u32(i + 8) * 2 ** 32 + u32(i + 12); body = i + 16; }
+        if (size === 0) size = end - i;
+        if (size < 8) return;
+        const stop = Math.min(i + size, end);
+        if (type === 'moov' || type === 'trak' || type === 'mdia') walk(body, stop);
+        else if (type === 'mvhd' && body + 24 <= stop) {
+          const v1 = b[body] === 1;
+          const scale = u32(body + (v1 ? 20 : 12));
+          const length = v1 ? u32(body + 24) * 2 ** 32 + u32(body + 28) : u32(body + 16);
+          if (scale) info.seconds = length / scale;
+        } else if (type === 'tkhd') {
+          const at = body + (b[body] === 1 ? 88 : 76);
+          if (at + 8 <= stop) {
+            info.width = Math.max(info.width, u32(at) / 65536);
+            info.height = Math.max(info.height, u32(at + 4) / 65536);
+          }
+        } else if (type === 'hdlr' && body + 12 <= stop && tag(body + 8) === 'soun') info.sound = true;
+        i += size;
+      }
+    };
+    walk(0, b.length);
+    return info;
+  }
+
+  function checkMedia(m, files, errors) {
+    const name = typeof m.media === 'string' ? m.media : '';
+    const file = files[name];
+    if (!MEDIA.test(name)) return null;
+    if (!file || !file.bytes) {
+      errors.push({ code: 'bad-media', message: `${name} is missing from the package` });
+      return null;
+    }
+    if (file.size > LIMITS.mediaBytes) errors.push({ code: 'too-big', message: `${name} is over ${LIMITS.mediaBytes / 1024 / 1024} MB` });
+    if (name.endsWith('.mp4')) {
+      const clip = clipInfo(file.bytes);
+      if (!clip || !clip.width || clip.seconds === null) {
+        errors.push({ code: 'bad-media', message: `${name} is not a readable MP4 (its header has to come first)` });
+        return null;
+      }
+      if (Math.max(clip.width, clip.height) > LIMITS.clipSide) errors.push({ code: 'too-big', message: `the clip is ${clip.width}×${clip.height}; keep it within ${LIMITS.clipSide}px` });
+      if (clip.seconds > LIMITS.clipSeconds + 0.5) errors.push({ code: 'too-long', message: `the clip runs ${Math.round(clip.seconds)} s; keep it under ${LIMITS.clipSeconds} s` });
+      if (clip.sound) errors.push({ code: 'sound', message: 'wallpapers are silent; share the clip without its audio track' });
+      return { type: 'clip', width: clip.width, height: clip.height, seconds: Math.round(clip.seconds * 10) / 10, bytes: file.size };
+    }
+    const size = imageSize(file.bytes);
+    if (!size) {
+      errors.push({ code: 'bad-media', message: `${name} is not a real PNG, JPEG or WebP image` });
+      return null;
+    }
+    if (Math.max(size.width, size.height) > LIMITS.stillSide) errors.push({ code: 'too-big', message: `the picture is ${size.width}×${size.height}; keep it within ${LIMITS.stillSide}px` });
+    return { type: 'picture', width: size.width, height: size.height, seconds: null, bytes: file.size };
+  }
+
   // ---- whole package ------------------------------------------------------
 
   function validatePackage(pkg, opts = {}) {
     const errors = [];
     const warnings = [];
     const files = (pkg && pkg.files) || {};
+    const m = (pkg && pkg.manifest) || {};
+    const isMedia = m.kind === 'media';
+    const allowed = isMedia ? ALLOWED_MEDIA : ALLOWED;
     for (const path of Object.keys(files)) {
-      if (!ALLOWED(path)) errors.push({ code: 'unexpected-file', message: `${path} is not allowed in a package` });
+      if (!allowed(path)) errors.push({ code: 'unexpected-file', message: `${path} is not allowed in a ${isMedia ? 'media' : 'scene'} package` });
     }
     const readme = files['README.md'];
     if (readme && readme.size > LIMITS.readmeBytes) errors.push({ code: 'too-big', message: 'README.md is too long' });
 
     const props = checkManifest(pkg && pkg.manifest, errors);
-    const scene = checkScene(files['scene.js'], errors);
-    checkTheme(props, scene, errors, warnings);
-    const { assets, total } = checkAssets(files, errors);
+    const scene = isMedia ? '' : checkScene(files['scene.js'], errors);
+    checkTheme(props, scene, errors, warnings, isMedia);
+    const { assets, total } = isMedia ? { assets: [], total: 0 } : checkAssets(files, errors);
+    const media = isMedia ? checkMedia(m, files, errors) : null;
 
     const packageBytes = opts.packageBytes ?? Object.values(files).reduce((s, f) => s + (f.size || 0), 0);
-    if (packageBytes > LIMITS.packageBytes) errors.push({ code: 'too-big', message: `package is over ${LIMITS.packageBytes / 1024} KB` });
+    const limit = isMedia ? LIMITS.mediaPackageBytes : LIMITS.packageBytes;
+    if (packageBytes > limit) errors.push({ code: 'too-big', message: `package is over ${Math.round(limit / 1024)} KB` });
 
-    const m = (pkg && pkg.manifest) || {};
     const cell = props.find((p) => p.key === 'cell');
     const size = cell ? cell.default : 9;
     const cols = Math.ceil(REFERENCE.width / size);
@@ -254,6 +336,7 @@
     const facts = {
       id: m.id,
       name: m.name,
+      kind: isMedia ? 'media' : 'scene',
       author: m.author && m.author.name,
       authorURL: m.author && m.author.url,
       version: m.version || 1,
@@ -262,11 +345,23 @@
       assetBytes: total,
       files: Object.keys(files).length,
       assets,
+      media,
       grid: `${cols} × ${rows} cells at ${REFERENCE.width} × ${REFERENCE.height}, redrawn to fit any display`,
-      interactive: Boolean(m.interactive),
+      interactive: Boolean(m.interactive) && !isMedia,
       settings: props.length,
     };
     return { ok: errors.length === 0, errors, warnings, facts };
+  }
+
+  /** The app's nudity screen over sampled frames: { nsfw: worst score 0–1, frames }. */
+  function judgeScreen(screen) {
+    const errors = [];
+    if (!screen || !(screen.frames >= SAFETY.minFrames) || typeof screen.nsfw !== 'number') {
+      errors.push({ code: 'unscreened', message: 'the safety screen didn\'t run on this wallpaper' });
+    } else if (screen.nsfw > SAFETY.maxNsfw) {
+      errors.push({ code: 'nsfw', message: 'it looks like it may show nudity or sexual content, which the marketplace doesn\'t allow' });
+    }
+    return { ok: errors.length === 0, errors, warnings: [] };
   }
 
   /** Metrics from the app's --inspect run, judged against the house style. */
@@ -279,10 +374,13 @@
     if (metrics.msPerFrame > RENDER.maxMsPerFrame) errors.push({ code: 'heavy', message: `${metrics.msPerFrame.toFixed(1)} ms per frame; keep under ${RENDER.maxMsPerFrame} ms` });
     if (metrics.paletteShare < RENDER.minPaletteShare) errors.push({ code: 'off-theme-palette', message: 'too many colours; official scenes use a small ink palette' });
     if (!WOVEN.includes(metrics.mode)) errors.push({ code: 'off-theme-mode', message: 'renders as raw pixels by default' });
+    if (typeof metrics.nsfw === 'number' && metrics.nsfw > SAFETY.maxNsfw) {
+      errors.push({ code: 'nsfw', message: 'the render looks like it may show nudity or sexual content, which the marketplace doesn\'t allow' });
+    }
     return { ok: errors.length === 0, errors, warnings };
   }
 
-  const api = Object.freeze({ validatePackage, judgeRender, imageSize, stripComments, isNeon });
+  const api = Object.freeze({ validatePackage, judgeRender, judgeScreen, imageSize, clipInfo, stripComments, isNeon });
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.TokonomaValidate = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

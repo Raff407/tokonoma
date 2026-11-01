@@ -194,3 +194,100 @@ for (const id of ['torii', 'koi', 'sumi', 'fuji', 'kaze']) {
     assert.deepEqual(r.errors, []);
   });
 }
+
+// ---- media packages ---------------------------------------------------------
+
+function box(type, ...parts) {
+  const body = Buffer.concat(parts);
+  const head = Buffer.alloc(8);
+  head.writeUInt32BE(8 + body.length, 0);
+  head.write(type, 4, 'ascii');
+  return Buffer.concat([head, body]);
+}
+
+/** Just enough MP4 for the header reader: ftyp, then moov with mvhd + tracks. */
+function mp4({ width = 1280, height = 720, seconds = 12, sound = false } = {}) {
+  const mvhd = Buffer.alloc(100);
+  mvhd.writeUInt32BE(600, 12);
+  mvhd.writeUInt32BE(seconds * 600, 16);
+  const track = (w, h, handler) => {
+    const tkhd = Buffer.alloc(84);
+    tkhd.writeUInt32BE(w * 65536, 76);
+    tkhd.writeUInt32BE(h * 65536, 80);
+    const hdlr = Buffer.alloc(24);
+    hdlr.write(handler, 8, 'ascii');
+    return box('trak', box('tkhd', tkhd), box('mdia', box('hdlr', hdlr)));
+  };
+  const tracks = [track(width, height, 'vide')];
+  if (sound) tracks.push(track(0, 0, 'soun'));
+  return new Uint8Array(Buffer.concat([box('ftyp', Buffer.from('isom0000')), box('moov', box('mvhd', mvhd), ...tracks)]));
+}
+
+const mediaManifest = (over = {}) => manifest({
+  kind: 'media',
+  media: 'media.mp4',
+  properties: [
+    { key: 'mode', label: 'weave', type: 'choice', options: ['glyph', 'block', 'dot'], default: 'glyph' },
+    { key: 'cell', label: 'cell size', type: 'range', min: 3, max: 24, step: 1, default: 8 },
+  ],
+  ...over,
+});
+const bin = (bytes) => ({ size: bytes.length, bytes });
+const mediaPkg = (bytes = mp4(), over = {}) => ({ manifest: mediaManifest(over), files: { [over.media || 'media.mp4']: bin(bytes) } });
+
+test('a shared clip passes and reports its size and length', () => {
+  const r = V.validatePackage(mediaPkg());
+  assert.deepEqual(r.errors, []);
+  assert.equal(r.facts.kind, 'media');
+  assert.deepEqual(r.facts.media, { type: 'clip', width: 1280, height: 720, seconds: 12, bytes: r.facts.media.bytes });
+  assert.equal(r.facts.interactive, false);
+});
+
+test('a shared picture reports its dimensions', () => {
+  const r = V.validatePackage(mediaPkg(png(1600, 900), { media: 'media.png' }));
+  assert.deepEqual(r.errors, []);
+  assert.equal(r.facts.media.type, 'picture');
+  assert.equal(r.facts.media.width, 1600);
+});
+
+test('shared media is always woven: raw is not even offered', () => {
+  const props = [
+    { key: 'mode', label: 'weave', type: 'choice', options: ['glyph', 'raw'], default: 'glyph' },
+    { key: 'cell', label: 'cell size', type: 'range', min: 3, max: 24, default: 8 },
+  ];
+  assert.ok(codes(V.validatePackage(mediaPkg(mp4(), { properties: props }))).includes('off-theme-mode'));
+});
+
+test('media packages carry no code', () => {
+  const p = mediaPkg();
+  p.files['scene.js'] = text(SCENE);
+  assert.ok(codes(V.validatePackage(p)).includes('unexpected-file'));
+});
+
+test('clips must be short, small and silent', () => {
+  assert.ok(codes(V.validatePackage(mediaPkg(mp4({ seconds: 90 })))).includes('too-long'));
+  assert.ok(codes(V.validatePackage(mediaPkg(mp4({ width: 3840, height: 2160 })))).includes('too-big'));
+  assert.ok(codes(V.validatePackage(mediaPkg(mp4({ sound: true })))).includes('sound'));
+});
+
+test('media that is not what it claims is refused', () => {
+  assert.ok(codes(V.validatePackage(mediaPkg(new Uint8Array([1, 2, 3, 4])))).includes('bad-media'));
+  assert.ok(codes(V.validatePackage(mediaPkg(mp4(), { media: '../x.mp4' }))).includes('bad-manifest'));
+});
+
+test('scenes still cannot smuggle a media file', () => {
+  assert.ok(codes(V.validatePackage(pkg({ manifest: { media: 'clip.mp4' } }))).includes('bad-manifest'));
+});
+
+test('the nudity screen must have run and come back clean', () => {
+  assert.deepEqual(codes(V.judgeScreen(null)), ['unscreened']);
+  assert.deepEqual(codes(V.judgeScreen({ nsfw: 0.2, frames: 0 })), ['unscreened']);
+  assert.deepEqual(codes(V.judgeScreen({ nsfw: 0.95, frames: 8 })), ['nsfw']);
+  assert.equal(V.judgeScreen({ nsfw: 0.05, frames: 8 }).ok, true);
+});
+
+test('a render that screens as explicit is refused', () => {
+  const clean = { motion: 0.01, flash: 0, coverage: 0.5, msPerFrame: 1, paletteShare: 0.9, mode: 'glyph' };
+  assert.equal(V.judgeRender({ ...clean, nsfw: 0.1 }).ok, true);
+  assert.ok(codes(V.judgeRender({ ...clean, nsfw: 0.9 })).includes('nsfw'));
+});

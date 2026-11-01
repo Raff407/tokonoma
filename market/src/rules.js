@@ -16,6 +16,19 @@
     maxLine: 400,
     maxString: 2000,
     maxNeon: 3,
+    // Media wallpapers: one clip or picture of your own, woven like a scene.
+    mediaBytes: 12 * 1024 * 1024,
+    mediaPackageBytes: 17 * 1024 * 1024,
+    clipSide: 1920,
+    stillSide: 2560,
+    clipSeconds: 60,
+  });
+
+  // The nudity screen (an on-device image classifier the app runs over the
+  // media frames, the images and a rendered still). Scores are 0–1.
+  const SAFETY = Object.freeze({
+    maxNsfw: 0.7,
+    minFrames: 1,
   });
 
   const RENDER = Object.freeze({
@@ -48,6 +61,18 @@ Shared wallpapers must look like they belong next to the official ones.
 - No text, logos, words or ads drawn into the scene.
 - No photos. Small sprite or texture assets only (≤ ${LIMITS.assetSide}px a side).
 
+## Media wallpapers
+- Your own clip or picture, shared as kind "media": wallpaper.json plus one
+  media.mp4|jpg|png|webp (and an optional README.md). No code.
+- Always woven: the "mode" choice offers only glyph, block or dot (no raw).
+- Clips ≤ ${LIMITS.clipSide}px a side and ${LIMITS.clipSeconds} s, pictures ≤ ${LIMITS.stillSide}px,
+  media file ≤ ${LIMITS.mediaBytes / 1024 / 1024} MB, no sound.
+
+## Nothing explicit
+- No nudity or sexual content, in scenes, images or media. Every frame the
+  app samples is screened on device; anything over ${SAFETY.maxNsfw} is refused,
+  at publish and again before install.
+
 ## Package
 - wallpaper.json, scene.js, optional assets/*.png|jpg|webp, optional README.md.
 - The app writes index.html itself; packages cannot ship HTML or CSS.
@@ -68,7 +93,7 @@ Under ${RENDER.maxMsPerFrame} ms per frame in WebKit at the reference size.
 Paint into the cols × rows canvas only; cache anything still into layers.
 `;
 
-  const api = Object.freeze({ LIMITS, RENDER, WOVEN, MODES, REFERENCE, GUIDE });
+  const api = Object.freeze({ LIMITS, RENDER, SAFETY, WOVEN, MODES, REFERENCE, GUIDE });
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.TokonomaRules = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);
