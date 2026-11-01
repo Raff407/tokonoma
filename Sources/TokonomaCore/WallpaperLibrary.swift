@@ -5,16 +5,20 @@ public struct Wallpaper: Identifiable, Equatable, Hashable, Sendable {
     public let manifest: Manifest
     public let folder: URL
     public let isBuiltIn: Bool
+    /// Set for community wallpapers; nil for built-ins and your own imports.
+    public let origin: Origin?
 
     public var id: String { manifest.id }
     public var name: String { manifest.name }
     public var entryURL: URL { folder.appendingPathComponent(manifest.entry) }
     public var isMedia: Bool { manifest.media != nil }
+    public var isCommunity: Bool { origin?.source == .community }
 
-    public init(manifest: Manifest, folder: URL, isBuiltIn: Bool) {
+    public init(manifest: Manifest, folder: URL, isBuiltIn: Bool, origin: Origin? = nil) {
         self.manifest = manifest
         self.folder = folder
         self.isBuiltIn = isBuiltIn
+        self.origin = origin
     }
 }
 
@@ -63,7 +67,9 @@ public enum WallpaperLibrary {
             guard manifest.id == name else {
                 return .failure(LibraryProblem(folder: name, reason: "id \"\(manifest.id)\" does not match its folder"))
             }
-            let wallpaper = Wallpaper(manifest: manifest, folder: folder, isBuiltIn: builtIn.contains(manifest.id))
+            let origin = Origin.read(from: folder)
+            // A community folder can never pass itself off as a built-in.
+            let wallpaper = Wallpaper(manifest: manifest, folder: folder, isBuiltIn: origin == nil && builtIn.contains(manifest.id), origin: origin)
             guard FileManager.default.fileExists(atPath: wallpaper.entryURL.path) else {
                 return .failure(LibraryProblem(folder: name, reason: "\(manifest.entry) is missing"))
             }
