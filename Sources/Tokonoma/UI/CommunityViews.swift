@@ -74,11 +74,17 @@ struct InstallSheet: View {
             VStack(alignment: .leading, spacing: 6) {
                 fact("made by", [pending.package.author, pending.package.authorURL].compactMap { $0 }.joined(separator: " · "))
                 fact("size", byteFormat.string(fromByteCount: Int64(facts.packageBytes)))
-                fact("grid", facts.grid)
-                fact("files", "\(facts.files) · scene \(byteFormat.string(fromByteCount: Int64(facts.sceneBytes)))")
-                fact("images", facts.assets.isEmpty ? "none" : facts.assets.map { "\($0.width)×\($0.height)" }.joined(separator: ", "))
-                fact("reacts to", facts.interactive ? "cursor and clicks" : "nothing, it just plays")
-                fact("checks", "passed: no network, own files only, on theme, light")
+                if let media = facts.media {
+                    fact("kind", "\(media.type), always woven, no code")
+                    fact("dimensions", "\(media.width)×\(media.height)" + (media.seconds.map { String(format: " · %.0f s, silent", $0) } ?? ""))
+                    fact("checks", "passed: nothing explicit, on theme, light")
+                } else {
+                    fact("grid", facts.grid)
+                    fact("files", "\(facts.files) · scene \(byteFormat.string(fromByteCount: Int64(facts.sceneBytes)))")
+                    fact("images", facts.assets.isEmpty ? "none" : facts.assets.map { "\($0.width)×\($0.height)" }.joined(separator: ", "))
+                    fact("reacts to", facts.interactive ? "cursor and clicks" : "nothing, it just plays")
+                    fact("checks", "passed: no network, own files only, nothing explicit, on theme, light")
+                }
                 fact("fingerprint", String(pending.package.sha256.prefix(16)))
             }
 
