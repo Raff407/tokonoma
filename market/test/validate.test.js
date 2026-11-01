@@ -188,7 +188,7 @@ for (const id of ['torii', 'koi', 'sumi', 'fuji', 'kaze']) {
     const scene = fs.readFileSync(path.join(dir, 'scene.js'), 'utf8');
     const official = JSON.parse(fs.readFileSync(path.join(dir, 'wallpaper.json'), 'utf8'));
     const r = V.validatePackage({
-      manifest: { ...official, author: { name: 'Tokonoma' } },
+      manifest: { ...official, author: { name: 'Calibration' } },
       files: { 'scene.js': { size: Buffer.byteLength(scene), text: scene } },
     });
     assert.deepEqual(r.errors, []);
@@ -290,4 +290,23 @@ test('a render that screens as explicit is refused', () => {
   const clean = { motion: 0.01, flash: 0, coverage: 0.5, msPerFrame: 1, paletteShare: 0.9, mode: 'glyph' };
   assert.equal(V.judgeRender({ ...clean, nsfw: 0.1 }).ok, true);
   assert.ok(codes(V.judgeRender({ ...clean, nsfw: 0.9 })).includes('nsfw'));
+});
+
+test('constructor tricks, frames and peer connections are refused', () => {
+  const sneak = (line) => codes(V.validatePackage(pkg({ scene: SCENE + '\n' + line })));
+  assert.ok(sneak("const F = (0).constructor.constructor; F('x')();").includes('code-from-strings'));
+  assert.ok(sneak("const F = ({})['constructor']['constructor'];").includes('code-from-strings'));
+  assert.ok(sneak("const f = document['createElement']('canvas');").includes('dynamic-lookup'));
+  assert.ok(sneak("const w = frames[0];").includes('frames'));
+  assert.ok(sneak("const p = new webkitRTCPeerConnection({});").includes('peer-network'));
+  assert.ok(sneak("const t = new WebTransport('x');").includes('peer-network'));
+  // Ordinary classes with constructors are still fine.
+  assert.deepEqual(sneak('class Fish { constructor() { this.x = 1; } }'), []);
+});
+
+test('nobody publishes as Tokonoma or hides characters in names', () => {
+  assert.ok(codes(V.validatePackage(pkg({ manifest: { author: { name: 'Tokonoma Team' } } }))).includes('impersonation'));
+  assert.ok(codes(V.validatePackage(pkg({ manifest: { author: { name: 'Official' } } }))).includes('impersonation'));
+  assert.ok(codes(V.validatePackage(pkg({ manifest: { name: 'Verified koi' } }))).includes('impersonation'));
+  assert.ok(codes(V.validatePackage(pkg({ manifest: { name: 'Koi‮iok' } }))).includes('bad-manifest'));
 });

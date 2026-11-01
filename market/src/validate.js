@@ -31,7 +31,11 @@
     ['probing', /\bnavigator\b|\bscreen\s*\.|getUserMedia|mediaDevices/, 'probes the device'],
     ['sound', /AudioContext|new\s+Audio\b/, 'plays sound'],
     ['text', /\b(?:fillText|strokeText)\s*\(/, 'draws text (wallpapers carry no words, logos or ads)'],
-    ['dynamic-lookup', /\b(?:window|globalThis|self|this)\s*\[|\bReflect\s*\.|\bnew\s+Proxy\b|\b(?:atob|btoa)\s*\(/, 'looks things up by computed name'],
+    ['dynamic-lookup', /\b(?:window|globalThis|self|this|document|navigator)\s*\[|\bReflect\s*\.|\bnew\s+Proxy\b|\b(?:atob|btoa)\s*\(/, 'looks things up by computed name'],
+    // (0).constructor.constructor is Function by another name.
+    ['code-from-strings', /\.\s*constructor\b|\[\s*['"`]constructor['"`]\s*\]|__proto__|\bgetPrototypeOf\b/, 'reaches for constructors (a way to build code from strings)'],
+    ['frames', /\biframe\b|\bframes\b|\bcontentWindow\b|\bopener\b|\bparent\s*\./, 'uses frames or other windows'],
+    ['peer-network', /WebTransport|RTC[A-Z]\w*|\bwebkit[A-Z]\w*/, 'opens peer connections'],
   ];
 
   function stripComments(src) {
@@ -91,9 +95,22 @@
     }
   }
 
+  // Invisible and direction-flipping characters let a name read differently than it is.
+  const SPOOFY = /[\u0000-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2060-\u2069\ufeff]/;
+  // Nobody can publish as the app itself or claim a review that never happened.
+  const RESERVED = /tokonoma|official|verified|anthropic|\bapple\b|\bsupport\b|\badmin/i;
+
   function checkManifest(m, errors) {
     const bad = (why) => errors.push({ code: 'bad-manifest', message: why });
     if (!m || typeof m !== 'object') return bad('wallpaper.json is missing or not an object');
+    const shown = [m.name, m.title, m.description, m.author && m.author.name, m.author && m.author.url];
+    if (shown.some((v) => typeof v === 'string' && SPOOFY.test(v))) bad('names and descriptions can\'t contain invisible or direction-changing characters');
+    if (m.author && typeof m.author.name === 'string' && RESERVED.test(m.author.name)) {
+      errors.push({ code: 'impersonation', message: `"${m.author.name}" sounds like Tokonoma or a reviewer; publish under your own name` });
+    }
+    if (typeof m.name === 'string' && /tokonoma|official|verified/i.test(m.name)) {
+      errors.push({ code: 'impersonation', message: 'wallpaper names can\'t claim to be official or verified' });
+    }
     if (typeof m.id !== 'string' || !ID.test(m.id)) bad('id must be 3–40 lowercase letters, digits or dashes');
     if (typeof m.name !== 'string' || !m.name.trim() || m.name.length > 40) bad('name must be 1–40 characters');
     if (m.title !== undefined && (typeof m.title !== 'string' || m.title.length > 12)) bad('title must be at most 12 characters');
