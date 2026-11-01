@@ -18,6 +18,8 @@ final class WallpaperHost: NSObject {
     private var scale = 2.0
     private var lastLoad: (wallpaper: Wallpaper, root: URL, isolation: [String]?)?
     private var crashes: [Date] = []
+    /// One error report per page load: a page can't flood the app with notices.
+    private var reportedError = false
     var onError: ((String) -> Void)?
 
     override init() {
@@ -27,6 +29,7 @@ final class WallpaperHost: NSObject {
         config.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
         config.mediaTypesRequiringUserActionForPlayback = []
         config.suppressesIncrementalRendering = true
+        Lockdown.apply(to: config.preferences)
         NetworkLock.apply(to: config.userContentController)
         webView = WKWebView(frame: .zero, configuration: config)
         super.init()
@@ -48,9 +51,11 @@ final class WallpaperHost: NSObject {
         self.properties = properties
         bootProperties = properties
         ready = false
+        reportedError = false
         lastLoad = (wallpaper, root, isolation)
         let controller = webView.configuration.userContentController
         controller.removeAllUserScripts()
+        controller.addUserScript(Lockdown.script)
         let props = (try? PropertyResolver.javascriptObject(properties)) ?? "{}"
         let boot = "window.__tokonoma = { properties: \(props), fps: \(fps), scale: \(scale) };"
         controller.addUserScript(WKUserScript(source: boot, injectionTime: .atDocumentStart, forMainFrameOnly: true))
@@ -111,13 +116,25 @@ final class WallpaperHost: NSObject {
                     "return window.tokonoma ? await window.tokonoma.capture(w) : null",
                     arguments: ["w": width], in: nil, contentWorld: .page
                 )
-                finish(result as? String)
+                finish(Self.plausibleJPEG(result as? String))
             }
             Task { @MainActor in
                 try? await Task.sleep(for: timeout)
                 finish(nil)
             }
         }
+    }
+
+    /// The page makes the capture, so it's untrusted bytes headed for a native
+    /// image decoder: only a modest data URL that really starts like a JPEG passes.
+    static let maxCaptureBytes = 4 * 1024 * 1024
+    static func plausibleJPEG(_ dataURL: String?) -> String? {
+        let prefix = "data:image/jpeg;base64,"
+        guard let dataURL, dataURL.hasPrefix(prefix), dataURL.utf8.count < maxCaptureBytes * 4 / 3 + 64,
+              let head = Data(base64Encoded: String(dataURL.dropFirst(prefix.count).prefix(8))),
+              head.starts(with: [0xFF, 0xD8, 0xFF])
+        else { return nil }
+        return dataURL
     }
 
     /// Drop the page entirely: frees its web process, GPU context and any timers.
@@ -148,9 +165,17 @@ final class WallpaperHost: NSObject {
                 call("apply(\(json))")
             }
         case "error":
-            let text = message["message"] as? String ?? "unknown error"
+            let text = String((message["message"] as? String ?? "unknown error").prefix(300))
             NSLog("tokonoma: wallpaper \(wallpaperID ?? "?") reported: \(text)")
-            onError?(text)
+            guard !reportedError else { return }
+            reportedError = true
+            // Words from a community page never reach the app's own UI: it could
+            // otherwise pose as Tokonoma ("your Mac is infected, call…").
+            if let last = lastLoad, last.isolation != nil {
+                onError?("\(last.wallpaper.name) stopped with a script error.")
+            } else {
+                onError?(text)
+            }
         default:
             break
         }
@@ -158,6 +183,20 @@ final class WallpaperHost: NSObject {
 }
 
 extension WallpaperHost: WKNavigationDelegate {
+    /// A wallpaper page may only ever be itself: no navigating away, no custom
+    /// URL schemes that open other apps, no frames, no new windows.
+    func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
+                 decisionHandler: @escaping @MainActor @Sendable (WKNavigationActionPolicy) -> Void) {
+        decisionHandler(allows(action) ? .allow : .cancel)
+    }
+
+    private func allows(_ action: WKNavigationAction) -> Bool {
+        guard action.targetFrame?.isMainFrame == true, let url = action.request.url else { return false }
+        if url.absoluteString == "about:blank" { return true }
+        guard url.isFileURL, let entry = lastLoad?.wallpaper.entryURL else { return false }
+        return url.standardizedFileURL.path == entry.standardizedFileURL.path
+    }
+
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
         // The web process can die under memory pressure; bring the wallpaper back,
         // but give up on a page that keeps dying rather than thrash.
