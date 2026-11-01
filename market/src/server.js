@@ -173,10 +173,15 @@ function buildServer() {
         fs.mkdirSync(path.dirname(path.join(scratch, p)), { recursive: true });
         fs.writeFileSync(path.join(scratch, p), f.text ?? Buffer.from(f.bytes));
       }
+      if (pkg.manifest && pkg.manifest.kind === 'media') {
+        throw new Error('Media wallpapers (your own clips and pictures) are published from the Tokonoma app, which screens every frame first.');
+      }
       const render = S.inspect(scratch);
       fs.rmSync(scratch, { recursive: true, force: true });
-      const entry = registry().publish(packed, { render: render && render.metrics });
-      return text(`Published ${entry.name} ${entry.version} by ${entry.author} (${kb(entry.bytes)}) as a community wallpaper.\nRender checks: ${entry.checks.render}.`);
+      const preview = render && render.image && fs.existsSync(render.image) ? fs.readFileSync(render.image) : null;
+      if (render && render.image) fs.rmSync(render.image, { force: true });
+      const entry = registry().publish(packed, { render: render && render.metrics, preview });
+      return text(`Published ${entry.name} ${entry.version} by ${entry.author} (${kb(entry.bytes)}) as a community wallpaper.\nRender checks: ${entry.checks.render}. Nudity screen: ${entry.checks.screen}.`);
     } catch (e) {
       return fail(e);
     }
@@ -193,7 +198,8 @@ function buildServer() {
       if (!entries.length) return text('Nothing found.');
       const lines = entries.map((e) => [
         `${e.name}${e.title ? ' ' + e.title : ''} (${e.id} v${e.version})`,
-        `  by ${e.author}${e.authorURL ? ' · ' + e.authorURL : ''} · ${kb(e.bytes)} · ${e.facts.grid}`,
+        `  ${e.kind === 'media' ? 'media' : 'scene'} by ${e.author}${e.authorURL ? ' · ' + e.authorURL : ''} · ${kb(e.bytes)} · ${
+          e.facts.media ? `${e.facts.media.type} ${e.facts.media.width}×${e.facts.media.height}` : e.facts.grid}`,
         `  ${e.verified ? 'verified by Tokonoma' : 'community: made by a third party, checked automatically, not reviewed by hand'}`,
         e.description ? `  ${e.description}` : null,
       ].filter(Boolean).join('\n'));

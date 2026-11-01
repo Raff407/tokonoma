@@ -96,3 +96,30 @@ test('registry re-checks packages itself instead of trusting the uploader', () =
   });
   assert.throws(() => reg.publish(bad), /refused/);
 });
+
+test('registry lists media only after a clean nudity screen', () => {
+  const reg = new LocalRegistry(fs.mkdtempSync(path.join(os.tmpdir(), 'tokonoma-reg-')));
+  const still = Buffer.alloc(33);
+  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(still, 0);
+  still.writeUInt32BE(13, 8);
+  still.write('IHDR', 12, 'ascii');
+  still.writeUInt32BE(1600, 16);
+  still.writeUInt32BE(900, 20);
+  const media = P.encode({
+    manifest: {
+      id: 'lantern-walk', name: 'Lantern walk', author: { name: 'Mika' }, version: 1, kind: 'media', media: 'media.png',
+      properties: [
+        { key: 'mode', label: 'weave', type: 'choice', options: ['glyph', 'block', 'dot'], default: 'block' },
+        { key: 'cell', label: 'cell size', type: 'range', min: 3, max: 24, default: 8 },
+      ],
+    },
+    files: { 'media.png': { bytes: new Uint8Array(still) } },
+  });
+  assert.throws(() => reg.publish(media), /safety screen/);
+  assert.throws(() => reg.publish(media, { screen: { nsfw: 0.93, frames: 1 } }), /nudity/);
+  const entry = reg.publish(media, { screen: { nsfw: 0.02, frames: 1 }, preview: Buffer.from([0xff, 0xd8]) });
+  assert.equal(entry.kind, 'media');
+  assert.equal(entry.checks.screen, 'passed');
+  assert.equal(entry.preview, 'lantern-walk-1.jpg');
+  assert.ok(fs.existsSync(path.join(reg.previews, entry.preview)));
+});
