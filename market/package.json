@@ -1,0 +1,14 @@
+{
+  "name": "tokonoma-market",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Make, check, pack and share Tokonoma wallpapers. Includes an MCP server.",
+  "type": "commonjs",
+  "bin": { "tokonoma-mcp": "src/server.js" },
+  "scripts": {
+    "test": "node --test 'test/*.test.js'",
+    "coverage": "node --test --experimental-test-coverage 'test/*.test.js'",
+    "mcp": "node src/server.js"
+  },
+  "engines": { "node": ">=20" }
+}
