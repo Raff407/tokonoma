@@ -18,8 +18,9 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/Tokonoma"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 rsync -a --exclude '_sample' --exclude '.DS_Store' Wallpapers/ "$APP/Contents/Resources/Wallpapers/"
-mkdir -p "$APP/Contents/Resources/Market"
-cp market/src/rules.js market/src/validate.js "$APP/Contents/Resources/Market/"
+# The market package: validator for installs, MCP server for agents.
+[[ -d market/node_modules ]] || (cd market && npm ci --omit=dev --cache "${TMPDIR:-/tmp}/npm-cache")
+rsync -a --exclude '.claude' --exclude '.DS_Store' --exclude 'test' market/ "$APP/Contents/Resources/market/"
 
 echo "› drawing icon"
 rm -rf build/AppIcon.iconset

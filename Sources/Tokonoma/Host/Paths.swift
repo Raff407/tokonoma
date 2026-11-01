@@ -41,13 +41,17 @@ struct Paths {
             .appendingPathComponent("Wallpapers", isDirectory: true)
     }
 
+    /// The market package (validator, MCP server) ships in Resources/market;
+    /// it sits beside Resources/Wallpapers so its relative paths still work.
     private static func market() -> URL {
-        if let inApp = Bundle.main.resourceURL?.appendingPathComponent("Market"),
+        if let inApp = Bundle.main.resourceURL?.appendingPathComponent("market/src"),
            FileManager.default.fileExists(atPath: inApp.path) {
             return inApp
         }
         return bundled().deletingLastPathComponent().appendingPathComponent("market/src", isDirectory: true)
     }
+
+    var mcpServer: URL { marketScripts.appendingPathComponent("server.js") }
 
     var mediaTemplate: URL { library.appendingPathComponent("_lib/media.html") }
 
