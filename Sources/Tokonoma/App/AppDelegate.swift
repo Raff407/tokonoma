@@ -54,6 +54,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
                 defer: false
             )
             window.title = "Tokonoma"
+            window.appearance = NSAppearance(named: .darkAqua)
+            window.backgroundColor = NSColor(Ink.page)
             window.titlebarAppearsTransparent = true
             window.titleVisibility = .hidden
             window.isReleasedWhenClosed = false

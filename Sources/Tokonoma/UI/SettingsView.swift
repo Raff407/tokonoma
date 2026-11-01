@@ -13,13 +13,15 @@ struct SettingsView: View {
                     toggleRow("In Low Power Mode", \.pauseInLowPower)
                     toggleRow("Whenever the Mac is on battery", \.pauseOnBattery)
                 }
-                group("Smoothness") {
-                    pickerRow("Frames per second", \.fpsCap, [15, 24, 30, 60], format: { "\($0)" })
-                    pickerRow("On battery", \.batteryFps, [10, 15, 24, 30], format: { "\($0)" })
+                group("Battery") {
+                    choiceRow("Frames per second", \.fpsCap, [15, 24, 30, 60], format: { "\($0)" })
+                    choiceRow("On battery", \.batteryFps, [10, 15, 24, 30], format: { "\($0)" })
                         .disabled(model.settings.pauseOnBattery)
+                        .opacity(model.settings.pauseOnBattery ? 0.5 : 1)
+                    toggleRow("Keep glyphs Retina-sharp on battery", \.sharpOnBattery)
                 }
                 group("Change the scroll") {
-                    pickerRow("Next scene every", \.rotateMinutes, [0, 15, 60, 360, 1440], format: rotation)
+                    choiceRow("Next scene every", \.rotateMinutes, [0, 15, 60, 360, 1440], format: rotation)
                 }
                 group("Cursor") {
                     toggleRow("Let scenes react to the cursor and clicks", \.followCursor)
@@ -29,29 +31,19 @@ struct SettingsView: View {
                         Text("No displays found").font(Face.body).foregroundStyle(Ink.muted)
                     }
                     ForEach(model.displays) { display in
-                        HStack {
-                            Text(display.name).font(Face.body).foregroundStyle(Ink.secondary)
-                            Spacer()
-                            Picker("", selection: Binding(
-                                get: { model.shown(on: display.id) },
-                                set: { model.show($0, on: display.id) }
-                            )) {
-                                ForEach(model.wallpapers) { Text($0.name).tag($0.id) }
-                            }
-                            .labelsHidden()
-                            .controlSize(.small)
-                            .fixedSize()
+                        SettingRow(label: display.name) {
+                            MenuChoice(
+                                options: model.wallpapers.map(\.id),
+                                selection: Binding(get: { model.shown(on: display.id) }, set: { model.show($0, on: display.id) }),
+                                label: { id in model.wallpaper(id)?.name ?? id }
+                            )
                         }
-                        .frame(minHeight: 36)
                     }
                 }
                 group("Startup") {
-                    HStack {
-                        Text("Open at login").font(Face.body).foregroundStyle(Ink.secondary)
-                        Spacer()
+                    SettingRow(label: "Open at login") {
                         Toggle("", isOn: $openAtLogin)
-                            .toggleStyle(.switch)
-                            .controlSize(.mini)
+                            .toggleStyle(ShuToggleStyle())
                             .labelsHidden()
                             .onChange(of: openAtLogin) { _, wanted in
                                 if let problem = LaunchAtLogin.set(wanted) {
@@ -60,9 +52,8 @@ struct SettingsView: View {
                                 }
                             }
                     }
-                    .frame(minHeight: 36)
                 }
-                Text("Library folder  \(model.paths.library.path)")
+                Text("library  \(model.paths.library.path)")
                     .font(Face.meta)
                     .foregroundStyle(Ink.muted)
                     .textSelection(.enabled)
@@ -81,42 +72,33 @@ struct SettingsView: View {
     }
 
     private func toggleRow(_ label: String, _ key: WritableKeyPath<TokonomaCore.Settings, Bool>) -> some View {
-        HStack {
-            Text(label).font(Face.body).foregroundStyle(Ink.secondary)
-            Spacer()
+        SettingRow(label: label) {
             Toggle("", isOn: Binding(
                 get: { model.settings[keyPath: key] },
                 set: { value in model.change { $0.with(key, value) } }
             ))
-            .toggleStyle(.switch)
-            .controlSize(.mini)
+            .toggleStyle(ShuToggleStyle())
             .labelsHidden()
         }
-        .frame(minHeight: 36)
     }
 
-    private func pickerRow(_ label: String, _ key: WritableKeyPath<TokonomaCore.Settings, Int>, _ options: [Int], format: @escaping (Int) -> String) -> some View {
-        HStack {
-            Text(label).font(Face.body).foregroundStyle(Ink.secondary)
-            Spacer()
-            Picker("", selection: Binding(
-                get: { model.settings[keyPath: key] },
-                set: { value in model.change { $0.with(key, value) } }
-            )) {
-                ForEach(options, id: \.self) { Text(format($0)).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .controlSize(.small)
-            .fixedSize()
+    private func choiceRow(_ label: String, _ key: WritableKeyPath<TokonomaCore.Settings, Int>, _ options: [Int], format: @escaping (Int) -> String) -> some View {
+        SettingRow(label: label) {
+            ChoiceBar(
+                options: options.map(String.init),
+                selection: Binding(
+                    get: { String(model.settings[keyPath: key]) },
+                    set: { text in if let value = Int(text) { model.change { $0.with(key, value) } } }
+                ),
+                label: { format(Int($0) ?? 0) }
+            )
         }
-        .frame(minHeight: 36)
     }
 
     private func rotation(_ minutes: Int) -> String {
         switch minutes {
         case 0: "never"
-        case 1440: "day"
+        case 1440: "daily"
         case let m where m >= 60: "\(m / 60)h"
         default: "\(minutes)m"
         }

@@ -24,7 +24,7 @@ struct LibraryView: View {
             }
         }
         .background(Ink.page)
-        .tint(Ink.control)
+        .tint(Ink.shu)
         .preferredColorScheme(.dark)
         .onAppear { if selection == nil { selection = model.settings.fallbackWallpaper } }
     }
@@ -38,8 +38,8 @@ struct LibraryView: View {
             HStack(spacing: Space.l) {
                 ForEach(Tab.allCases, id: \.self) { item in
                     Button { withAnimation(Motion.quick) { tab = item } } label: {
-                        Text(item.rawValue)
-                            .font(Face.meta)
+                        Text(item.rawValue.sentenceCased)
+                            .font(Face.label)
                             .foregroundStyle(tab == item ? Ink.text : Ink.muted)
                     }
                     .buttonStyle(.plain)

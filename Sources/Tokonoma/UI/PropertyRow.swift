@@ -1,23 +1,14 @@
 import SwiftUI
 import TokonomaCore
 
-/// One adjustable setting: label on the left, its control on the right, 36pt tall.
+/// One adjustable setting from a wallpaper's manifest, drawn with the shared controls.
 struct PropertyRow: View {
     let spec: PropertySpec
     let value: PropertyValue
     let onChange: (PropertyValue) -> Void
 
     var body: some View {
-        HStack(spacing: Space.m) {
-            Text(spec.label)
-                .font(Face.body)
-                .foregroundStyle(Ink.secondary)
-                .frame(width: 104, alignment: .leading)
-                .lineLimit(1)
-            control
-                .frame(maxWidth: .infinity, alignment: .trailing)
-        }
-        .frame(minHeight: 36)
+        SettingRow(label: spec.label.sentenceCased) { control }
     }
 
     @ViewBuilder private var control: some View {
@@ -40,11 +31,13 @@ struct PropertyRow: View {
             // No `step:` here: macOS would draw a tick for every step. The model snaps instead.
             Slider(value: binding, in: lo...hi)
                 .controlSize(.small)
+                .tint(Ink.shu)
+                .frame(width: 140)
             Text(format(binding.wrappedValue))
                 .font(Face.meta)
                 .monospacedDigit()
                 .foregroundStyle(Ink.muted)
-                .frame(width: 36, alignment: .trailing)
+                .frame(width: 32, alignment: .trailing)
         }
     }
 
@@ -52,27 +45,15 @@ struct PropertyRow: View {
         let options = spec.options ?? []
         let binding = Binding<String>(get: { value.text ?? "" }, set: { onChange(.text($0)) })
         if options.count <= 4 {
-            Picker("", selection: binding) {
-                ForEach(options, id: \.self) { Text($0).tag($0) }
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-            .controlSize(.small)
+            ChoiceBar(options: options, selection: binding)
         } else {
-            Picker("", selection: binding) {
-                ForEach(options, id: \.self) { Text($0).tag($0) }
-            }
-            .pickerStyle(.menu)
-            .labelsHidden()
-            .controlSize(.small)
-            .fixedSize()
+            MenuChoice(options: options, selection: binding)
         }
     }
 
     private var toggle: some View {
         Toggle("", isOn: Binding(get: { value.flag ?? false }, set: { onChange(.flag($0)) }))
-            .toggleStyle(.switch)
-            .controlSize(.mini)
+            .toggleStyle(ShuToggleStyle())
             .labelsHidden()
     }
 
