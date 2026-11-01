@@ -49,7 +49,7 @@ final class DesktopController {
     private func makeDesk(screen: NSScreen, id: String) -> Desk {
         let host = WallpaperHost()
         host.onError = { [weak self] message in self?.onError?(message) }
-        let window = DesktopWindow(screen: screen, displayID: id, content: host.webView)
+        let window = DesktopWindow(screen: screen, displayID: id, content: host.view)
         let occlusion = NotificationCenter.default.addObserver(forName: NSWindow.didChangeOcclusionStateNotification, object: window, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.onChange?() }
         }

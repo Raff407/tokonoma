@@ -157,7 +157,7 @@ struct LivePreview: NSViewRepresentable {
         host.setFps(30)
         host.webView.pageZoom = zoom
         host.load(wallpaper, properties: properties, root: root, isolation: isolation)
-        return host.webView
+        return host.view
     }
 
     private var zoom: CGFloat { max(0.15, min(1, width / Self.virtualWidth)) }

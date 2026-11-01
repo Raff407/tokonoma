@@ -5,9 +5,18 @@ import WebKit
 /// One WKWebView running one wallpaper page, plus the bridge to talk to it.
 /// Remembers what it was last told (pause, fps) and repeats it once the page
 /// reports ready, so calls made mid-load are never lost.
+///
+/// A web process keeps every file permission it was ever given, so a community
+/// page loaded where a built-in had run could read your whole library (tested).
+/// Each change of trust (whole library vs one folder) gets a brand-new web view
+/// inside the same stable `view`.
 @MainActor
 final class WallpaperHost: NSObject {
-    let webView: WKWebView
+    /// What windows and previews embed; the web view inside it can be swapped.
+    let view = NSView()
+    private(set) var webView: WKWebView
+    /// The folder the current web process has been allowed to read.
+    private var grantedRoot: URL?
     private(set) var wallpaperID: String?
     private(set) var properties: [String: PropertyValue] = [:]
     /// What the page booted with; anything newer is sent once it's ready.
@@ -23,20 +32,47 @@ final class WallpaperHost: NSObject {
     var onError: ((String) -> Void)?
 
     override init() {
+        webView = Self.makeWebView()
+        super.init()
+        attach(webView)
+    }
+
+    private static func makeWebView() -> WKWebView {
         let config = WKWebViewConfiguration()
         // Imported videos and pictures are file:// too; without this the
         // canvas they're drawn into is tainted and WebGL refuses it.
         config.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
         config.mediaTypesRequiringUserActionForPlayback = []
         config.suppressesIncrementalRendering = true
+        // Its own throwaway data store: WebKit keys its process cache on it, so
+        // a new web view can never be handed a process a trusted page used.
+        config.websiteDataStore = .nonPersistent()
         Lockdown.apply(to: config.preferences)
         NetworkLock.apply(to: config.userContentController)
-        webView = WKWebView(frame: .zero, configuration: config)
-        super.init()
+        let webView = WKWebView(frame: .zero, configuration: config)
         webView.setValue(false, forKey: "drawsBackground")
         webView.underPageBackgroundColor = .black
+        return webView
+    }
+
+    private func attach(_ webView: WKWebView) {
         webView.navigationDelegate = self
         webView.configuration.userContentController.add(WeakMessageHandler(self), name: "tokonoma")
+        webView.frame = view.bounds
+        webView.autoresizingMask = [.width, .height]
+        view.addSubview(webView)
+    }
+
+    /// Throws the old web process away with everything it was allowed to read.
+    private func freshWebView() {
+        let zoom = webView.pageZoom
+        webView.navigationDelegate = nil
+        webView.configuration.userContentController.removeScriptMessageHandler(forName: "tokonoma")
+        webView.stopLoading()
+        webView.removeFromSuperview()
+        webView = Self.makeWebView()
+        webView.pageZoom = zoom
+        attach(webView)
     }
 
     /// `isolation` is for community wallpapers: the trusted kasuri scripts are
@@ -53,6 +89,9 @@ final class WallpaperHost: NSObject {
         ready = false
         reportedError = false
         lastLoad = (wallpaper, root, isolation)
+        let readable = isolation == nil ? root : wallpaper.folder
+        if let granted = grantedRoot, granted.standardizedFileURL != readable.standardizedFileURL { freshWebView() }
+        grantedRoot = readable
         let controller = webView.configuration.userContentController
         controller.removeAllUserScripts()
         controller.addUserScript(Lockdown.script)
@@ -62,7 +101,7 @@ final class WallpaperHost: NSObject {
         for script in isolation ?? [] {
             controller.addUserScript(WKUserScript(source: script, injectionTime: .atDocumentStart, forMainFrameOnly: true))
         }
-        webView.loadFileURL(wallpaper.entryURL, allowingReadAccessTo: isolation == nil ? root : wallpaper.folder)
+        webView.loadFileURL(wallpaper.entryURL, allowingReadAccessTo: readable)
     }
 
     func apply(_ properties: [String: PropertyValue]) {

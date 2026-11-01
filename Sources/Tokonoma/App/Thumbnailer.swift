@@ -12,7 +12,7 @@ final class Thumbnailer {
     private var busy = false
     private lazy var host: WallpaperHost = {
         let host = WallpaperHost()
-        host.webView.frame = NSRect(x: 0, y: 0, width: 960, height: 600)
+        host.view.frame = NSRect(x: 0, y: 0, width: 960, height: 600)
         host.setPaused(true)
         return host
     }()
