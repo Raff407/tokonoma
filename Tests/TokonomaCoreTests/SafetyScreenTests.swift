@@ -31,6 +31,13 @@ private func landscape(width: Int = 320, height: Int = 200) throws -> CGImage {
         #expect(score >= 0 && score < 0.7)
     }
 
+    @Test func longerClipsGetDenserSampling() {
+        #expect(SafetyScreen.sampleCount(seconds: 1) == 10)
+        #expect(SafetyScreen.sampleCount(seconds: 30) == 60)
+        #expect(SafetyScreen.sampleCount(seconds: 60) == 120)
+        #expect(SafetyScreen.sampleCount(seconds: 600) == 120)
+    }
+
     @Test func verdictsKeepTheWorstFrame() {
         let merged = SafetyVerdict(nsfw: 0.1, frames: 2).merged(SafetyVerdict(nsfw: 0.8, frames: 3))
         #expect(merged == SafetyVerdict(nsfw: 0.8, frames: 5))

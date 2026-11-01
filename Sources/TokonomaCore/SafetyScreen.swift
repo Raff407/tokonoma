@@ -40,8 +40,15 @@ public struct SafetyVerdict: Codable, Equatable, Sendable {
 /// on top of Apple's built-in Vision feature print; no image leaves the Mac.
 public final class SafetyScreen: @unchecked Sendable {
     private let model: VNCoreMLModel
-    /// Frames sampled from a clip, spread evenly over its length.
+    /// Clips are sampled twice a second (at least 10 frames, at most 120 for
+    /// a full minute), so nothing explicit can hide between samples for long.
     public static let clipSamples = 10
+    public static let samplesPerSecond = 2.0
+    public static let maxSamples = 120
+
+    static func sampleCount(seconds: Double) -> Int {
+        min(maxSamples, max(clipSamples, Int((seconds * samplesPerSecond).rounded(.up))))
+    }
 
     public init(compiledModel: URL) throws {
         do {
@@ -90,7 +97,8 @@ public final class SafetyScreen: @unchecked Sendable {
             throw SafetyError.unreadable(name)
         }
         let count = CGImageSourceGetCount(source)
-        let picks = Set((0..<min(count, Self.clipSamples)).map { $0 * count / min(count, Self.clipSamples) })
+        let wanted = min(count, Self.maxSamples)
+        let picks = Set((0..<wanted).map { $0 * count / wanted })
         let frames = picks.sorted().compactMap { MediaPrep.frame(source, at: $0, maxSide: 512) }
         guard !frames.isEmpty else { throw SafetyError.unreadable(name) }
         return try screen(images: frames)
@@ -104,11 +112,12 @@ public final class SafetyScreen: @unchecked Sendable {
         let generator = AVAssetImageGenerator(asset: asset)
         generator.appliesPreferredTrackTransform = true
         generator.maximumSize = CGSize(width: 512, height: 512)
-        generator.requestedTimeToleranceBefore = CMTime(seconds: 0.5, preferredTimescale: 600)
-        generator.requestedTimeToleranceAfter = CMTime(seconds: 0.5, preferredTimescale: 600)
+        generator.requestedTimeToleranceBefore = CMTime(seconds: 0.1, preferredTimescale: 600)
+        generator.requestedTimeToleranceAfter = CMTime(seconds: 0.1, preferredTimescale: 600)
+        let samples = Self.sampleCount(seconds: seconds)
         var frames: [CGImage] = []
-        for i in 0..<Self.clipSamples {
-            let at = seconds * (Double(i) + 0.5) / Double(Self.clipSamples)
+        for i in 0..<samples {
+            let at = seconds * (Double(i) + 0.5) / Double(samples)
             if let (image, _) = try? await generator.image(at: CMTime(seconds: at, preferredTimescale: 600)) {
                 frames.append(image)
             }
