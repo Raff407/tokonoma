@@ -16,7 +16,7 @@ final class WallpaperHost: NSObject {
     private var paused = false
     private var fps = 30
     private var scale = 2.0
-    private var lastLoad: (wallpaper: Wallpaper, root: URL)?
+    private var lastLoad: (wallpaper: Wallpaper, root: URL, isolation: [String]?)?
     private var crashes: [Date] = []
     var onError: ((String) -> Void)?
 
@@ -27,6 +27,7 @@ final class WallpaperHost: NSObject {
         config.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
         config.mediaTypesRequiringUserActionForPlayback = []
         config.suppressesIncrementalRendering = true
+        NetworkLock.apply(to: config.userContentController)
         webView = WKWebView(frame: .zero, configuration: config)
         super.init()
         webView.setValue(false, forKey: "drawsBackground")
@@ -35,18 +36,28 @@ final class WallpaperHost: NSObject {
         webView.configuration.userContentController.add(WeakMessageHandler(self), name: "tokonoma")
     }
 
-    func load(_ wallpaper: Wallpaper, properties: [String: PropertyValue], root: URL) {
+    /// `isolation` is for community wallpapers: the trusted kasuri scripts are
+    /// injected from here and the page may read only its own folder, so it
+    /// never sees the rest of the library or your imported files.
+    func load(_ wallpaper: Wallpaper, properties: [String: PropertyValue], root: URL, isolation: [String]? = nil) {
+        if isolation != nil && !NetworkLock.isReady {
+            onError?("\(wallpaper.name) wasn't started because the network block isn't ready yet.")
+            return
+        }
         wallpaperID = wallpaper.id
         self.properties = properties
         bootProperties = properties
         ready = false
-        lastLoad = (wallpaper, root)
+        lastLoad = (wallpaper, root, isolation)
         let controller = webView.configuration.userContentController
         controller.removeAllUserScripts()
         let props = (try? PropertyResolver.javascriptObject(properties)) ?? "{}"
         let boot = "window.__tokonoma = { properties: \(props), fps: \(fps), scale: \(scale) };"
         controller.addUserScript(WKUserScript(source: boot, injectionTime: .atDocumentStart, forMainFrameOnly: true))
-        webView.loadFileURL(wallpaper.entryURL, allowingReadAccessTo: root)
+        for script in isolation ?? [] {
+            controller.addUserScript(WKUserScript(source: script, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        }
+        webView.loadFileURL(wallpaper.entryURL, allowingReadAccessTo: isolation == nil ? root : wallpaper.folder)
     }
 
     func apply(_ properties: [String: PropertyValue]) {
@@ -157,7 +168,7 @@ extension WallpaperHost: WKNavigationDelegate {
             return
         }
         NSLog("tokonoma: web process ended for \(wallpaperID ?? "?"), reloading")
-        if let last = lastLoad { load(last.wallpaper, properties: properties, root: last.root) }
+        if let last = lastLoad { load(last.wallpaper, properties: properties, root: last.root, isolation: last.isolation) }
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
