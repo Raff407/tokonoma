@@ -9,14 +9,15 @@ enum NetworkLock {
 
     static func prepare() async {
         guard rules == nil else { return }
-        // WebKit's rule regexes have no alternation, so one rule per scheme.
-        let json = ["^https?://", "^wss?://", "^ftp://"]
-            .map { #"{"trigger":{"url-filter":"\#($0)"},"action":{"type":"block"}}"# }
-            .joined(separator: ",")
-            .wrapped("[", "]")
+        // Block every URL, then let back only what never leaves the Mac. Rules
+        // apply in order; WebKit's regexes have no alternation, so one per scheme.
+        let block = #"{"trigger":{"url-filter":".*"},"action":{"type":"block"}}"#
+        let local = ["^file:", "^data:", "^blob:", "^about:"]
+            .map { #"{"trigger":{"url-filter":"\#($0)"},"action":{"type":"ignore-previous-rules"}}"# }
+        let json = ([block] + local).joined(separator: ",").wrapped("[", "]")
         do {
             rules = try await WKContentRuleListStore.default().compileContentRuleList(
-                forIdentifier: "tokonoma.offline", encodedContentRuleList: json
+                forIdentifier: "tokonoma.offline.v2", encodedContentRuleList: json
             )
         } catch {
             NSLog("tokonoma: network lock failed to compile: \(error)")
