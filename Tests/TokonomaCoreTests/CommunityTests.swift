@@ -111,6 +111,22 @@ private func validator() throws -> PackageValidator {
         #expect(again.id == "paper-moon")
     }
 
+    @Test func someoneElseCantUpdateYourInstall() throws {
+        let root = try makeTempDir()
+        _ = try CommunityInstaller.install(try CommunityPackage.open(packageData()), facts: nil, into: root, existing: [])
+        let existing = WallpaperLibrary.scan(root, builtIn: []).wallpapers
+        let takeover = try CommunityPackage.open(packageData(manifest: manifest(author: "Mallory")))
+        #expect(throws: CommunityError.otherAuthor(installed: "Mika", incoming: "Mallory")) {
+            try CommunityInstaller.install(takeover, facts: nil, into: root, existing: existing)
+        }
+    }
+
+    @Test func hugeFilesAreNotEvenParsed() {
+        #expect(throws: CommunityError.tooBig(CommunityPackage.maxBytes + 1)) {
+            try CommunityPackage.open(Data(count: CommunityPackage.maxBytes + 1))
+        }
+    }
+
     @Test func refusesPathsOutsideThePackage() throws {
         let root = try makeTempDir()
         let pkg = try CommunityPackage.open(packageData(files: [

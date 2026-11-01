@@ -33,6 +33,8 @@ public enum CommunityError: Error, Equatable, CustomStringConvertible {
     case badFile(String)
     case idTaken(String)
     case validatorBroken(String)
+    case tooBig(Int)
+    case otherAuthor(installed: String, incoming: String)
 
     public var description: String {
         switch self {
@@ -42,6 +44,8 @@ public enum CommunityError: Error, Equatable, CustomStringConvertible {
         case let .badFile(path): "The package contains \(path), which isn't allowed."
         case let .idTaken(id): "\"\(id)\" is already used by a wallpaper that didn't come from the community, so it was left alone."
         case let .validatorBroken(why): "The safety checks couldn't run (\(why)), so nothing was installed."
+        case let .tooBig(bytes): "This package is \(bytes / 1_048_576) MB, far over the marketplace limit, so it wasn't opened."
+        case let .otherAuthor(installed, incoming): "You already have this wallpaper from \(installed). This one is by \(incoming), so it wasn't installed over it. Remove the old one first if you want to switch."
         }
     }
 }
@@ -59,7 +63,12 @@ public struct CommunityPackage: Sendable {
     public let sha256: String
     public let byteCount: Int
 
+    /// Bigger than any legal package (17 MB of media, base64) with room to spare;
+    /// anything past it isn't even parsed.
+    public static let maxBytes = 24 * 1024 * 1024
+
     public static func open(_ data: Data) throws -> CommunityPackage {
+        guard data.count <= maxBytes else { throw CommunityError.tooBig(data.count) }
         guard let envelope = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
               envelope["format"] as? String == "tokonoma-package",
               let body = envelope["body"] as? String,
@@ -272,8 +281,10 @@ public enum CommunityInstaller {
             let range = NSRange(path.startIndex..., in: path)
             guard allowed.firstMatch(in: path, range: range) != nil else { throw CommunityError.badFile(path) }
         }
-        if let clash = existing.first(where: { $0.id.lowercased() == pkg.id }), clash.origin?.source != .community {
-            throw CommunityError.idTaken(pkg.id)
+        if let clash = existing.first(where: { $0.id.lowercased() == pkg.id }) {
+            guard let origin = clash.origin, origin.source == .community else { throw CommunityError.idTaken(pkg.id) }
+            // An "update" from someone else is a takeover, not an update.
+            guard origin.author == pkg.author else { throw CommunityError.otherAuthor(installed: origin.author, incoming: pkg.author) }
         }
         let fm = FileManager.default
         let target = root.appendingPathComponent(pkg.id)
