@@ -10,6 +10,21 @@ struct PendingInstall: Identifiable {
     let replaces: Bool
 }
 
+/// One of your imports on its way to the marketplace (or kept private).
+struct ShareDraft: Identifiable {
+    let id = UUID()
+    let wallpaper: Wallpaper
+    /// Shown right after an import, where "keep it private" is the default.
+    let justImported: Bool
+}
+
+enum ShareState: Equatable {
+    case idle
+    case working(String)
+    case failed(String)
+    case published(MarketEntry, trimmed: Bool)
+}
+
 struct DisplayInfo: Identifiable, Equatable {
     let id: String
     let name: String
@@ -28,6 +43,10 @@ final class AppModel: ObservableObject {
     @Published var notice: String?
     @Published private(set) var importing = 0
     @Published var pendingInstall: PendingInstall?
+    @Published private(set) var market: [MarketEntry] = []
+    @Published var shareDraft: ShareDraft?
+    @Published private(set) var shareState: ShareState = .idle
+    @Published private(set) var checking: String?
 
     static let builtInOrder = ["torii", "koi", "sumi", "fuji", "kaze"]
 
@@ -59,6 +78,10 @@ final class AppModel: ObservableObject {
         }
     }()
     private lazy var kasuriSources: [String] = paths.kasuriScripts.compactMap { try? String(contentsOf: $0, encoding: .utf8) }
+    private lazy var mediaSource: String? = try? String(contentsOf: paths.mediaScript, encoding: .utf8)
+    private lazy var registry = MarketRegistry(root: paths.registry)
+    /// Loaded the first time something is shared or installed, then kept.
+    private var safetyScreen: SafetyScreen?
 
     init(paths: Paths = .standard()) {
         self.paths = paths
@@ -87,6 +110,7 @@ final class AppModel: ObservableObject {
             notice = "The built-in wallpapers couldn't be copied into your library. \(error.localizedDescription)"
         }
         rescan()
+        refreshMarket()
         desktop.onChange = { [weak self] in self?.refreshDesks() }
         desktop.onError = { [weak self] message in self?.notice = "A wallpaper hit a problem: \(message)" }
         monitor.onChange = { [weak self] _ in self?.refreshPlayback() }
@@ -110,9 +134,12 @@ final class AppModel: ObservableObject {
 
     // MARK: - Reading
 
-    /// Community wallpapers get kasuri injected and can read only their own folder.
+    /// Community wallpapers get kasuri injected and can read only their own
+    /// folder. Shared clips and pictures get the media player injected too.
     func isolation(for wallpaper: Wallpaper) -> [String]? {
-        wallpaper.isCommunity ? kasuriSources : nil
+        guard wallpaper.isCommunity else { return nil }
+        guard wallpaper.isMedia else { return kasuriSources }
+        return kasuriSources + [mediaSource].compactMap { $0 }
     }
 
     func wallpaper(_ id: String) -> Wallpaper? {
@@ -133,6 +160,7 @@ final class AppModel: ObservableObject {
 
     var summary: String {
         if importing > 0 { return "Importing…" }
+        if let checking { return "Checking \(checking)…" }
         if settings.userPaused { return "Paused" }
         let states = Array(playback.values)
         if states.isEmpty { return "Starting" }
@@ -214,16 +242,40 @@ final class AppModel: ObservableObject {
         rescan()
         thumbnailer.render(wallpapers.filter { outcome.added.contains($0.id) })
         if !outcome.failures.isEmpty { notice = outcome.failures.joined(separator: "\n") }
+        // One file at a time gets the private-or-publish choice; a batch stays private.
+        if outcome.added.count == 1, let added = wallpaper(outcome.added[0]) {
+            share(added, justImported: true)
+        }
         return outcome.added
     }
 
     // MARK: - Community packages
 
-    /// Opens a .tokonoma, checks its fingerprint and runs every rule on it.
-    /// Nothing is installed here: a clean package waits for the user's yes.
+    /// Opens a .tokonoma, checks its fingerprint, runs every rule on it and
+    /// screens its pictures and clips. Nothing is installed here: a clean
+    /// package waits for the user's yes.
     func review(_ url: URL) {
+        guard let data = try? Data(contentsOf: url) else {
+            notice = "\(url.lastPathComponent) couldn't be opened."
+            return
+        }
+        Task { await review(data, label: url.lastPathComponent) }
+    }
+
+    func install(_ entry: MarketEntry) {
         do {
-            let package = try CommunityPackage.open(Data(contentsOf: url))
+            let data = try registry.download(entry)
+            Task { await review(data, label: entry.name) }
+        } catch {
+            notice = (error as? CustomStringConvertible)?.description ?? error.localizedDescription
+        }
+    }
+
+    private func review(_ data: Data, label: String) async {
+        checking = label
+        defer { checking = nil }
+        do {
+            let package = try CommunityPackage.open(data)
             guard let validator else { throw CommunityError.validatorBroken("the checks are missing from this copy of Tokonoma") }
             let report = try validator.validate(package)
             guard report.ok else {
@@ -231,11 +283,82 @@ final class AppModel: ObservableObject {
                     + report.errors.map { "• \($0.message)" }.joined(separator: "\n")
                 return
             }
+            // Screened again here: a check that only ran on someone else's Mac doesn't count.
+            let screen = try await loadSafetyScreen()
+            let verdict = try await Task.detached(priority: .userInitiated) { try await screen.screen(package: package) }.value
+            if verdict.frames > 0 || package.isMedia {
+                let judged = try validator.judge(verdict)
+                guard judged.ok else {
+                    notice = "“\(package.name)” wasn't installed: " + judged.errors.map(\.message).joined(separator: "; ")
+                    return
+                }
+            }
             pendingInstall = PendingInstall(package: package, report: report, replaces: wallpaper(package.id)?.isCommunity == true)
-        } catch let error as CommunityError {
-            notice = error.description
         } catch {
-            notice = "\(url.lastPathComponent) couldn't be opened: \(error.localizedDescription)"
+            notice = (error as? CustomStringConvertible)?.description ?? "\(label) couldn't be opened: \(error.localizedDescription)"
+        }
+    }
+
+    private func loadSafetyScreen() async throws -> SafetyScreen {
+        if let safetyScreen { return safetyScreen }
+        let screen = try await SafetyScreen.load(model: paths.nsfwModel, cache: paths.modelCache)
+        safetyScreen = screen
+        return screen
+    }
+
+    // MARK: - Marketplace
+
+    func refreshMarket() {
+        market = registry.list().sorted { $0.publishedAt > $1.publishedAt }
+    }
+
+    func preview(for entry: MarketEntry) -> URL? {
+        registry.previewURL(entry)
+    }
+
+    /// The marketplace copy of one of yours, if you've published it.
+    func listing(for wallpaper: Wallpaper) -> MarketEntry? {
+        let id = Publisher.marketID(for: wallpaper.name)
+        return market.first { $0.isMedia && $0.id == id && $0.author == settings.authorName && !settings.authorName.isEmpty }
+    }
+
+    func share(_ wallpaper: Wallpaper, justImported: Bool = false) {
+        guard wallpaper.isMedia, !wallpaper.isCommunity, !wallpaper.isBuiltIn else { return }
+        shareState = .idle
+        shareDraft = ShareDraft(wallpaper: wallpaper, justImported: justImported)
+    }
+
+    func closeShare() {
+        shareDraft = nil
+        shareState = .idle
+    }
+
+    /// Light copy → nudity screen → package → validate.js → listed. Any no stops it.
+    func publish(_ wallpaper: Wallpaper, name: String, description: String, author: String) {
+        let author = author.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !author.isEmpty, !name.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        guard let validator else {
+            shareState = .failed(CommunityError.validatorBroken("the checks are missing from this copy of Tokonoma").description)
+            return
+        }
+        update { $0.with(\.authorName, author) }
+        shareState = .working("Making a light copy and screening it")
+        let request = Publisher.Request(
+            wallpaper: wallpaper, name: name, description: description, author: author, values: properties(for: wallpaper)
+        )
+        let registry = registry
+        let preview = thumbnailer.cachedJPEG(for: wallpaper)
+        Task {
+            do {
+                let screen = try await loadSafetyScreen()
+                let result = try await Task.detached(priority: .userInitiated) {
+                    try await Publisher.publish(request, registry: registry, validator: validator, screen: screen, preview: preview)
+                }.value
+                refreshMarket()
+                shareState = .published(result.entry, trimmed: result.trimmed)
+            } catch {
+                shareState = .failed((error as? CustomStringConvertible)?.description ?? error.localizedDescription)
+            }
         }
     }
 
