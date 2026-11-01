@@ -21,6 +21,7 @@ struct InspectorView: View {
                 heading
                 if let origin = wallpaper.origin { CommunityNote(origin: origin) }
                 actions
+                if wallpaper.isMedia && !wallpaper.isBuiltIn && !wallpaper.isCommunity { sharing }
                 if !wallpaper.manifest.properties.isEmpty { properties }
                 if !wallpaper.isBuiltIn { removal }
             }
@@ -90,6 +91,19 @@ struct InspectorView: View {
                 .menuStyle(.button)
                 .buttonStyle(QuietButtonStyle())
                 .fixedSize()
+            }
+        }
+    }
+
+    /// Imports are private until you choose otherwise.
+    private var sharing: some View {
+        HStack(spacing: Space.s) {
+            Button("Share to market…") { model.share(wallpaper) }
+                .buttonStyle(QuietButtonStyle())
+            if let listing = model.listing(for: wallpaper) {
+                Text("in the market · v\(listing.version)").font(Face.meta).foregroundStyle(Ink.muted)
+            } else {
+                Text("private").font(Face.meta).foregroundStyle(Ink.muted)
             }
         }
     }
