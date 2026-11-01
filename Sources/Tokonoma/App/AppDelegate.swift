@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var model: AppModel!
     private var menu: StatusMenu!
     private var libraryWindow: NSWindow?
@@ -34,6 +34,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc func nextWallpaper() { model.showNext() }
     @objc func showLibrary() { openLibrary() }
 
+    /// A closed library keeps nothing running: its live preview and views go with it.
+    func windowWillClose(_ notification: Notification) {
+        guard (notification.object as? NSWindow) === libraryWindow else { return }
+        libraryWindow?.contentView = nil
+        libraryWindow = nil
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         model.stop()
     }
@@ -54,6 +61,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             window.contentView = NSHostingView(rootView: LibraryView().environmentObject(model))
             window.center()
             window.setFrameAutosaveName("TokonomaLibrary")
+            window.delegate = self
             libraryWindow = window
         }
         NSApp.activate(ignoringOtherApps: true)

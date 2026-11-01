@@ -15,6 +15,7 @@ final class WallpaperHost: NSObject {
     private var ready = false
     private var paused = false
     private var fps = 30
+    private var scale = 2.0
     private var lastLoad: (wallpaper: Wallpaper, root: URL)?
     private var crashes: [Date] = []
     var onError: ((String) -> Void)?
@@ -43,7 +44,7 @@ final class WallpaperHost: NSObject {
         let controller = webView.configuration.userContentController
         controller.removeAllUserScripts()
         let props = (try? PropertyResolver.javascriptObject(properties)) ?? "{}"
-        let boot = "window.__tokonoma = { properties: \(props), fps: \(fps) };"
+        let boot = "window.__tokonoma = { properties: \(props), fps: \(fps), scale: \(scale) };"
         controller.addUserScript(WKUserScript(source: boot, injectionTime: .atDocumentStart, forMainFrameOnly: true))
         webView.loadFileURL(wallpaper.entryURL, allowingReadAccessTo: root)
     }
@@ -65,6 +66,13 @@ final class WallpaperHost: NSObject {
         guard value != fps else { return }
         fps = value
         if ready { call("setFps(\(value))") }
+    }
+
+    /// Device pixels per point for the weave: 2 for Retina-sharp, 1 to save power.
+    func setScale(_ value: Double) {
+        guard value != scale else { return }
+        scale = value
+        if ready { call("setScale(\(value))") }
     }
 
     func pointer(x: Double, y: Double, active: Bool) {

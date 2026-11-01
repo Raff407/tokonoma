@@ -120,6 +120,7 @@ final class AppModel: ObservableObject {
         case .covered: "Resting behind your windows"
         case .battery: "Resting on battery"
         case .lowPower: "Resting in Low Power Mode"
+        case .hot: "Resting while the Mac cools down"
         }
     }
 
@@ -254,8 +255,10 @@ final class AppModel: ObservableObject {
     private func refreshPlayback() {
         var next: [String: Playback] = [:]
         for (display, desk) in desktop.desks {
-            let decision = PlaybackPolicy.decide(monitor.conditions.with(\.covered, desk.window.isCovered), settings)
+            let conditions = monitor.conditions.with(\.covered, desk.window.isCovered)
+            let decision = PlaybackPolicy.decide(conditions, settings)
             next[display] = decision
+            desk.host.setScale(PlaybackPolicy.renderScale(conditions, settings))
             switch decision {
             case let .play(fps):
                 desk.host.setFps(fps)

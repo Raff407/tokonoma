@@ -21,8 +21,13 @@ final class SystemMonitor {
         watch(distributed, Notification.Name("com.apple.screenIsLocked")) { $0.with(\.sessionActive, false) }
         watch(distributed, Notification.Name("com.apple.screenIsUnlocked")) { $0.with(\.sessionActive, true) }
         watch(.default, .NSProcessInfoPowerStateDidChange) { $0.with(\.lowPower, ProcessInfo.processInfo.isLowPowerModeEnabled) }
+        watch(.default, ProcessInfo.thermalStateDidChangeNotification) { $0.with(\.thermal, Self.thermal()) }
 
-        update { $0.with(\.lowPower, ProcessInfo.processInfo.isLowPowerModeEnabled).with(\.onBattery, Self.onBattery()) }
+        update {
+            $0.with(\.lowPower, ProcessInfo.processInfo.isLowPowerModeEnabled)
+                .with(\.onBattery, Self.onBattery())
+                .with(\.thermal, Self.thermal())
+        }
         // Power-source callbacks need a C trampoline; a slow poll is plenty for this.
         batteryTimer = Timer.scheduledTimer(withTimeInterval: 20, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.update { $0.with(\.onBattery, Self.onBattery()) } }
@@ -41,6 +46,16 @@ final class SystemMonitor {
         guard next != conditions else { return }
         conditions = next
         onChange?(next)
+    }
+
+    static func thermal() -> Conditions.Thermal {
+        switch ProcessInfo.processInfo.thermalState {
+        case .nominal: .nominal
+        case .fair: .fair
+        case .serious: .serious
+        case .critical: .critical
+        @unknown default: .serious
+        }
     }
 
     static func onBattery() -> Bool {
