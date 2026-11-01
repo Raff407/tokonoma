@@ -280,7 +280,9 @@ void main() {
     let raf = 0;
     // The host can pause us and so can the page going hidden; play only when neither holds.
     const holds = { host: false, hidden: false };
-    let gate = C.frameGate((root.__tokonoma && root.__tokonoma.fps) || 0);
+    // A scene can ask for fewer frames than the host allows (slow ink needs no 30fps).
+    const capped = (fps) => (spec.maxFps ? Math.min(fps || spec.maxFps, spec.maxFps) : fps);
+    let gate = C.frameGate(capped((root.__tokonoma && root.__tokonoma.fps) || 0));
 
     function layout() {
       const dpr = root.devicePixelRatio || 1;
@@ -366,7 +368,7 @@ void main() {
     root.tokonoma = {
       apply,
       setPaused: (value) => setHold('host', Boolean(value)),
-      setFps(fps) { gate = C.frameGate(fps); },
+      setFps(fps) { gate = C.frameGate(capped(fps)); },
       pointer,
       step,
       capture,
