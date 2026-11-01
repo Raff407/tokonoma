@@ -166,15 +166,20 @@ function buildServer() {
     try {
       const packed = fs.readFileSync(file, 'utf8');
       const pkg = P.unpack(packed);
+      // Nothing from an uploaded package touches the disk until every rule has
+      // passed, and then only at paths that stay inside the scratch folder.
+      const checked = V.validatePackage(pkg, { packageBytes: Buffer.byteLength(packed, 'utf8') });
+      if (!checked.ok) throw new Error('Upload refused:\n' + checked.errors.map((e) => `- ${e.code}: ${e.message}`).join('\n'));
+      if (pkg.manifest && pkg.manifest.kind === 'media') {
+        throw new Error('Media wallpapers (your own clips and pictures) are published from the Tokonoma app, which screens every frame first.');
+      }
       // Render from a scratch copy so the registry judges what was uploaded, not a local folder.
       const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'tokonoma-publish-'));
       fs.writeFileSync(path.join(scratch, 'wallpaper.json'), JSON.stringify(pkg.manifest));
       for (const [p, f] of Object.entries(pkg.files)) {
-        fs.mkdirSync(path.dirname(path.join(scratch, p)), { recursive: true });
-        fs.writeFileSync(path.join(scratch, p), f.text ?? Buffer.from(f.bytes));
-      }
-      if (pkg.manifest && pkg.manifest.kind === 'media') {
-        throw new Error('Media wallpapers (your own clips and pictures) are published from the Tokonoma app, which screens every frame first.');
+        const target = insideFolder(scratch, p);
+        fs.mkdirSync(path.dirname(target), { recursive: true });
+        fs.writeFileSync(target, f.text ?? Buffer.from(f.bytes));
       }
       const render = S.inspect(scratch);
       fs.rmSync(scratch, { recursive: true, force: true });
@@ -277,6 +282,14 @@ function buildServer() {
   return server;
 }
 
+/** `rel` resolved under `root`, or an error if it would land anywhere else. */
+function insideFolder(root, rel) {
+  const base = path.resolve(root);
+  const target = path.resolve(base, rel);
+  if (!target.startsWith(base + path.sep)) throw new Error(`Refused a file path outside the package: ${rel}`);
+  return target;
+}
+
 // ---- transports -----------------------------------------------------------
 
 function agentToken() {
@@ -294,15 +307,29 @@ function agentToken() {
 function serveHTTP(port) {
   const token = agentToken();
   const allowedHosts = new Set([`127.0.0.1:${port}`, `localhost:${port}`, ...(process.env.TOKONOMA_PUBLIC_HOST ? [process.env.TOKONOMA_PUBLIC_HOST] : [])]);
+  // Hashing both sides first gives equal-length buffers, so the comparison
+  // can't throw on odd input and still takes the same time either way.
+  const digest = (s) => crypto.createHash('sha256').update(String(s), 'utf8').digest();
+  const expected = digest(token);
   const httpServer = http.createServer(async (req, res) => {
-    const url = new URL(req.url, `http://${req.headers.host}`);
-    const given = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || url.searchParams.get('key') || '';
-    const sameToken = given.length === token.length && crypto.timingSafeEqual(Buffer.from(given), Buffer.from(token));
-    // Host check stops a web page in your browser reaching this through DNS rebinding.
-    if (!allowedHosts.has(req.headers.host) || url.pathname !== '/mcp') {
+    // Host check first: it stops a web page in your browser reaching this through DNS rebinding.
+    if (!allowedHosts.has(req.headers.host)) {
       res.writeHead(404).end();
       return;
     }
+    let url;
+    try {
+      url = new URL(req.url, `http://${req.headers.host}`);
+    } catch {
+      res.writeHead(400).end();
+      return;
+    }
+    if (url.pathname !== '/mcp') {
+      res.writeHead(404).end();
+      return;
+    }
+    const given = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || url.searchParams.get('key') || '';
+    const sameToken = crypto.timingSafeEqual(digest(given), expected);
     if (!sameToken) {
       res.writeHead(401, { 'content-type': 'application/json' }).end(JSON.stringify({ error: 'missing or wrong key' }));
       return;

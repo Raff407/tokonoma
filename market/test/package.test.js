@@ -123,3 +123,34 @@ test('registry lists media only after a clean nudity screen', () => {
   assert.equal(entry.preview, 'lantern-walk-1.jpg');
   assert.ok(fs.existsSync(path.join(reg.previews, entry.preview)));
 });
+
+test('registry refuses to serve a package that changed after it was listed', () => {
+  const reg = new LocalRegistry(fs.mkdtempSync(path.join(os.tmpdir(), 'tokonoma-reg-')));
+  const entry = reg.publish(P.pack(folder()).text);
+  const other = P.pack(folder({ version: 9 })).text;
+  fs.writeFileSync(path.join(reg.packages, entry.file), other);
+  assert.throws(() => reg.download('paper-moon'), /tampered/);
+});
+
+test('publishing a package with ../ paths writes nothing outside its scratch folder', async () => {
+  const { Client } = await import('@modelcontextprotocol/sdk/client/index.js');
+  const { StdioClientTransport } = await import('@modelcontextprotocol/sdk/client/stdio.js');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tokonoma-trav-'));
+  const victim = path.join(dir, 'victim.txt');
+  fs.writeFileSync(victim, 'original');
+  const evil = P.encode({
+    manifest: { id: 'evil-one', name: 'Evil', author: { name: 'x' }, version: 1, properties: [] },
+    files: { 'scene.js': { text: 'Kasuri.run({});' }, ['../'.repeat(12) + victim.slice(1)]: { text: 'PWNED' } },
+  });
+  fs.writeFileSync(path.join(dir, 'evil.tokonoma'), evil);
+  const client = new Client({ name: 'test', version: '1' });
+  await client.connect(new StdioClientTransport({
+    command: process.execPath,
+    args: [path.join(__dirname, '..', 'src', 'server.js')],
+    env: { ...process.env, TOKONOMA_APP: 'none', TOKONOMA_REGISTRY: path.join(dir, 'reg') },
+  }));
+  const result = await client.callTool({ name: 'tokonoma_publish', arguments: { package: path.join(dir, 'evil.tokonoma') } });
+  await client.close();
+  assert.match(result.content[0].text, /refused/);
+  assert.equal(fs.readFileSync(victim, 'utf8'), 'original');
+});
