@@ -321,6 +321,7 @@
       ramp: 'lines',
       cell: 9,
     },
+    maxFps: 20,
     setup,
     draw,
     onProps(props, api) {

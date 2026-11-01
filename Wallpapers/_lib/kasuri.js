@@ -284,8 +284,11 @@ void main() {
     const capped = (fps) => (spec.maxFps ? Math.min(fps || spec.maxFps, spec.maxFps) : fps);
     let gate = C.frameGate(capped((root.__tokonoma && root.__tokonoma.fps) || 0));
 
+    // The host may cap the pixel ratio (1× on battery): same grid, a quarter of the pixels.
+    let maxScale = (root.__tokonoma && root.__tokonoma.scale) || Infinity;
+
     function layout() {
-      const dpr = root.devicePixelRatio || 1;
+      const dpr = Math.min(root.devicePixelRatio || 1, maxScale);
       const grid = C.gridSize(root.innerWidth, root.innerHeight, props.cell);
       const cellPx = grid.cell * dpr;
       out.width = Math.round(grid.cols * cellPx);
@@ -374,6 +377,12 @@ void main() {
       apply,
       setPaused: (value) => setHold('host', Boolean(value)),
       setFps(fps) { gate = C.frameGate(capped(fps)); },
+      setScale(value) {
+        if (value === maxScale) return;
+        maxScale = value;
+        layout();
+        if (paused) render(0);
+      },
       pointer,
       click,
       step,
