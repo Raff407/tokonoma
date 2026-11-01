@@ -67,12 +67,10 @@
     defaults: { mode: 'glyph' },
     draw(ctx, t, dt, api) { ctx.fillStyle = '#204030'; ctx.fillRect(0, 0, api.cols, api.rows); },
   });
-  const done = Promise.all(attacks);
-  const wait = setInterval(() => {
-    if (!window.tokonoma) return;
-    clearInterval(wait);
-    window.tokonoma.inspect = () => done.then(() => results);
-    // Hand the host a fake capture: arbitrary bytes the app would decode natively.
-    window.tokonoma.capture = () => Promise.resolve('data:image/jpeg;base64,' + btoa('not really a jpeg'.repeat(10)));
-  }, 50);
+  // Reported through --probe; the scene can no longer touch window.tokonoma.
+  window.__redteam = Promise.all(attacks).then(() => {
+    try { window.tokonoma.inspect = () => ({ faked: true }); results.replaceInspect = 'REPLACED'; } catch (e) { results.replaceInspect = 'blocked'; }
+    results.replaceInspect = window.tokonoma.inspect.toString().includes('faked') ? 'REPLACED' : 'blocked';
+    return results;
+  });
 })();

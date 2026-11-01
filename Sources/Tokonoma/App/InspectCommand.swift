@@ -52,7 +52,8 @@ enum InspectCommand {
     private static func inspect(_ folder: URL, out: URL?) async throws -> [String: Any] {
         await NetworkLock.prepare()
         let paths = Paths.standard()
-        let staging = try stage(folder)
+        let warm = argument(after: "--warm").map(URL.init(fileURLWithPath:))
+        let staging = try stage(folder, inside: warm)
         defer { try? FileManager.default.removeItem(at: staging) }
 
         let manifest = try Manifest.decode(Data(contentsOf: staging.appendingPathComponent(WallpaperLibrary.manifestName)))
@@ -60,8 +61,14 @@ enum InspectCommand {
         let scripts = try paths.kasuriScripts.map { try String(contentsOf: $0, encoding: .utf8) }
 
         let host = WallpaperHost()
-        host.webView.frame = NSRect(x: 0, y: 0, width: 1512, height: 982)
+        host.view.frame = NSRect(x: 0, y: 0, width: 1512, height: 982)
         host.setPaused(true)
+        // --warm <library folder>: run a trusted page in this host first, the way the
+        // desktop or thumbnailer would, so the red team can check nothing carries over.
+        if let warm, let first = WallpaperLibrary.scan(warm, builtIn: []).wallpapers.first {
+            host.load(first, properties: [:], root: warm)
+            for _ in 0..<50 where !host.isReady { try await Task.sleep(for: .milliseconds(100)) }
+        }
         host.load(wallpaper, properties: PropertyResolver.resolve(manifest.properties, overrides: [:]), root: staging, isolation: scripts)
         for _ in 0..<80 where !host.isReady {
             try await Task.sleep(for: .milliseconds(100))
@@ -81,6 +88,12 @@ enum InspectCommand {
             return Data(base64Encoded: String(dataURL[dataURL.index(after: comma)...]))
         }
         if let out, let still { try still.write(to: out) }
+        // --probe: the red-team scene's own report (window.__redteam), kept apart from the metrics.
+        if CommandLine.arguments.contains("--probe") {
+            metrics["probe"] = try? await host.webView.callAsyncJavaScript(
+                "return window.__redteam ? await window.__redteam : null", arguments: [:], in: nil, contentWorld: .page
+            )
+        }
         if let verdict = await screen(still: still, assets: staging.appendingPathComponent("assets"), paths: paths) {
             metrics["nsfw"] = verdict.nsfw
             metrics["screenedFrames"] = verdict.frames
@@ -103,9 +116,9 @@ enum InspectCommand {
     }
 
     /// Copies only what a package may contain, then writes the trusted page.
-    private static func stage(_ folder: URL) throws -> URL {
+    private static func stage(_ folder: URL, inside parent: URL? = nil) throws -> URL {
         let fm = FileManager.default
-        let staging = fm.temporaryDirectory.appendingPathComponent("tokonoma-inspect-\(UUID().uuidString)")
+        let staging = (parent ?? fm.temporaryDirectory).appendingPathComponent("tokonoma-inspect-\(UUID().uuidString)")
         try fm.createDirectory(at: staging.appendingPathComponent("assets"), withIntermediateDirectories: true)
         for name in ["scene.js", "README.md"] where fm.fileExists(atPath: folder.appendingPathComponent(name).path) {
             try fm.copyItem(at: folder.appendingPathComponent(name), to: staging.appendingPathComponent(name))
