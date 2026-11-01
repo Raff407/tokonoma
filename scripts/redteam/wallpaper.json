@@ -1,0 +1,2 @@
+{"id":"hostile-probe","name":"Hostile probe","entry":"index.html","author":{"name":"x"},
+ "properties":[{"key":"mode","label":"weave","type":"choice","options":["glyph"],"default":"glyph"},{"key":"cell","label":"cell","type":"range","min":4,"max":16,"default":8}]}
