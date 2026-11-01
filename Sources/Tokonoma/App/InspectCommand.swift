@@ -73,15 +73,33 @@ enum InspectCommand {
             throw InspectError.neverStarted(probe as? String ?? "page didn't answer")
         }
 
-        let metrics = try await host.webView.callAsyncJavaScript(
+        var metrics = try await host.webView.callAsyncJavaScript(
             "return await window.tokonoma.inspect()", arguments: [:], in: nil, contentWorld: .page
         ) as? [String: Any] ?? [:]
-        if let out, let dataURL = await host.capture(width: 1024),
-           let comma = dataURL.firstIndex(of: ","),
-           let jpeg = Data(base64Encoded: String(dataURL[dataURL.index(after: comma)...])) {
-            try jpeg.write(to: out)
+        let still = await host.capture(width: 1024).flatMap { dataURL -> Data? in
+            guard let comma = dataURL.firstIndex(of: ",") else { return nil }
+            return Data(base64Encoded: String(dataURL[dataURL.index(after: comma)...]))
+        }
+        if let out, let still { try still.write(to: out) }
+        if let verdict = await screen(still: still, assets: staging.appendingPathComponent("assets"), paths: paths) {
+            metrics["nsfw"] = verdict.nsfw
+            metrics["screenedFrames"] = verdict.frames
         }
         return metrics
+    }
+
+    /// The rendered still and every image asset through the nudity screen.
+    /// nil (no score) when the model can't load, so the registry says "not run".
+    private static func screen(still: Data?, assets: URL, paths: Paths) async -> SafetyVerdict? {
+        guard let screen = try? await SafetyScreen.load(model: paths.nsfwModel, cache: paths.modelCache) else { return nil }
+        var verdict = SafetyVerdict.empty
+        if let still, let seen = try? screen.screen(picture: still, name: "render") { verdict = verdict.merged(seen) }
+        for asset in (try? FileManager.default.contentsOfDirectory(at: assets, includingPropertiesForKeys: nil)) ?? [] {
+            if let data = try? Data(contentsOf: asset), let seen = try? screen.screen(picture: data, name: asset.lastPathComponent) {
+                verdict = verdict.merged(seen)
+            }
+        }
+        return verdict.frames > 0 ? verdict : nil
     }
 
     /// Copies only what a package may contain, then writes the trusted page.
