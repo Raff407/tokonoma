@@ -1,0 +1,103 @@
+# Tokonoma — rules for working on this repo
+
+Read this before changing anything. It is the agreed shape of the project;
+when a change contradicts it, update this file in the same commit.
+
+## What this is
+
+A free, private Wallpaper Engine for macOS. Animated scenes are painted small
+and woven into glyphs/blocks/dots by **kasuri** (WebGL2), shown behind the
+desktop icons by a native Swift app. Agents can make new scenes through an
+MCP server; shared scenes travel as `.tokonoma` packages.
+
+```
+Wallpapers/_lib/        kasuri.js, kasuri-core.js, sky.js, media.js/.html
+Wallpapers/<scene>/     wallpaper.json + index.html + scene.js (+ helpers)
+Sources/TokonomaCore/   pure logic: manifest, settings, policy, importer, community
+Sources/Tokonoma/Host/  desktop windows, WebKit bridge, monitors, network lock
+Sources/Tokonoma/App/   model, menus, thumbnails, --inspect, agent server
+Sources/Tokonoma/UI/    SwiftUI library window (Theme.swift holds the tokens)
+market/                 rules.js + validate.js (shared checks), package, registry, MCP server
+web/test, Tests/        node:test and Swift Testing suites
+scripts/                bundle.sh, bench.swift, make-icon.swift
+```
+
+## Commands
+
+```bash
+xcrun swift test                      # Swift core (plain `swift` is a broken swiftly toolchain)
+cd web && npm test                    # kasuri, marbling, sky
+cd market && npm test                 # validator, packages, registry
+xcrun swift scripts/bench.swift       # ms/frame of every scene in real WebKit
+scripts/bundle.sh --install           # build, sign, copy to /Applications
+python3 -m http.server 8765 --directory Wallpapers   # preview scenes; ?mode=raw&cell=4
+```
+
+- Writes to `.git`, `swift build`, `gh` and `/Applications` need the Bash sandbox off.
+- npm: pass `--cache "$TMPDIR/npm-cache"` (`~/.npm` has root-owned files; don't chown).
+- `tokonoma.step(1/30, n)` in a page renders frames by hand when the pane is hidden.
+
+## Git
+
+- Author is always Raff (`152933632+Raff407@users.noreply.github.com`). Never add
+  Co-Authored-By or any AI attribution, in commits, PRs or comments.
+- Many small commits, messages short, lowercase and human: `koi pond, fish run from the cursor`,
+  `save settings once sliders settle`. No `feat(scope):` prefixes.
+- Repo: `Raff407/tokonoma` (private), branch `main`. Ask Raff before git operations
+  unless he has already asked for them in the current request.
+
+## Look of the app (unslop direction)
+
+- Product: a free live-wallpaper host; one woven scene behind your icons.
+- Character: quiet, exact, a little ceremonial. World: a tokonoma alcove at night.
+- Neutrals from `Ink` in Theme.swift only. **Shu `#D6452C` is the only accent and means
+  "on"**: the hanko seal on what's hanging, switches that are on, slider fill. Selection
+  stays neutral. System blue never appears.
+- Type: SF Pro for words (sentence case), SF Mono for values/counts/status (lowercase),
+  Hiragino Mincho for kanji only. Weights 400/500.
+- Controls: `ShuToggleStyle`, `ChoiceBar` (≤ 4 options), `MenuChoice`, `SettingRow`,
+  `QuietButtonStyle`, `PrimaryButtonStyle` (one per screen). 4pt grid, rows 36pt.
+- No emoji, gradients on chrome, glows or bouncy motion. The live preview is the one rich thing.
+
+## Scenes
+
+- Paint `api.cols × api.rows` pixels only; cache anything still into layers.
+- Budget: under ~2 ms/frame in `bench.swift`; never over 6 (the community limit).
+  Ask for `maxFps` 20–24 if motion is slow. No per-frame allocation in hot loops.
+- Palette: ink, washi, indigo, vermilion, moss, gold. No neon, nothing flashes.
+- Default weave glyph/block/dot, never raw. Declare `mode` and `cell` properties.
+- Interactive scenes set `"interactive": true` and use `api.pointer` / `onClick`.
+- Adding a built-in: folder + manifest + index.html, then add the id to
+  `AppModel.builtInOrder`, `ShippedWallpaperTests`, `market/src/server.js` EXAMPLES,
+  `market/test/validate.test.js` calibration list, `scripts/bench.swift`, README table.
+- Official scenes must pass `market/src/validate.js` like any community scene.
+
+## Battery
+
+Pause when covered, asleep, locked, Low Power Mode, critically hot; half fps when hot;
+1× pixels on battery/low power/heat (`PlaybackPolicy.renderScale`). Thumbnail and
+preview web views are freed when idle. Don't add timers or polling that run while paused.
+
+## Community wallpapers and agents — security model (don't weaken)
+
+1. `market/src/validate.js` + `rules.js` is the single rulebook. It runs in the MCP
+   server, in the registry on upload, and in the app via JavaScriptCore before install.
+2. Packages hold only `wallpaper.json`, `scene.js`, `README.md`, small `assets/` images.
+   The app writes `index.html` itself. Fingerprint = SHA-256 of the body string.
+3. At runtime every web view has the `NetworkLock` content rules (no http/ws/ftp).
+   Community scenes get kasuri injected as user scripts and read access to their own
+   folder only. Verified by a hostile test scene: both escapes blocked.
+4. `.origin.json` is written by the app, never taken from a package. Nothing published
+   through the MCP server or registry is ever marked verified.
+5. Installs always go through the review sheet with the third-party warning, author,
+   size, grid, images and checks. Agents can't install silently (`tokonoma_try` opens the sheet).
+6. HTTP MCP listens on 127.0.0.1 only, checks Host, needs the key in
+   `~/Library/Application Support/Tokonoma/agent-token`.
+
+## Gotchas
+
+- WebKit content-rule regexes have no `|`; write one rule per scheme.
+- Hidden (windowless) WKWebViews don't decode video: imported videos get a native
+  `poster.jpg` so thumbnails work.
+- `Settings` clashes with SwiftUI's `Settings`; use `TokonomaCore.Settings`.
+- The Agents pane needs Node.js on the user's Mac; say so plainly when it's missing.
