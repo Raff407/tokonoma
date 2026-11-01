@@ -4,8 +4,14 @@
  * The host writes a tiny index.html next to the file with
  * <body data-media="clip.mp4">. In a browser, ?src=path works too.
  */
-(function () {
+(function start() {
   'use strict';
+
+  // Shared media gets this file injected at document start, before <body> exists.
+  if (!document.body) {
+    document.addEventListener('DOMContentLoaded', start, { once: true });
+    return;
+  }
 
   const K = KasuriCore;
   const VIDEO = /\.(mp4|m4v|mov|webm)$/i;
