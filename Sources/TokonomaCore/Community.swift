@@ -47,6 +47,8 @@ public enum CommunityError: Error, Equatable, CustomStringConvertible {
 }
 
 /// A .tokonoma file, opened and fingerprint-checked. Nothing on disk yet.
+/// The format is package.js's: { format, formatVersion, sha256, body }, where
+/// body is the JSON text of { manifest, files } and sha256 is its hash.
 public struct CommunityPackage: Sendable {
     public let id: String
     public let name: String
@@ -96,6 +98,31 @@ public struct CommunityPackage: Sendable {
         )
     }
 
+    /// The other direction, for publishing from the app: manifest + files → package bytes.
+    public static func encode(manifest: [String: Any], files: [String: Data]) throws -> Data {
+        var encoded: [String: Any] = [:]
+        for (path, data) in files {
+            let isText = path.hasSuffix(".js") || path.hasSuffix(".md")
+            encoded[path] = isText
+                ? ["encoding": "utf8", "data": String(decoding: data, as: UTF8.self)]
+                : ["encoding": "base64", "data": data.base64EncodedString()]
+        }
+        let body = String(decoding: try JSONSerialization.data(withJSONObject: ["manifest": manifest, "files": encoded], options: [.sortedKeys]), as: UTF8.self)
+        let hash = SHA256.hash(data: Data(body.utf8)).map { String(format: "%02x", $0) }.joined()
+        return try JSONSerialization.data(withJSONObject: [
+            "format": "tokonoma-package", "formatVersion": 1, "sha256": hash, "body": body,
+        ], options: [.sortedKeys])
+    }
+
+    /// Media wallpapers: one clip or picture, no code.
+    public var isMedia: Bool {
+        ((try? JSONSerialization.jsonObject(with: manifestJSON)) as? [String: Any])?["kind"] as? String == "media"
+    }
+
+    /// The validator reads sizes and headers, never whole clips, so binaries
+    /// past this many bytes are handed over truncated (with their real size).
+    static let headerBytes = 512 * 1024
+
     /// The shape validate.js expects: text for scripts, byte arrays for images.
     func validatorInput() throws -> String {
         var files: [String: Any] = [:]
@@ -103,7 +130,7 @@ public struct CommunityPackage: Sendable {
             if path.hasSuffix(".js") || path.hasSuffix(".md") {
                 files[path] = ["size": data.count, "text": String(decoding: data, as: UTF8.self)]
             } else {
-                files[path] = ["size": data.count, "bytes": [UInt8](data)]
+                files[path] = ["size": data.count, "bytes": [UInt8](data.prefix(Self.headerBytes))]
             }
         }
         let manifest = try JSONSerialization.jsonObject(with: manifestJSON)
@@ -113,19 +140,29 @@ public struct CommunityPackage: Sendable {
 }
 
 public struct ValidationReport: Decodable, Sendable {
-    public struct Issue: Decodable, Sendable, Equatable {
+    public struct Issue: Codable, Sendable, Equatable {
         public let code: String
         public let message: String
     }
 
-    public struct Asset: Decodable, Sendable, Equatable {
+    public struct Asset: Codable, Sendable, Equatable {
         public let path: String
         public let width: Int
         public let height: Int
         public let bytes: Int
     }
 
-    public struct Facts: Decodable, Sendable, Equatable {
+    public struct Media: Codable, Sendable, Equatable {
+        public let type: String
+        public let width: Int
+        public let height: Int
+        public let seconds: Double?
+        public let bytes: Int
+    }
+
+    public struct Facts: Codable, Sendable, Equatable {
+        public let kind: String?
+        public let media: Media?
         public let author: String?
         public let packageBytes: Int
         public let sceneBytes: Int
@@ -141,6 +178,12 @@ public struct ValidationReport: Decodable, Sendable {
     public let errors: [Issue]
     public let warnings: [Issue]
     public let facts: Facts
+}
+
+/// validate.js `judgeScreen`: did the nudity screen run, and did it come back clean.
+public struct ScreenReport: Decodable, Sendable {
+    public let ok: Bool
+    public let errors: [ValidationReport.Issue]
 }
 
 /// Runs market/src/validate.js, the same file the MCP server and registry
@@ -170,12 +213,22 @@ public final class PackageValidator: @unchecked Sendable {
         }
         return try JSONDecoder().decode(ValidationReport.self, from: Data(json.utf8))
     }
+
+    /// The threshold lives in rules.js, so the app judges exactly like the registry.
+    public func judge(_ verdict: SafetyVerdict) throws -> ScreenReport {
+        context.setObject(String(decoding: try JSONEncoder().encode(verdict), as: UTF8.self), forKeyedSubscript: "__screen" as NSString)
+        guard let json = context.evaluateScript("JSON.stringify(TokonomaValidate.judgeScreen(JSON.parse(__screen)))")?.toString(),
+              json != "undefined"
+        else { throw CommunityError.validatorBroken(context.exception?.toString() ?? "no screen verdict") }
+        return try JSONDecoder().decode(ScreenReport.self, from: Data(json.utf8))
+    }
 }
 
 /// Writes a checked package into the library. Only ever writes the files it
 /// expects, under names it chose, and generates the page itself.
 public enum CommunityInstaller {
-    static let allowed = try! NSRegularExpression(pattern: #"^(scene\.js|README\.md|assets/[a-z0-9][a-z0-9._-]{0,60}\.(png|jpe?g|webp))$"#)
+    static let allowed = try! NSRegularExpression(pattern: #"^(scene\.js|README\.md|assets/[a-z0-9][a-z0-9._-]{0,60}\.(png|jpe?g|webp)|media\.(mp4|jpe?g|png|webp))$"#)
+    static let mediaName = try! NSRegularExpression(pattern: #"^media\.(mp4|jpe?g|png|webp)$"#)
 
     /// The only HTML a community wallpaper ever gets. kasuri is injected by the
     /// app at load time, so the page can't reach the shared library folder.
@@ -190,6 +243,26 @@ public enum CommunityInstaller {
         </body>
         </html>
         """
+    }
+
+    /// A shared clip or picture gets the same page an import does, minus the
+    /// script tags: kasuri and media.js are injected, like every community page.
+    public static func mediaPage(title: String, media: String) -> String {
+        let safe = title.replacingOccurrences(of: "<", with: "").replacingOccurrences(of: "&", with: "")
+        return """
+        <!doctype html>
+        <html lang="en">
+        <head><meta charset="utf-8"><title>\(safe)</title></head>
+        <body data-media="\(media)"></body>
+        </html>
+        """
+    }
+
+    /// What the "grid" line says: cells for a scene, size and length for media.
+    public static func describeGrid(_ facts: ValidationReport.Facts) -> String {
+        guard let media = facts.media else { return facts.grid }
+        let length = media.seconds.map { String(format: " · %.0f s", $0) } ?? ""
+        return "\(media.type) \(media.width)×\(media.height)\(length), woven to fit any display"
     }
 
     @discardableResult
@@ -219,14 +292,24 @@ public enum CommunityInstaller {
             }
             var manifest = (try JSONSerialization.jsonObject(with: pkg.manifestJSON) as? [String: Any]) ?? [:]
             manifest["entry"] = "index.html"
-            manifest["media"] = nil
+            let media = manifest["media"] as? String
+            let html: String
+            if pkg.isMedia, let media, mediaName.firstMatch(in: media, range: NSRange(media.startIndex..., in: media)) != nil,
+               pkg.files[media] != nil {
+                html = mediaPage(title: pkg.name, media: media)
+            } else if pkg.isMedia {
+                throw CommunityError.badFile("media")
+            } else {
+                manifest["media"] = nil
+                html = page(title: pkg.name)
+            }
             try JSONSerialization.data(withJSONObject: manifest, options: [.prettyPrinted, .sortedKeys])
                 .write(to: incoming.appendingPathComponent(WallpaperLibrary.manifestName))
-            try Data(page(title: pkg.name).utf8).write(to: incoming.appendingPathComponent("index.html"))
+            try Data(html.utf8).write(to: incoming.appendingPathComponent("index.html"))
 
             let origin = Origin(
                 source: .community, author: pkg.author, authorURL: pkg.authorURL, sha256: pkg.sha256,
-                installedAt: Date(), verified: false, packageBytes: pkg.byteCount, grid: facts?.grid
+                installedAt: Date(), verified: false, packageBytes: pkg.byteCount, grid: facts.map(describeGrid)
             )
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
