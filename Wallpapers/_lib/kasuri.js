@@ -361,6 +361,11 @@ void main() {
       return still.toDataURL('image/jpeg', 0.86);
     }
 
+    // A click on the desktop, from the host (or the mouse in a browser), in cells.
+    function click(nx, ny) {
+      if (spec.onClick) spec.onClick(nx * api.cols, ny * api.rows, api);
+    }
+
     function pointer(nx, ny, active) {
       api.pointer = { x: nx * api.cols, y: ny * api.rows, active: active !== false };
     }
@@ -370,6 +375,7 @@ void main() {
       setPaused: (value) => setHold('host', Boolean(value)),
       setFps(fps) { gate = C.frameGate(capped(fps)); },
       pointer,
+      click,
       step,
       capture,
       get props() { return props; },
@@ -379,6 +385,7 @@ void main() {
     if (!root.webkit || !root.webkit.messageHandlers || !root.webkit.messageHandlers.tokonoma) {
       root.addEventListener('pointermove', (e) => pointer(e.clientX / root.innerWidth, e.clientY / root.innerHeight, true));
       root.addEventListener('pointerleave', () => pointer(-1, -1, false));
+      root.addEventListener('pointerdown', (e) => click(e.clientX / root.innerWidth, e.clientY / root.innerHeight));
     }
 
     let resizeTimer = 0;
