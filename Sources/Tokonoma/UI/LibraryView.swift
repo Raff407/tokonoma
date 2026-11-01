@@ -27,6 +27,11 @@ struct LibraryView: View {
         .tint(Ink.shu)
         .preferredColorScheme(.dark)
         .onAppear { if selection == nil { selection = model.settings.fallbackWallpaper } }
+        .sheet(item: $model.pendingInstall) { pending in
+            InstallSheet(pending: pending, install: {
+                if let id = model.confirmInstall() { selection = id }
+            }, cancel: { model.pendingInstall = nil })
+        }
     }
 
     private var header: some View {
@@ -97,8 +102,8 @@ struct LibraryView: View {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
-        panel.allowedContentTypes = MediaImporter.acceptedExtensions.compactMap { UTType(filenameExtension: $0) }
-        panel.message = "Videos, gifs and pictures become wallpapers, woven like the rest"
+        panel.allowedContentTypes = (MediaImporter.acceptedExtensions + ["tokonoma"]).compactMap { UTType(filenameExtension: $0) }
+        panel.message = "Videos, gifs and pictures get woven like the rest. Wallpaper packages (.tokonoma) are checked before anything is installed"
         guard panel.runModal() == .OK else { return }
         let urls = panel.urls
         Task { if let first = await model.importFiles(urls).first { selection = first } }

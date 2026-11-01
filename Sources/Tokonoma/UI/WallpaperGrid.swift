@@ -10,11 +10,13 @@ struct WallpaperGrid: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Space.xxl) {
             section("Scenes", model.wallpapers.filter(\.isBuiltIn))
-            let yours = model.wallpapers.filter { !$0.isBuiltIn }
+            let community = model.wallpapers.filter(\.isCommunity)
+            if !community.isEmpty { section("Community", community) }
+            let yours = model.wallpapers.filter { !$0.isBuiltIn && !$0.isCommunity }
             if yours.isEmpty {
                 VStack(alignment: .leading, spacing: Space.s) {
                     Text("Yours").font(Face.label).foregroundStyle(Ink.secondary)
-                    Text("Drop a video, gif or picture here and it gets woven like the scenes above")
+                    Text("Drop a video, gif or picture here and it gets woven like the scenes above. Wallpaper packages (.tokonoma) go here too")
                         .font(Face.body)
                         .foregroundStyle(Ink.muted)
                 }
@@ -86,6 +88,9 @@ struct WallpaperCard: View {
                 if hanging { Seal() }
             }
             .padding(.horizontal, 3)
+            if let origin = wallpaper.origin {
+                Text("by \(origin.author)").font(Face.meta).foregroundStyle(Ink.muted).lineLimit(1).padding(.horizontal, 3)
+            }
         }
         .contentShape(Rectangle())
         .onHover { inside in withAnimation(Motion.quick) { hovering = inside } }
