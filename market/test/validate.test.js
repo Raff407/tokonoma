@@ -99,9 +99,11 @@ for (const [name, snippet] of [
   });
 }
 
-test('mentions inside comments do not count', () => {
-  const r = V.validatePackage(pkg({ scene: SCENE + '\n// no fetch() here, honest\n/* eval(x) */\n' }));
-  assert.deepEqual(r.errors, []);
+test('forbidden words in comments are refused too, with a clear reason', () => {
+  // The comment stripper can be fooled, so comments are no hiding place.
+  const r = V.validatePackage(pkg({ scene: SCENE + '\n// no fetch() here, honest\n' }));
+  assert.deepEqual(codes(r), ['network']);
+  assert.match(r.errors[0].message, /comment/);
 });
 
 test('minified or packed code is refused', () => {
@@ -316,4 +318,9 @@ test('versions are plain whole numbers (they name registry files)', () => {
   assert.ok(codes(V.validatePackage(pkg({ manifest: { version: 1.5 } }))).includes('bad-manifest'));
   assert.ok(codes(V.validatePackage(pkg({ manifest: { version: 0 } }))).includes('bad-manifest'));
   assert.equal(V.validatePackage(pkg({ manifest: { version: 4 } })).ok, true);
+});
+
+test('hiding code behind a fake comment does not help', () => {
+  const r = V.validatePackage(pkg({ scene: SCENE + "\nconst re = /a\\//; fetch('https://x.example');" }));
+  assert.ok(codes(r).includes('network'));
 });

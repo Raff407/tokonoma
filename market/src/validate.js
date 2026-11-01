@@ -181,8 +181,11 @@
     if ((code.match(/\bKasuri\.run\s*\(/g) || []).length !== 1) {
       errors.push({ code: 'not-kasuri', message: 'scene.js must call Kasuri.run(...) exactly once' });
     }
+    // Checked on the source with and without comments: the comment stripper can be
+    // fooled (a "//" inside a regex literal), so hiding code behind it doesn't help.
     for (const [codeName, pattern, why] of FORBIDDEN) {
       if (pattern.test(code)) errors.push({ code: codeName, message: `scene.js ${why}` });
+      else if (pattern.test(file.text)) errors.push({ code: codeName, message: `scene.js mentions something that ${why} in a comment; reword it (comments are checked too)` });
     }
     const longest = Math.max(0, ...file.text.split('\n').map((l) => l.length));
     const lits = strings(code);
