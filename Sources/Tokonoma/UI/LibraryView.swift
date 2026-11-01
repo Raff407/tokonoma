@@ -45,6 +45,7 @@ struct LibraryView: View {
                 Text("Tokonoma").font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.text)
                 Text("床の間").font(Face.kanji(13)).foregroundStyle(Ink.muted)
             }
+            .fixedSize()
             HStack(spacing: Space.l) {
                 ForEach(Tab.allCases, id: \.self) { item in
                     Button { withAnimation(Motion.quick) { tab = item } } label: {
@@ -55,14 +56,19 @@ struct LibraryView: View {
                     .buttonStyle(.plain)
                 }
             }
-            Spacer()
+            .fixedSize()
+            Spacer(minLength: Space.m)
             Text(model.summary.lowercased())
                 .font(Face.meta)
                 .foregroundStyle(Ink.muted)
+                .lineLimit(1)
+                .truncationMode(.tail)
             Button(model.settings.userPaused ? "Resume" : "Pause") { model.togglePause() }
                 .buttonStyle(QuietButtonStyle())
+                .fixedSize()
             Button("Import…", action: chooseFiles)
                 .buttonStyle(QuietButtonStyle())
+                .fixedSize()
         }
         .padding(.leading, 84) // clear the traffic lights in the transparent title bar
         .padding(.trailing, Space.l)
