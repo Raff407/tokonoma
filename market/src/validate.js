@@ -114,6 +114,8 @@
     if (typeof m.id !== 'string' || !ID.test(m.id)) bad('id must be 3–40 lowercase letters, digits or dashes');
     if (typeof m.name !== 'string' || !m.name.trim() || m.name.length > 40) bad('name must be 1–40 characters');
     if (m.title !== undefined && (typeof m.title !== 'string' || m.title.length > 12)) bad('title must be at most 12 characters');
+    // The version names files in the registry, so it is a plain whole number and nothing else.
+    if (m.version !== undefined && !(Number.isInteger(m.version) && m.version >= 1 && m.version <= 1e6)) bad('version must be a whole number from 1 to 1000000');
     if (m.description !== undefined && (typeof m.description !== 'string' || m.description.length > 240)) bad('description must be at most 240 characters');
     if (m.kind !== undefined && m.kind !== 'media') bad('kind must be "media" or left out for a scene');
     if (m.kind !== 'media' && m.media !== undefined) bad('a scene can\'t carry a media file; share it as kind "media"');

@@ -310,3 +310,10 @@ test('nobody publishes as Tokonoma or hides characters in names', () => {
   assert.ok(codes(V.validatePackage(pkg({ manifest: { name: 'Verified koi' } }))).includes('impersonation'));
   assert.ok(codes(V.validatePackage(pkg({ manifest: { name: 'Koi‮iok' } }))).includes('bad-manifest'));
 });
+
+test('versions are plain whole numbers (they name registry files)', () => {
+  assert.ok(codes(V.validatePackage(pkg({ manifest: { version: '1/../victim-3' } }))).includes('bad-manifest'));
+  assert.ok(codes(V.validatePackage(pkg({ manifest: { version: 1.5 } }))).includes('bad-manifest'));
+  assert.ok(codes(V.validatePackage(pkg({ manifest: { version: 0 } }))).includes('bad-manifest'));
+  assert.equal(V.validatePackage(pkg({ manifest: { version: 4 } })).ok, true);
+});
