@@ -18,6 +18,8 @@ public struct Settings: Codable, Equatable, Sendable {
     public var userPaused: Bool
     /// Keep Retina-sharp glyphs on battery (costs GPU time).
     public var sharpOnBattery: Bool
+    /// The name your marketplace uploads are credited to. Empty until you publish.
+    public var authorName: String
 
     public static let `default` = Settings(
         assignments: [:],
@@ -31,7 +33,8 @@ public struct Settings: Codable, Equatable, Sendable {
         rotateMinutes: 0,
         followCursor: true,
         userPaused: false,
-        sharpOnBattery: false
+        sharpOnBattery: false,
+        authorName: ""
     )
 
     public func wallpaper(for display: String) -> String {
@@ -72,7 +75,7 @@ public struct Settings: Codable, Equatable, Sendable {
 extension Settings {
     private enum Keys: String, CodingKey {
         case assignments, fallbackWallpaper, overrides, pauseWhenCovered, pauseOnBattery, pauseInLowPower
-        case fpsCap, batteryFps, rotateMinutes, followCursor, userPaused, sharpOnBattery
+        case fpsCap, batteryFps, rotateMinutes, followCursor, userPaused, sharpOnBattery, authorName
     }
 
     // Tolerant decoding: a settings file from an older build fills gaps with defaults.
@@ -91,6 +94,7 @@ extension Settings {
         followCursor = try c.decodeIfPresent(Bool.self, forKey: .followCursor) ?? d.followCursor
         userPaused = try c.decodeIfPresent(Bool.self, forKey: .userPaused) ?? d.userPaused
         sharpOnBattery = try c.decodeIfPresent(Bool.self, forKey: .sharpOnBattery) ?? d.sharpOnBattery
+        authorName = try c.decodeIfPresent(String.self, forKey: .authorName) ?? d.authorName
     }
 }
 

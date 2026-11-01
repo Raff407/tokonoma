@@ -82,5 +82,12 @@ import Testing
         let loaded = SettingsStore(url: url).load()
         #expect(loaded.fallbackWallpaper == "koi")
         #expect(loaded.pauseWhenCovered == Settings.default.pauseWhenCovered)
+        #expect(loaded.authorName == "")
+    }
+
+    @Test func theNameYouPublishUnderIsRemembered() throws {
+        let store = SettingsStore(url: try makeTempDir().appendingPathComponent("settings.json"))
+        try store.save(Settings.default.with(\.authorName, "Raff"))
+        #expect(store.load().authorName == "Raff")
     }
 }

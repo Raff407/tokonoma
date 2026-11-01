@@ -4,6 +4,8 @@ import Foundation
 ///   ~/Library/Application Support/Tokonoma/
 ///     Wallpapers/   built-ins (refreshed each launch) + your imports
 ///     Thumbnails/   cached library stills
+///     Registry/     the marketplace (shared with the MCP server)
+///     Models/       the compiled nudity-screen model, when not bundled
 ///     settings.json
 struct Paths {
     let support: URL
@@ -52,6 +54,26 @@ struct Paths {
     }
 
     var mcpServer: URL { marketScripts.appendingPathComponent("server.js") }
+
+    /// Same default as market/src/studio.js, so agents and the app share one market.
+    var registry: URL {
+        ProcessInfo.processInfo.environment["TOKONOMA_REGISTRY"].map(URL.init(fileURLWithPath:))
+            ?? support.appendingPathComponent("Registry", isDirectory: true)
+    }
+
+    var modelCache: URL { support.appendingPathComponent("Models", isDirectory: true) }
+
+    /// Compiled inside the .app (bundle.sh); the raw model in the repo under `swift run`.
+    var nsfwModel: URL {
+        if let inApp = Bundle.main.resourceURL?.appendingPathComponent("Models/NSFW.mlmodelc"),
+           FileManager.default.fileExists(atPath: inApp.path) {
+            return inApp
+        }
+        return bundledWallpapers.deletingLastPathComponent().appendingPathComponent("Resources/Models/NSFW.mlmodel")
+    }
+
+    /// The media player, injected into shared clips and pictures like kasuri is into scenes.
+    var mediaScript: URL { bundledWallpapers.appendingPathComponent("_lib/media.js") }
 
     var mediaTemplate: URL { library.appendingPathComponent("_lib/media.html") }
 
