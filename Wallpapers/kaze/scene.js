@@ -5,7 +5,6 @@
  * The susuki is a few hundred stalks in depth order, each a curved stem with
  * a feathery plume; gusts roll across the field as travelling waves, so
  * neighbouring stalks bow one after another. Seed fluff rides the same wind.
- * The cursor parts the grass, and a click sends a gust out from that spot.
  */
 (function () {
   'use strict';
@@ -123,11 +122,6 @@
       const front = (t - gust.t) * 26;
       const band = Math.exp(-((d - front) ** 2) / 40);
       push += Math.sign(x - gust.x || 1) * band * 0.7 * Math.max(0, 1 - (t - gust.t) / 4);
-    }
-    if (pointer.active) {
-      const dx = x - pointer.x;
-      const near = Math.exp(-(dx * dx) / 30 - ((y - pointer.y) ** 2) / 300);
-      push += Math.sign(dx || 1) * near * 0.9;
     }
     return base + roll + push;
   }
@@ -349,8 +343,5 @@
     maxFps: 24,
     setup,
     draw,
-    onClick(x, y) {
-      state.gusts.push({ x, y, t: state.now || 0 });
-    },
   });
 })();
