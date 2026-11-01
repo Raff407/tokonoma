@@ -22,6 +22,11 @@ rsync -a --exclude '_sample' --exclude '.DS_Store' Wallpapers/ "$APP/Contents/Re
 [[ -d market/node_modules ]] || (cd market && npm ci --omit=dev --cache "${TMPDIR:-/tmp}/npm-cache")
 rsync -a --exclude '.claude' --exclude '.DS_Store' --exclude 'test' market/ "$APP/Contents/Resources/market/"
 
+# The nudity screen's classifier (NSFWDetector by LOVOO, BSD-3), compiled once here.
+mkdir -p "$APP/Contents/Resources/Models"
+xcrun coremlcompiler compile Resources/Models/NSFW.mlmodel "$APP/Contents/Resources/Models" >/dev/null
+cp Resources/Models/NSFW-LICENSE "$APP/Contents/Resources/Models/"
+
 echo "› drawing icon"
 rm -rf build/AppIcon.iconset
 $SWIFT scripts/make-icon.swift build/AppIcon.iconset >/dev/null
