@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import TokonomaCore
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
@@ -17,7 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             await NetworkLock.prepare()
             self.model.start()
             if !self.pendingOpens.isEmpty { self.openLibrary() }
-            self.pendingOpens.forEach { self.model.review($0) }
+            self.take(self.pendingOpens)
             self.pendingOpens = []
         }
         NSApp.mainMenu = MainMenu.make(target: self)
@@ -25,17 +26,24 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if model.isFirstRun { openLibrary() }
     }
 
-    /// Double-clicked .tokonoma files (or `open -a Tokonoma x.tokonoma` from the MCP server).
+    /// Double-clicked .tokonoma files (or `open -a Tokonoma x.tokonoma` from the MCP server),
+    /// and clips or pictures dropped on the Dock icon.
     func application(_ application: NSApplication, open urls: [URL]) {
-        let packages = urls.filter { $0.pathExtension.lowercased() == "tokonoma" }
-        guard !packages.isEmpty else { return }
+        let wanted = urls.filter { $0.pathExtension.lowercased() == "tokonoma" || MediaImporter.kind(of: $0) != nil }
+        guard !wanted.isEmpty else { return }
         // Opening a file can launch the app, before the model or network block exist.
         guard model != nil, NetworkLock.isReady else {
-            pendingOpens += packages
+            pendingOpens += wanted
             return
         }
         openLibrary()
-        packages.forEach { model.review($0) }
+        take(wanted)
+    }
+
+    /// importFiles sends packages to review and imports the rest.
+    private func take(_ urls: [URL]) {
+        guard !urls.isEmpty else { return }
+        Task { await model.importFiles(urls) }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -84,6 +92,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             window.contentView = NSHostingView(rootView: LibraryView().environmentObject(model))
             window.center()
             window.setFrameAutosaveName("TokonomaLibrary")
+            // A frame saved before the minimum existed can be narrower than the layout allows.
+            if window.frame.width < window.minSize.width || window.frame.height < window.minSize.height {
+                var frame = window.frame
+                frame.size = NSSize(width: max(frame.width, window.minSize.width), height: max(frame.height, window.minSize.height))
+                window.setFrame(frame, display: false)
+            }
             window.delegate = self
             libraryWindow = window
         }
