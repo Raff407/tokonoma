@@ -41,6 +41,20 @@ import Testing
         #expect(PlaybackPolicy.decide(calm, s) == .pause(.user))
     }
 
+    @Test func aHotMacSlowsDownThenStops() {
+        #expect(PlaybackPolicy.decide(calm.with(\.thermal, .serious), .default) == .play(fps: 15))
+        #expect(PlaybackPolicy.decide(calm.with(\.thermal, .critical), .default) == .pause(.hot))
+        #expect(PlaybackPolicy.decide(calm.with(\.thermal, .fair), .default) == .play(fps: 30))
+    }
+
+    @Test func rendersAtOneXWhenSavingPower() {
+        #expect(PlaybackPolicy.renderScale(calm, .default) == 2)
+        #expect(PlaybackPolicy.renderScale(calm.with(\.onBattery, true), .default) == 1)
+        #expect(PlaybackPolicy.renderScale(calm.with(\.lowPower, true), .default) == 1)
+        #expect(PlaybackPolicy.renderScale(calm.with(\.thermal, .serious), .default) == 1)
+        #expect(PlaybackPolicy.renderScale(calm.with(\.onBattery, true), Settings.default.with(\.sharpOnBattery, true)) == 2)
+    }
+
     @Test func fpsIsClampedToSomethingSane() {
         #expect(PlaybackPolicy.decide(calm, Settings.default.with(\.fpsCap, 500)) == .play(fps: 120))
         #expect(PlaybackPolicy.decide(calm, Settings.default.with(\.fpsCap, 0)) == .play(fps: 1))

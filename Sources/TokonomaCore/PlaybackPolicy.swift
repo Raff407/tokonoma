@@ -2,18 +2,26 @@ import Foundation
 
 /// What the machine is doing right now, as far as a wallpaper cares.
 public struct Conditions: Equatable, Sendable {
+    /// Mirrors ProcessInfo.ThermalState without importing it into the core.
+    public enum Thermal: Int, Comparable, Sendable {
+        case nominal, fair, serious, critical
+        public static func < (a: Thermal, b: Thermal) -> Bool { a.rawValue < b.rawValue }
+    }
+
     public var covered: Bool
     public var onBattery: Bool
     public var lowPower: Bool
     public var screensAsleep: Bool
     public var sessionActive: Bool
+    public var thermal: Thermal
 
-    public init(covered: Bool, onBattery: Bool, lowPower: Bool, screensAsleep: Bool, sessionActive: Bool) {
+    public init(covered: Bool, onBattery: Bool, lowPower: Bool, screensAsleep: Bool, sessionActive: Bool, thermal: Thermal = .nominal) {
         self.covered = covered
         self.onBattery = onBattery
         self.lowPower = lowPower
         self.screensAsleep = screensAsleep
         self.sessionActive = sessionActive
+        self.thermal = thermal
     }
 
     public static let idle = Conditions(covered: false, onBattery: false, lowPower: false, screensAsleep: false, sessionActive: true)
@@ -26,7 +34,7 @@ public struct Conditions: Equatable, Sendable {
 }
 
 public enum PauseReason: String, Equatable, Sendable {
-    case user, asleep, covered, battery, lowPower
+    case user, asleep, covered, battery, lowPower, hot
 }
 
 public enum Playback: Equatable, Sendable {
@@ -46,8 +54,18 @@ public enum PlaybackPolicy {
         if c.covered && s.pauseWhenCovered { return .pause(.covered) }
         if c.lowPower && s.pauseInLowPower { return .pause(.lowPower) }
         if c.onBattery && s.pauseOnBattery { return .pause(.battery) }
-        let cap = clamp(s.fpsCap)
-        return .play(fps: c.onBattery ? min(cap, clamp(s.batteryFps)) : cap)
+        if c.thermal >= .critical { return .pause(.hot) }
+        var fps = clamp(s.fpsCap)
+        if c.onBattery { fps = min(fps, clamp(s.batteryFps)) }
+        if c.thermal >= .serious { fps = max(fpsRange.lowerBound, fps / 2) }
+        return .play(fps: fps)
+    }
+
+    /// Device pixels per point for the weave. Retina sharpness costs GPU time,
+    /// so it is the first thing to go when power or heat is short.
+    public static func renderScale(_ c: Conditions, _ s: Settings) -> Double {
+        let saving = (c.onBattery && !s.sharpOnBattery) || c.lowPower || c.thermal >= .serious
+        return saving ? 1 : 2
     }
 
     private static func clamp(_ fps: Int) -> Int {

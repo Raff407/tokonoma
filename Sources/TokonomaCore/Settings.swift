@@ -16,6 +16,8 @@ public struct Settings: Codable, Equatable, Sendable {
     public var rotateMinutes: Int
     public var followCursor: Bool
     public var userPaused: Bool
+    /// Keep Retina-sharp glyphs on battery (costs GPU time).
+    public var sharpOnBattery: Bool
 
     public static let `default` = Settings(
         assignments: [:],
@@ -28,7 +30,8 @@ public struct Settings: Codable, Equatable, Sendable {
         batteryFps: 15,
         rotateMinutes: 0,
         followCursor: true,
-        userPaused: false
+        userPaused: false,
+        sharpOnBattery: false
     )
 
     public func wallpaper(for display: String) -> String {
@@ -69,7 +72,7 @@ public struct Settings: Codable, Equatable, Sendable {
 extension Settings {
     private enum Keys: String, CodingKey {
         case assignments, fallbackWallpaper, overrides, pauseWhenCovered, pauseOnBattery, pauseInLowPower
-        case fpsCap, batteryFps, rotateMinutes, followCursor, userPaused
+        case fpsCap, batteryFps, rotateMinutes, followCursor, userPaused, sharpOnBattery
     }
 
     // Tolerant decoding: a settings file from an older build fills gaps with defaults.
@@ -87,6 +90,7 @@ extension Settings {
         rotateMinutes = try c.decodeIfPresent(Int.self, forKey: .rotateMinutes) ?? d.rotateMinutes
         followCursor = try c.decodeIfPresent(Bool.self, forKey: .followCursor) ?? d.followCursor
         userPaused = try c.decodeIfPresent(Bool.self, forKey: .userPaused) ?? d.userPaused
+        sharpOnBattery = try c.decodeIfPresent(Bool.self, forKey: .sharpOnBattery) ?? d.sharpOnBattery
     }
 }
 
