@@ -179,7 +179,7 @@ public enum CommunityInstaller {
 
     /// The only HTML a community wallpaper ever gets. kasuri is injected by the
     /// app at load time, so the page can't reach the shared library folder.
-    static func page(title: String) -> String {
+    public static func page(title: String) -> String {
         let safe = title.replacingOccurrences(of: "<", with: "").replacingOccurrences(of: "&", with: "")
         return """
         <!doctype html>

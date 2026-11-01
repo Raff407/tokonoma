@@ -18,6 +18,8 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/Tokonoma"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 rsync -a --exclude '_sample' --exclude '.DS_Store' Wallpapers/ "$APP/Contents/Resources/Wallpapers/"
+mkdir -p "$APP/Contents/Resources/Market"
+cp market/src/rules.js market/src/validate.js "$APP/Contents/Resources/Market/"
 
 echo "› drawing icon"
 rm -rf build/AppIcon.iconset
