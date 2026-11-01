@@ -22,7 +22,7 @@ struct SettingsView: View {
                     pickerRow("Next scene every", \.rotateMinutes, [0, 15, 60, 360, 1440], format: rotation)
                 }
                 group("Cursor") {
-                    toggleRow("Let koi and ink react to the cursor", \.followCursor)
+                    toggleRow("Let scenes react to the cursor and clicks", \.followCursor)
                 }
                 group("Displays") {
                     if model.displays.isEmpty {

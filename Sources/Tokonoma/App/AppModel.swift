@@ -67,6 +67,7 @@ final class AppModel: ObservableObject {
         desktop.onError = { [weak self] message in self?.notice = "A wallpaper hit a problem: \(message)" }
         monitor.onChange = { [weak self] _ in self?.refreshPlayback() }
         pointer.onMove = { [weak self] point in self?.forwardPointer(point) }
+        pointer.onClick = { [weak self] point in self?.forwardClick(point) }
         monitor.start()
         desktop.syncScreens()
         followCursorIfUseful()
@@ -286,6 +287,14 @@ final class AppModel: ObservableObject {
         guard let hit, let desk = desktop.desks[hit.id],
               wallpaper(settings.wallpaper(for: hit.id))?.manifest.interactive == true else { return }
         desk.host.pointer(x: hit.x, y: hit.y, active: true)
+    }
+
+    /// Only on bare desktop: a click in a window or on the Dock is not for the koi.
+    private func forwardClick(_ point: NSPoint) {
+        guard let hit = desktop.locate(point), let desk = desktop.desks[hit.id],
+              wallpaper(settings.wallpaper(for: hit.id))?.manifest.interactive == true,
+              DesktopHitTest.isBareDesktop(point) else { return }
+        desk.host.click(x: hit.x, y: hit.y)
     }
 
     /// Only restarts the countdown when the interval itself changes, so

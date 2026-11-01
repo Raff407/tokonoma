@@ -73,6 +73,11 @@ final class WallpaperHost: NSObject {
         call(String(format: "pointer(%.4f,%.4f,%@)", x, y, active ? "true" : "false"))
     }
 
+    func click(x: Double, y: Double) {
+        guard ready, !paused else { return }
+        call(String(format: "click(%.4f,%.4f)", x, y))
+    }
+
     /// JPEG data URL of the current scene; nil if the page can't make one in time.
     func capture(width: Int, timeout: Duration = .seconds(8)) async -> String? {
         await withCheckedContinuation { continuation in
