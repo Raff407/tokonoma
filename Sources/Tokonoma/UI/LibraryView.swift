@@ -104,7 +104,7 @@ struct LibraryView: View {
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
         panel.allowedContentTypes = (MediaImporter.acceptedExtensions + ["tokonoma"]).compactMap { UTType(filenameExtension: $0) }
-        panel.message = "Videos, gifs and pictures get woven like the rest. Wallpaper packages (.tokonoma) are checked before anything is installed"
+        panel.message = "Videos, gifs and pictures (png, jpg, webp, heic, avif, tiff, bmp…) get woven like the rest. Wallpaper packages (.tokonoma) are checked before anything is installed"
         guard panel.runModal() == .OK else { return }
         let urls = panel.urls
         Task { if let first = await model.importFiles(urls).first { selection = first } }
