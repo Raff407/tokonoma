@@ -16,6 +16,8 @@ final class DesktopWindow: NSWindow {
         backgroundColor = .black
         isReleasedWhenClosed = false
         animationBehavior = .none
+        // Hiding the app (or another app's "Hide Others") must never take the wallpaper with it.
+        canHide = false
         contentView = content
         place(on: screen)
     }
