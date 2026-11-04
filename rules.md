@@ -75,6 +75,16 @@ python3 -m http.server 8765 --directory Wallpapers   # preview scenes; ?mode=raw
   `market/test/validate.test.js` calibration list, `scripts/bench.swift`, README table.
 - Official scenes must pass `market/src/validate.js` like any community scene.
 
+## Dock and Cmd-Tab
+
+- `LSUIElement` is on: the app runs as wallpaper plus menu-bar torii, with no Dock icon
+  and nothing in Cmd-Tab. `openLibrary` switches to `.regular`; closing the library
+  switches back to `.accessory`. Minimised or hidden still counts as open.
+- Opening by hand shows the library. A login launch doesn't (`LaunchIntent`: login flag,
+  or within 60 s of logging in). AppKit invents a plain `oapp` event for shell launches,
+  so running the binary is not a fair test of a login launch.
+- `DesktopWindow.canHide = false`, so hiding the app never takes the wallpaper with it.
+
 ## Importing media
 
 - `MediaPrep`: animated gif/apng/webp/heics become an H.264 `media.mp4` (WebKit

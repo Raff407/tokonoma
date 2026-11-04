@@ -32,8 +32,9 @@ scripts/bundle.sh --install  # and copies it into /Applications
 open build/Tokonoma.app
 ```
 
-It lives in the menu bar (the little torii). Open Library… to pick a scene,
-tweak it with a live preview, import your own clips, or change when it rests.
+It lives in the menu bar (the little torii), out of the Dock and Cmd-Tab until
+you open it. Open Library… to pick a scene, tweak it with a live preview, import
+your own clips, or change when it rests. Closing the library hides it again.
 
 ## How it works
 
