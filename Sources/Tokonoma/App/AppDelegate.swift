@@ -10,20 +10,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     private var pendingOpens: [URL] = []
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        NSApp.setActivationPolicy(.regular)
+        // LSUIElement keeps the app out of the Dock and Cmd-Tab until the library opens.
+        let openedByHand = LaunchIntent.openedByHand(NSAppleEventManager.shared().currentAppleEvent)
         model = AppModel()
         menu = StatusMenu(model: model) { [weak self] in self?.openLibrary() }
         // Every web view gets the network block, so build it before the first one exists.
         Task { @MainActor in
             await NetworkLock.prepare()
             self.model.start()
-            if !self.pendingOpens.isEmpty { self.openLibrary() }
+            // Quiet at login: only someone opening the app, or the first run, gets a window.
+            if openedByHand || self.model.isFirstRun || !self.pendingOpens.isEmpty { self.openLibrary() }
             self.take(self.pendingOpens)
             self.pendingOpens = []
         }
         NSApp.mainMenu = MainMenu.make(target: self)
-        // Quiet at login: the window only opens by itself the very first time.
-        if model.isFirstRun { openLibrary() }
     }
 
     /// Double-clicked .tokonoma files (or `open -a Tokonoma x.tokonoma` from the MCP server),
@@ -68,6 +68,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         guard (notification.object as? NSWindow) === libraryWindow else { return }
         libraryWindow?.contentView = nil
         libraryWindow = nil
+        // Back to wallpaper only: no Dock icon, nothing in Cmd-Tab, focus returns to the last app.
+        NSApp.setActivationPolicy(.accessory)
+        NSApp.hide(nil)
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -101,6 +104,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             window.delegate = self
             libraryWindow = window
         }
+        NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
         libraryWindow?.makeKeyAndOrderFront(nil)
     }

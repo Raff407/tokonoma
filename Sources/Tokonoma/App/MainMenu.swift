@@ -1,6 +1,6 @@
 import AppKit
 
-/// The menu bar a Dock app needs: app, edit (so text fields copy and paste),
+/// The menu bar shown while the library is open: app, edit (so text fields copy and paste),
 /// wallpaper controls and window.
 @MainActor
 enum MainMenu {
