@@ -40,8 +40,12 @@ struct WallpaperGrid: View {
                         selected: selection == wallpaper.id,
                         hanging: model.isShownAnywhere(wallpaper.id)
                     )
-                    .onTapGesture { selection = wallpaper.id }
-                    .onTapGesture(count: 2) { model.show(wallpaper.id) }
+                    .onTapGesture {
+                        selection = wallpaper.id
+                        // AppKit's count follows the system double-click speed. SwiftUI's
+                        // count: 2 gives up after about 300 ms and misses ordinary double clicks.
+                        if (NSApp.currentEvent?.clickCount ?? 1) >= 2 { model.show(wallpaper.id) }
+                    }
                 }
             }
         }
