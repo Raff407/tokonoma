@@ -1,0 +1,17 @@
+{
+  "id": "toro",
+  "name": "Toro",
+  "title": "灯籠流し",
+  "description": "Paper lanterns set adrift on a night river below a far temple. Click the water to float another one.",
+  "entry": "index.html",
+  "version": 1,
+  "interactive": true,
+  "properties": [
+    {"key": "lanterns", "label": "lanterns", "type": "range", "min": 0.3, "max": 1.9, "step": 0.1, "default": 1},
+    {"key": "drift", "label": "drift", "type": "range", "min": 0.2, "max": 3, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot", "raw"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 8},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
