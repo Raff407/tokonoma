@@ -74,6 +74,11 @@ python3 -m http.server 8765 --directory Wallpapers   # preview scenes; ?mode=raw
   `AppModel.builtInOrder`, `ShippedWallpaperTests`, `market/src/server.js` EXAMPLES,
   `market/test/validate.test.js` calibration list, `scripts/bench.swift`, README table.
 - Official scenes must pass `market/src/validate.js` like any community scene.
+- New built-ins aren't interactive: no `interactive`, `api.pointer` or `onClick`. Raff finds them
+  heavy, and any scene marked interactive starts the global mouse monitors (`PointerTracker`).
+  No per-frame loop over every cell or over thousands of points either.
+- Retiring a built-in: delete it from the lists above and add its id to `BundleSync.retired`,
+  which removes the copy older builds left in the library.
 
 ## Dock and Cmd-Tab
 

@@ -13,7 +13,6 @@ whenever nobody can see them.
 | --- | --- |
 | **Torii** 鳥居 | A shrine gate at the top of mossy steps. Sky follows your clock, trees follow the month, a fox keeps watch. |
 | **Koi** 鯉 | A dark pond from above. The fish scatter when your cursor comes near. |
-| **Sumi** 墨流し | Suminagashi — ink floated on water. Rings keep landing, a slow current folds them, the cursor combs them. |
 | **Fuji** 富士 | The mountain over a still lake, mirrored row by row, with drifting clouds and a pagoda on the shore. |
 | **Kaze** 風 | A sword standing in silver grass under a storm. Gusts roll through the grass, seed fluff drifts on the wind. |
 | **Take** 竹 | A bamboo grove in steady rain. The tall stalks sway from the root, a stone lantern glows through the mist. |
@@ -22,7 +21,6 @@ whenever nobody can see them.
 | **Hotaru** 蛍 | Fireflies over a slow stream on a summer night, each pulsing in its own time. They gather near your cursor. |
 | **Tsuki** 月 | Tonight's moon in its real phase, behind thin cloud, with a pine and a low ridge underneath. |
 | **Nami** 青海波 | The overlapping-scale wave pattern, breathing like a real sea as long swells roll under it. |
-| **Niwa** 枯山水 | A dry garden of raked gravel, three rocks and a little moss. Drag your cursor to rake new lines; they get tidied up slowly. |
 | **Momiji** 紅葉 | Red maple leaves riding a dark stream, slipping round the rocks and away from your cursor. |
 | **Hoshi** 星 | The whole sky turning around the pole star over a dark ridge. The Milky Way goes with it, and a slow meteor now and then. |
 | **Toro** 灯籠流し | Paper lanterns set adrift on a night river below a far temple. Click the water to float another one. |
@@ -36,6 +34,28 @@ whenever nobody can see them.
 | **Densha** 夜汽車 | The last train crossing a viaduct over flooded paddies, window by window, its lights broken up in the water. |
 | **Kurage** 海月 | Moon jellyfish rising through deep indigo water, each on its own slow beat. They turn away from your cursor. |
 | **Suisha** 水車 | A water wheel turning beside an old mill. The sky follows your clock and the window lights up when it gets dark. |
+| **Yokocho** 横丁 | A narrow lantern alley in the rain, late. The wet road holds a wavering copy of every light. |
+| **Ajisai** 紫陽花 | Hydrangeas in the June rains, heads nodding under the drops, and one snail on its way across a leaf. |
+| **Tanada** 棚田 | Flooded rice terraces stepping down a hillside and holding the sky. The colours follow your clock. |
+| **Shika** 鹿 | A stag in a cedar forest at first light, grazing and looking up, with mist sliding through the trunks. |
+| **Fukuro** 梟 | An owl on a branch under a low moon. Its head turns in slow steps and it blinks now and then. |
+| **Usagi** 月見 | A rabbit watching the harvest moon from the silver grass, with dumplings set out and one ear that won't stay still. |
+| **Nagisa** 渚 | A shoreline seen from above. The tide breathes in and out over the sand, and a small crab crosses now and then. |
+| **Isaribi** 漁火 | Squid boats on the night horizon, lamps strung over the sea, and one near boat rocking in silhouette. |
+| **Taki** 滝 | A tall waterfall in a mossy gorge, with maples at the top and mist rolling at the foot. |
+| **Kazan** 火山 | A volcano smouldering at night over a black lake. Smoke rises and leans, lava threads breathe, nothing erupts. |
+| **Onsen** 温泉 | Snow monkeys soaking in a hot spring while it snows. Steam climbs past them and one keeps nodding off. |
+| **Tsuyu** 露 | A spider's web hung with dew at dawn. A band of light travels across, and each drop catches it in turn. |
+| **Kaki** 柿 | A bare persimmon tree in late autumn with the last of its fruit. Crows sit in it and more cross the dusk. |
+| **Kamo** 鴨 | Ducks paddling across a still pond, each with its wake, and willow strands swinging in front. |
+| **Himawari** 向日葵 | A sunflower field under a big summer sky. Rows nod as slow gusts pass and towering cloud drifts behind. |
+| **Shiro** 城 | A white castle on its stone base above the moat. The sky follows your clock and the windows light up after dark. |
+| **Icho** 銀杏 | A ginkgo avenue in November, the road gone gold, with fan-shaped leaves coming down all around. |
+| **Tako** 凧 | New Year kites over a village on a bright cold day, leaning on long strings with their tails waving. |
+| **Koinobori** 鯉のぼり | Carp streamers flying from a tall pole in May. A wave runs from mouth to tail so the cloth fills and ripples. |
+| **Furin** 風鈴 | A glass wind chime under the eaves on a still summer afternoon, stirring when a soft gust comes through. |
+| **Kingyo** 金魚 | Goldfish in a glass bowl on a low table by the window, with swaying weed and a few bubbles rising. |
+| **Chawan** 茶碗 | A bowl of matcha and an iron kettle in a quiet tea room. Only the steam moves, and the light, very slowly. |
 | **Yours** | Drop any video, gif or picture (png, jpg, webp, heic, avif, tiff…) into the library and it gets woven the same way. Gifs play as looping clips. |
 
 Every scene has its own settings (season, wind, fish, inks…) plus the weave:
