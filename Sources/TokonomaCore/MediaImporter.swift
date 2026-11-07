@@ -125,6 +125,10 @@ public enum MediaImporter {
 public enum BundleSync {
     static let skipped: Set<String> = ["_sample"]
 
+    /// Scenes that used to ship. Older builds copied them into the library, and nothing
+    /// else would ever clean them up.
+    public static let retired = ["sumi", "niwa"]
+
     public struct Installation: Equatable, Sendable {
         public let ids: [String]
         public let failures: [String: String]
@@ -142,6 +146,7 @@ public enum BundleSync {
     public static func install(from bundled: URL, into root: URL) throws -> Installation {
         let fm = FileManager.default
         try fm.createDirectory(at: root, withIntermediateDirectories: true)
+        removeRetired(from: root)
         var failures: [String: String] = [:]
         for folder in folders(in: bundled) {
             let name = folder.lastPathComponent
@@ -162,6 +167,22 @@ public enum BundleSync {
         }
         let ids = builtInIDs(in: bundled).filter { failures[$0] == nil }
         return Installation(ids: ids, failures: failures)
+    }
+
+    /// Only a shipped copy goes: anything with an origin came from the market, and an
+    /// import has no scene.js, so a wallpaper of yours with the same id is left alone.
+    private static func removeRetired(from root: URL) {
+        let fm = FileManager.default
+        for id in retired {
+            let folder = root.appendingPathComponent(id)
+            guard fm.fileExists(atPath: folder.appendingPathComponent("scene.js").path),
+                  !fm.fileExists(atPath: folder.appendingPathComponent(".origin.json").path) else { continue }
+            do {
+                try fm.removeItem(at: folder)
+            } catch {
+                NSLog("tokonoma: could not remove retired scene \(id): \(error)")
+            }
+        }
     }
 
     private static func folders(in bundled: URL) -> [URL] {

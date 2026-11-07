@@ -165,6 +165,25 @@ private let template = """
         #expect(FileManager.default.fileExists(atPath: root.appendingPathComponent("torii/index.html").path))
     }
 
+    @Test func removesRetiredBuiltInsButNeverSomeoneElsesWallpaper() throws {
+        let bundled = try makeTempDir()
+        let root = try makeTempDir()
+        try writeWallpaper(bundled, id: "torii")
+        let fm = FileManager.default
+        // A retired scene as an older build left it.
+        try writeWallpaper(root, id: "sumi")
+        try Data("//".utf8).write(to: root.appendingPathComponent("sumi/scene.js"))
+        // Same id, but installed from the market.
+        try writeWallpaper(root, id: "niwa")
+        try Data("//".utf8).write(to: root.appendingPathComponent("niwa/scene.js"))
+        try Data("{}".utf8).write(to: root.appendingPathComponent("niwa/.origin.json"))
+
+        try BundleSync.install(from: bundled, into: root)
+
+        #expect(!fm.fileExists(atPath: root.appendingPathComponent("sumi").path))
+        #expect(fm.fileExists(atPath: root.appendingPathComponent("niwa/scene.js").path))
+    }
+
     @Test func builtInIDsComeFromTheBundleEvenIfInstallFails() throws {
         let bundled = try makeTempDir()
         try writeWallpaper(bundled, id: "koi")
