@@ -48,7 +48,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var shareState: ShareState = .idle
     @Published private(set) var checking: String?
 
-    static let builtInOrder = ["torii", "koi", "sumi", "fuji", "kaze"]
+    static let builtInOrder = ["torii", "koi", "sumi", "fuji", "kaze", "take", "sakura", "yuki", "hotaru", "tsuki", "nami", "niwa", "momiji", "hoshi", "toro", "unkai", "tsuru", "neko", "hanabi", "shoji", "hasu", "kiri", "densha", "kurage", "suisha"]
 
     let paths: Paths
     let isFirstRun: Bool
