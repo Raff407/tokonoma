@@ -16,6 +16,26 @@ whenever nobody can see them.
 | **Sumi** 墨流し | Suminagashi — ink floated on water. Rings keep landing, a slow current folds them, the cursor combs them. |
 | **Fuji** 富士 | The mountain over a still lake, mirrored row by row, with drifting clouds and a pagoda on the shore. |
 | **Kaze** 風 | A sword standing in silver grass under a storm. Gusts roll through the grass, seed fluff drifts on the wind. |
+| **Take** 竹 | A bamboo grove in steady rain. The tall stalks sway from the root, a stone lantern glows through the mist. |
+| **Sakura** 夜桜 | One old cherry tree at night, shedding petals. They pile up underneath, and your cursor is a small gust. |
+| **Yuki** 雪 | A mountain village at night under falling snow. Windows glow and go out one by one, chimney smoke leans with the wind. |
+| **Hotaru** 蛍 | Fireflies over a slow stream on a summer night, each pulsing in its own time. They gather near your cursor. |
+| **Tsuki** 月 | Tonight's moon in its real phase, behind thin cloud, with a pine and a low ridge underneath. |
+| **Nami** 青海波 | The overlapping-scale wave pattern, breathing like a real sea as long swells roll under it. |
+| **Niwa** 枯山水 | A dry garden of raked gravel, three rocks and a little moss. Drag your cursor to rake new lines; they get tidied up slowly. |
+| **Momiji** 紅葉 | Red maple leaves riding a dark stream, slipping round the rocks and away from your cursor. |
+| **Hoshi** 星 | The whole sky turning around the pole star over a dark ridge. The Milky Way goes with it, and a slow meteor now and then. |
+| **Toro** 灯籠流し | Paper lanterns set adrift on a night river below a far temple. Click the water to float another one. |
+| **Unkai** 雲海 | A sea of cloud with peaks standing out of it. The sky follows your clock, the mountains wade through the weather. |
+| **Tsuru** 鶴 | Red-crowned cranes crossing a winter dusk, past a low vermilion sun, with two more standing in the snow. |
+| **Neko** 猫 | A cat asleep on the veranda while it rains in the garden. Bring your cursor close and one eye opens to follow it. |
+| **Hanabi** 花火 | Far-off summer fireworks over a river and a footbridge, unhurried, mirrored in the water. |
+| **Shoji** 障子 | Sunlit paper screens with the garden's shadow moving on them. Sometimes a sparrow lands on the branch. |
+| **Hasu** 蓮 | A lotus pond with real ripples. Rain lands now and then, your cursor leaves a wake, a click drops a stone. |
+| **Kiri** 霧 | Mountains in ink wash on pale paper, with mist moving through the valleys, a far temple and one red seal. |
+| **Densha** 夜汽車 | The last train crossing a viaduct over flooded paddies, window by window, its lights broken up in the water. |
+| **Kurage** 海月 | Moon jellyfish rising through deep indigo water, each on its own slow beat. They turn away from your cursor. |
+| **Suisha** 水車 | A water wheel turning beside an old mill. The sky follows your clock and the window lights up when it gets dark. |
 | **Yours** | Drop any video, gif or picture (png, jpg, webp, heic, avif, tiff…) into the library and it gets woven the same way. Gifs play as looping clips. |
 
 Every scene has its own settings (season, wind, fish, inks…) plus the weave:
