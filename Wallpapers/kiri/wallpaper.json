@@ -1,0 +1,15 @@
+{
+  "id": "kiri",
+  "name": "Kiri",
+  "title": "霧",
+  "description": "Mountains in ink wash on pale paper, with mist moving through the valleys, a far temple and one red seal.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "drift", "label": "drift", "type": "range", "min": 0, "max": 4, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot", "raw"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["kana", "lines", "ascii", "dense"], "default": "kana"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 8},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
