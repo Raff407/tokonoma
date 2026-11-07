@@ -36,7 +36,7 @@ const { LocalRegistry } = require('./registry.js');
 const KASURI_GUIDE = require('./guide.js');
 
 const SCENES = path.join(__dirname, '..', '..', 'Wallpapers');
-const EXAMPLES = ['torii', 'koi', 'sumi', 'fuji', 'kaze', 'take', 'sakura', 'yuki', 'hotaru', 'tsuki', 'nami', 'niwa', 'momiji', 'hoshi', 'toro', 'unkai', 'tsuru', 'neko', 'hanabi', 'shoji', 'hasu', 'kiri', 'densha', 'kurage', 'suisha'];
+const EXAMPLES = ['torii', 'koi', 'fuji', 'kaze', 'take', 'sakura', 'yuki', 'hotaru', 'tsuki', 'nami', 'momiji', 'hoshi', 'toro', 'unkai', 'tsuru', 'neko', 'hanabi', 'shoji', 'hasu', 'kiri', 'densha', 'kurage', 'suisha', 'yokocho', 'ajisai', 'tanada', 'shika', 'fukuro', 'usagi', 'nagisa', 'isaribi', 'taki', 'kazan', 'onsen', 'tsuyu', 'kaki', 'kamo', 'himawari', 'shiro', 'icho', 'tako', 'koinobori', 'furin', 'kingyo', 'chawan'];
 
 const registry = () => new LocalRegistry(S.registryRoot());
 

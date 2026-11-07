@@ -6,7 +6,7 @@ import WebKit
 
 let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
     .appendingPathComponent("Wallpapers")
-let names = CommandLine.arguments.dropFirst().isEmpty ? ["torii", "koi", "sumi", "fuji", "kaze", "take", "sakura", "yuki", "hotaru", "tsuki", "nami", "niwa", "momiji", "hoshi", "toro", "unkai", "tsuru", "neko", "hanabi", "shoji", "hasu", "kiri", "densha", "kurage", "suisha"] : Array(CommandLine.arguments.dropFirst())
+let names = CommandLine.arguments.dropFirst().isEmpty ? ["torii", "koi", "fuji", "kaze", "take", "sakura", "yuki", "hotaru", "tsuki", "nami", "momiji", "hoshi", "toro", "unkai", "tsuru", "neko", "hanabi", "shoji", "hasu", "kiri", "densha", "kurage", "suisha", "yokocho", "ajisai", "tanada", "shika", "fukuro", "usagi", "nagisa", "isaribi", "taki", "kazan", "onsen", "tsuyu", "kaki", "kamo", "himawari", "shiro", "icho", "tako", "koinobori", "furin", "kingyo", "chawan"] : Array(CommandLine.arguments.dropFirst())
 
 @MainActor
 func bench(_ name: String) async -> String {

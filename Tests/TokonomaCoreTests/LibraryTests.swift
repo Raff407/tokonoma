@@ -80,7 +80,7 @@ func writeWallpaper(_ root: URL, id: String, name: String? = nil, json: String? 
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
         let scan = WallpaperLibrary.scan(repo.appendingPathComponent("Wallpapers"), builtIn: [])
         #expect(scan.problems.isEmpty, "\(scan.problems)")
-        #expect(Set(scan.wallpapers.map(\.id)) == ["torii", "koi", "sumi", "fuji", "kaze", "take", "sakura", "yuki", "hotaru", "tsuki", "nami", "niwa", "momiji", "hoshi", "toro", "unkai", "tsuru", "neko", "hanabi", "shoji", "hasu", "kiri", "densha", "kurage", "suisha"])
+        #expect(Set(scan.wallpapers.map(\.id)) == ["torii", "koi", "fuji", "kaze", "take", "sakura", "yuki", "hotaru", "tsuki", "nami", "momiji", "hoshi", "toro", "unkai", "tsuru", "neko", "hanabi", "shoji", "hasu", "kiri", "densha", "kurage", "suisha", "yokocho", "ajisai", "tanada", "shika", "fukuro", "usagi", "nagisa", "isaribi", "taki", "kazan", "onsen", "tsuyu", "kaki", "kamo", "himawari", "shiro", "icho", "tako", "koinobori", "furin", "kingyo", "chawan"])
     }
 
     @Test func importedMediaPropertiesAreWellFormed() {

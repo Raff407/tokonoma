@@ -48,7 +48,7 @@ final class AppModel: ObservableObject {
     @Published private(set) var shareState: ShareState = .idle
     @Published private(set) var checking: String?
 
-    static let builtInOrder = ["torii", "koi", "sumi", "fuji", "kaze", "take", "sakura", "yuki", "hotaru", "tsuki", "nami", "niwa", "momiji", "hoshi", "toro", "unkai", "tsuru", "neko", "hanabi", "shoji", "hasu", "kiri", "densha", "kurage", "suisha"]
+    static let builtInOrder = ["torii", "koi", "fuji", "kaze", "take", "sakura", "yuki", "hotaru", "tsuki", "nami", "momiji", "hoshi", "toro", "unkai", "tsuru", "neko", "hanabi", "shoji", "hasu", "kiri", "densha", "kurage", "suisha", "yokocho", "ajisai", "tanada", "shika", "fukuro", "usagi", "nagisa", "isaribi", "taki", "kazan", "onsen", "tsuyu", "kaki", "kamo", "himawari", "shiro", "icho", "tako", "koinobori", "furin", "kingyo", "chawan"]
 
     let paths: Paths
     let isFirstRun: Bool
@@ -110,6 +110,7 @@ final class AppModel: ObservableObject {
             notice = "The built-in wallpapers couldn't be copied into your library. \(error.localizedDescription)"
         }
         rescan()
+        forgetRetiredScenes()
         refreshMarket()
         desktop.onChange = { [weak self] in self?.refreshDesks() }
         desktop.onError = { [weak self] message in self?.notice = "A wallpaper hit a problem: \(message)" }
@@ -396,6 +397,15 @@ final class AppModel: ObservableObject {
     }
 
     // MARK: - Plumbing
+
+    /// Hanging a scene that no longer ships would leave a blank desktop.
+    private func forgetRetiredScenes() {
+        let gone = BundleSync.retired.filter { wallpaper($0) == nil }
+        let cleaned = gone.reduce(settings) { $0.forgetting($1, fallback: Self.builtInOrder[0]) }
+        guard cleaned != settings else { return }
+        settings = cleaned
+        scheduleSave()
+    }
 
     private func rescan() {
         let order = Self.builtInOrder.filter(builtIns.contains) + builtIns.filter { !Self.builtInOrder.contains($0) }
