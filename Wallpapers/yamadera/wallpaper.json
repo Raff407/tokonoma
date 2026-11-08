@@ -1,0 +1,17 @@
+{
+  "id": "yamadera",
+  "name": "Yamadera",
+  "title": "山寺",
+  "description": "Worn stone steps climb through tall cedars to a small temple gate, lit by stone lanterns. Fog drifts, needles fall and a lone monk slowly climbs.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "fog", "label": "fog", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "needles", "label": "needles", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "glow", "label": "lantern glow", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot", "raw"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
