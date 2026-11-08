@@ -89,6 +89,9 @@ python3 -m http.server 8765 --directory Wallpapers   # preview scenes; ?mode=raw
   or within 60 s of logging in). AppKit invents a plain `oapp` event for shell launches,
   so running the binary is not a fair test of a login launch.
 - `DesktopWindow.canHide = false`, so hiding the app never takes the wallpaper with it.
+- The menu-bar menu lists favourites plus whatever is hanging, never the whole library
+  (it outgrew the screen at 100 scenes). With two or more favourites, Next and rotation
+  step through only them (`Settings.rotationPool`).
 
 ## Importing media
 

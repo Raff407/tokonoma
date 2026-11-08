@@ -113,6 +113,9 @@ whenever nobody can see them.
 | **Enso** 円相 | A large ink circle on pale washi with a blank red seal. An unseen brush draws it slowly in dry streaks, it rests, then fades as the next one begins. |
 | **Asanoha** 麻の葉 | Sliding doors of hemp-leaf kumiko lit from behind by warm paper. A lamp is carried slowly past on the far side, and maple shadows move with it. |
 | **Konbini** コンビニ | A corner convenience store with Mount Fuji rising right behind its roof. Clouds drift past the summit, the shop banners flutter, the odd shopper walks in, and the light follows your clock. |
+| **Kinkaku** 金閣 | The Golden Pavilion across its mirror pond on a late autumn afternoon. Its reflection wavers, mist drifts along the hill and maple leaves fall and float. |
+| **Itsukushima** 厳島 | The great vermilion torii standing in the sea at high tide. Waves break its reflection, gulls and a far boat pass; the sky keeps your clock and the gate is lit at night. |
+| **Inari** 稲荷 | A tunnel of vermilion torii climbing a wooded hill in low afternoon sun, a stone fox at the mouth. Stripes of light slide along the path; dust and leaves drift. |
 | **Yours** | Drop any video, gif or picture (png, jpg, webp, heic, avif, tiff…) into the library and it gets woven the same way. Gifs play as looping clips. |
 
 Every scene has its own settings (season, wind, fish, inks…) plus the weave:
@@ -132,6 +135,9 @@ open build/Tokonoma.app
 It lives in the menu bar (the little torii), out of the Dock and Cmd-Tab until
 you open it. Open Library… to pick a scene, tweak it with a live preview, import
 your own clips, or change when it rests. Closing the library hides it again.
+Star scenes in the library (or right-click one) to make them favourites: the
+menu-bar menu lists only those, the Favourites filter shows just them, and once
+you have two, Next and timed rotation step through them instead of everything.
 
 ## How it works
 
