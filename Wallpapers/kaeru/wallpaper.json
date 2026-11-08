@@ -1,0 +1,16 @@
+{
+  "id": "kaeru",
+  "name": "Kaeru",
+  "title": "蛙",
+  "description": "A big green frog on a mossy stone at a pond's edge in soft rain. Its throat pulses, it blinks now and then, and rings spread across the dark water.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "rain", "label": "rain", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "throat", "label": "throat", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot", "raw"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
