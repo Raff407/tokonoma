@@ -1,0 +1,17 @@
+{
+  "id": "komorebi",
+  "name": "Komorebi",
+  "title": "木漏れ日",
+  "description": "Midday sun through a maple canopy onto a mossy stone path and a temple gate. Pools of light drift over the moss as the leaves sway, with thin shafts and floating dust.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "light", "label": "sunlight", "type": "range", "min": 0, "max": 1.6, "step": 0.1, "default": 1},
+    {"key": "breeze", "label": "breeze", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "dust", "label": "dust", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot", "raw"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
