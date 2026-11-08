@@ -1,0 +1,16 @@
+{
+  "id": "ume",
+  "name": "Ume",
+  "title": "梅",
+  "description": "An old plum branch in white and pink blossom with late snow on it. Two white-eyes hop along and peck at the flowers while petals fall.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "petals", "label": "petals", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mist", "label": "mist", "type": "range", "min": 0, "max": 1.5, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot", "raw"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "kana"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
