@@ -90,4 +90,40 @@ import Testing
         try store.save(Settings.default.with(\.authorName, "Raff"))
         #expect(store.load().authorName == "Raff")
     }
+
+    @Test func starringTogglesAFavouriteAndReturnsANewValue() {
+        let base = Settings.default
+        let starred = base.togglingFavourite("koi")
+        #expect(base.favourites.isEmpty)
+        #expect(starred.isFavourite("koi"))
+        #expect(!starred.togglingFavourite("koi").isFavourite("koi"))
+    }
+
+    @Test func favouritesFollowLibraryOrderAndSkipMissingScenes() {
+        let s = Settings.default.togglingFavourite("fuji").togglingFavourite("gone").togglingFavourite("torii")
+        #expect(s.favourites(in: ["torii", "koi", "fuji"]) == ["torii", "fuji"])
+    }
+
+    @Test func rotationUsesFavouritesOnceThereAreTwo() {
+        let ids = ["torii", "koi", "fuji"]
+        #expect(Settings.default.rotationPool(in: ids) == ids)
+        #expect(Settings.default.togglingFavourite("fuji").rotationPool(in: ids) == ids)
+        let two = Settings.default.togglingFavourite("fuji").togglingFavourite("torii")
+        #expect(two.rotationPool(in: ids) == ["torii", "fuji"])
+    }
+
+    @Test func forgettingAWallpaperUnstarsIt() {
+        let s = Settings.default.togglingFavourite("clip").forgetting("clip", fallback: "torii")
+        #expect(!s.isFavourite("clip"))
+    }
+
+    @Test func favouritesSurviveARestartAndOlderFilesHaveNone() throws {
+        let dir = try makeTempDir()
+        let store = SettingsStore(url: dir.appendingPathComponent("settings.json"))
+        try store.save(Settings.default.togglingFavourite("koi"))
+        #expect(store.load().favourites == ["koi"])
+        let old = dir.appendingPathComponent("old.json")
+        try Data(#"{"fallbackWallpaper":"koi"}"#.utf8).write(to: old)
+        #expect(SettingsStore(url: old).load().favourites.isEmpty)
+    }
 }

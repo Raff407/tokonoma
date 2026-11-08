@@ -20,6 +20,8 @@ public struct Settings: Codable, Equatable, Sendable {
     public var sharpOnBattery: Bool
     /// The name your marketplace uploads are credited to. Empty until you publish.
     public var authorName: String
+    /// Starred wallpaper ids, in the order they were starred.
+    public var favourites: [String]
 
     public static let `default` = Settings(
         assignments: [:],
@@ -34,7 +36,8 @@ public struct Settings: Codable, Equatable, Sendable {
         followCursor: true,
         userPaused: false,
         sharpOnBattery: false,
-        authorName: ""
+        authorName: "",
+        favourites: []
     )
 
     public func wallpaper(for display: String) -> String {
@@ -69,13 +72,36 @@ public struct Settings: Codable, Equatable, Sendable {
         resetting(wallpaper)
             .with(\.assignments, assignments.filter { $0.value != wallpaper })
             .with(\.fallbackWallpaper, fallbackWallpaper == wallpaper ? fallback : fallbackWallpaper)
+            .with(\.favourites, favourites.filter { $0 != wallpaper })
+    }
+
+    // MARK: Favourites
+
+    public func isFavourite(_ wallpaper: String) -> Bool {
+        favourites.contains(wallpaper)
+    }
+
+    public func togglingFavourite(_ wallpaper: String) -> Settings {
+        with(\.favourites, isFavourite(wallpaper) ? favourites.filter { $0 != wallpaper } : favourites + [wallpaper])
+    }
+
+    /// Starred wallpapers that are still in the library, in library order.
+    public func favourites(in library: [String]) -> [String] {
+        library.filter(isFavourite)
+    }
+
+    /// What Next and timed rotation step through: your favourites once there
+    /// are two to move between, otherwise everything.
+    public func rotationPool(in library: [String]) -> [String] {
+        let starred = favourites(in: library)
+        return starred.count >= 2 ? starred : library
     }
 }
 
 extension Settings {
     private enum Keys: String, CodingKey {
         case assignments, fallbackWallpaper, overrides, pauseWhenCovered, pauseOnBattery, pauseInLowPower
-        case fpsCap, batteryFps, rotateMinutes, followCursor, userPaused, sharpOnBattery, authorName
+        case fpsCap, batteryFps, rotateMinutes, followCursor, userPaused, sharpOnBattery, authorName, favourites
     }
 
     // Tolerant decoding: a settings file from an older build fills gaps with defaults.
@@ -95,6 +121,7 @@ extension Settings {
         userPaused = try c.decodeIfPresent(Bool.self, forKey: .userPaused) ?? d.userPaused
         sharpOnBattery = try c.decodeIfPresent(Bool.self, forKey: .sharpOnBattery) ?? d.sharpOnBattery
         authorName = try c.decodeIfPresent(String.self, forKey: .authorName) ?? d.authorName
+        favourites = try c.decodeIfPresent([String].self, forKey: .favourites) ?? d.favourites
     }
 }
 
