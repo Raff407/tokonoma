@@ -112,6 +112,7 @@ whenever nobody can see them.
 | **Jizo** 地蔵 | A row of small stone guardians in red knitted caps beside a forest path. Paper pinwheels spin before them, fallen leaves blow past and afternoon light shifts through the trees. |
 | **Enso** 円相 | A large ink circle on pale washi with a blank red seal. An unseen brush draws it slowly in dry streaks, it rests, then fades as the next one begins. |
 | **Asanoha** 麻の葉 | Sliding doors of hemp-leaf kumiko lit from behind by warm paper. A lamp is carried slowly past on the far side, and maple shadows move with it. |
+| **Konbini** コンビニ | A corner convenience store with Mount Fuji rising right behind its roof. Clouds drift past the summit, the shop banners flutter, the odd shopper walks in, and the light follows your clock. |
 | **Yours** | Drop any video, gif or picture (png, jpg, webp, heic, avif, tiff…) into the library and it gets woven the same way. Gifs play as looping clips. |
 
 Every scene has its own settings (season, wind, fish, inks…) plus the weave:
