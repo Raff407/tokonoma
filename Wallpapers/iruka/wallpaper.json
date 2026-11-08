@@ -1,0 +1,17 @@
+{
+  "id": "iruka",
+  "name": "Iruka",
+  "title": "海豚",
+  "description": "Dolphins leap from a calm evening sea off a green headland. They arc and splash back in as the water slides by and the low sun's gold path shimmers.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "pod", "label": "dolphins", "type": "range", "min": 1, "max": 7, "step": 1, "default": 7},
+    {"key": "leaps", "label": "leaps", "type": "range", "min": 0.3, "max": 2, "step": 0.1, "default": 1},
+    {"key": "shimmer", "label": "shimmer", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot", "raw"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
