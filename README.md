@@ -56,6 +56,62 @@ whenever nobody can see them.
 | **Furin** 風鈴 | A glass wind chime under the eaves on a still summer afternoon, stirring when a soft gust comes through. |
 | **Kingyo** 金魚 | Goldfish in a glass bowl on a low table by the window, with swaying weed and a few bubbles rising. |
 | **Chawan** 茶碗 | A bowl of matcha and an iron kettle in a quiet tea room. Only the steam moves, and the light, very slowly. |
+| **Jihanki** 自販機 | A lone drinks machine glowing on a country road at night, paddies and telegraph poles behind. Moths circle its light, the tube hums unevenly. |
+| **Kintsugi** 金継ぎ | A dark raku bowl mended with gold on a low table in window light. Gold creeps along the seams and a soft sheen slides over the glaze. |
+| **Kuma** 熊 | A big brown bear stands belly-deep in a fast autumn river below the spruce. Red salmon leap upstream past it and it turns its head to watch them. |
+| **Tombo** 蜻蛉 | Red and blue-green dragonflies among tall reeds at a late-summer pond. They hover, dart and settle on the reed tips while seed fluff drifts past. |
+| **Kaeru** 蛙 | A big green frog on a mossy stone at a pond's edge in soft rain. Its throat pulses, it blinks now and then, and rings spread across the dark water. |
+| **Komorebi** 木漏れ日 | Midday sun through a maple canopy onto a mossy stone path and a temple gate. Pools of light drift over the moss as the leaves sway, with thin shafts and floating dust. |
+| **Suzume** 雀 | Plump sparrows on a sagging telephone wire at sunset over low town roofs. They puff up, shuffle and turn their heads; now and then one flies off and another lands. |
+| **Tanuki** 狸 | A round tanuki and two cubs forage on a moonlit clearing at the edge of a bamboo wood. They sniff and amble, tails swishing, while a few leaves drift down. |
+| **Kitsune** 狐 | A red fox hunts in deep snow among birches at dawn. It listens, leaps, dives nose-first, shakes itself off and walks back, while fine snow drifts along the ground. |
+| **Iruka** 海豚 | Dolphins leap from a calm evening sea off a green headland. They arc and splash back in as the water slides by and the low sun's gold path shimmers. |
+| **Kujira** 鯨 | A humpback and her calf glide through deep blue water, seen from below. Light shafts drift down and a shoal of tiny fish turns as one. |
+| **Umigame** 海亀 | A large sea turtle rowing through turquoise shallows, its shadow gliding over pale sand. Light drifts across the sea bed and small fish pass the coral. |
+| **Sango** 珊瑚 | A coral garden in warm shallow water, blue fading into the distance. Fans and anemones sway, light plays over the reef, and small shoals wheel and hold. |
+| **Todai** 灯台 | A white lighthouse on a rock headland at night. Its soft beam turns slowly over low cloud and the water while the sea rolls and breaks in white lines on the rocks. |
+| **Minato** 港 | Wooden fishing boats rock at their moorings in a small harbour below a hillside village. Gulls wheel, reflections waver, and the light follows your clock. |
+| **Hashi** 橋 | A vermilion drum bridge over a garden pond in early autumn, its reflection closing the circle. The water wavers, willows sway, and leaves float past. |
+| **Gojunoto** 五重塔 | A five-storey pagoda on a wooded hill, under your clock. Cloud drifts behind and in front of it, birds circle the spire, and lamps come on along its eaves after dark. |
+| **Yamadera** 山寺 | Worn stone steps climb through tall cedars to a small temple gate, lit by stone lanterns. Fog drifts, needles fall and a lone monk slowly climbs. |
+| **Kane** 鐘 | A great bronze bell in a snowy timber belfry at dusk. A hanging log swings back and strikes it; rings of air spread and birds lift from the cedars, then settle. |
+| **Koke** 苔 | A moss garden after rain, with a stone lantern and a path winding off between thin trunks. Drips ring a stone basin, mist drifts and a few leaves fall. |
+| **Shishi** 鹿威し | A bamboo deer-scarer in a mossy garden. Water trickles in, the tube tips and spills into a stone basin, then falls back onto its rock. |
+| **Bonsai** 盆栽 | An old windswept pine in a shallow glazed tray on a low stand. Its needles stir, one falls now and then, and the window's light creeps along the plaster wall. |
+| **Ikebana** 生花 | A branch, a camellia and long leaves in a dark vase, beside a scroll of a misty mountain. Shadows drift on the wall and a petal falls now and then to the lacquer floor. |
+| **Daruma** 達磨 | Rows of red daruma dolls on a wooden temple stall in low afternoon sun. They rock very slightly, out of step, while incense smoke drifts past. |
+| **Maneki** 招き猫 | White beckoning cats on a lit shop shelf at night, seen through wet glass. Each lifts a paw on its own slow beat while rain runs down. |
+| **Orizuru** 折鶴 | Long strings of folded paper cranes hang along a sunlit temple corridor. A breeze passes down the row and they sway and turn in sequence. |
+| **Yatai** 屋台 | A noodle cart on a street corner on a snowy winter night, one customer at the counter. Steam rolls from the pot, snow falls, and the warm light shivers on the wet road. |
+| **Kotatsu** 炬燵 | A winter room with a quilted low table, a bowl of mandarins and a lit lamp. Snow falls past the window, tea steams, and an orange cat breathes in its sleep. |
+| **Kissaten** 喫茶店 | An old coffee shop counter on a rainy evening. A glass siphon bubbles over a small flame, a cup steams, and rain runs down the big window past the blurred street lights. |
+| **Fumikiri** 踏切 | A country level crossing on a hill above the sea at dusk. The barrier lowers, two red lamps fade in turn, a two-car local passes with its windows lit. |
+| **Basutei** バス停 | A country bus stop in summer rain, with a rusty roof, a blank round sign and an umbrella at the bench. Rain falls, the roof drips, puddles ring and cloud drifts on the mountains. |
+| **Yakei** 夜景 | A big city at night from a hillside, past dark pines and a railing. Car lights creep along an elevated road, red beacons fade in and out, low cloud drifts. |
+| **Kasa** 傘 | A city crossing in the rain from high above. Umbrellas cross the stripes both ways, wait at the kerbs while the cars go, then cross again on the wet road. |
+| **Matsuri** 祭 | A summer festival street at night, lanterns strung overhead and striped stalls either side. People in yukata stroll both ways, smoke drifts, and a child watches a goldfish in a bag. |
+| **Uma** 馬 | Wild horses and a foal graze a misty upland at dawn. Heads lift and lower, manes and tails blow, and wind rolls through the long grass. |
+| **Hakucho** 白鳥 | Whooper swans on a winter lake at sunrise, snowy mountains behind. They glide, dip and preen, and one slowly stretches its wings as mist lifts off the water. |
+| **Sagi** 鷺 | A tall white egret stalks a flooded paddy at first light, one slow step at a time, and reaches down to the water. Ripples spread from its legs and mist drifts under the mountains. |
+| **Tsubame** 燕 | A swallow's mud nest under the timber eaves of a farmhouse in early summer. Four chicks gape while the adults sweep in over green paddies. |
+| **Ume** 梅 | An old plum branch in white and pink blossom with late snow on it. Two white-eyes hop along and peck at the flowers while petals fall. |
+| **Tsubaki** 椿 | A dark camellia heavy with red blooms in a snowy garden. Snow falls steadily, and now and then a whole flower drops to the white ground. |
+| **Ayame** 菖蒲 | Purple and white irises in a shallow marsh, with a zig-zag plank walkway across the water. Leaves sway, drizzle dimples the reflections, and a butterfly passes when it thins. |
+| **Higan** 彼岸花 | Red spider lilies crowd the banks of a golden rice field, along a path to a far farmhouse. The rice ripples in slow waves and the tall blooms nod. |
+| **Fujidana** 藤棚 | Looking along a wisteria trellis in full bloom toward the light. Long violet racemes sway in waves, petals fall on the gravel path, and bees drift. |
+| **Matsu** 松 | A huge pine leans from a sea cliff over a pale sea and misty islands. Its foliage stirs, cloud drifts below, waves break on far rocks. |
+| **Kakashi** 案山子 | A ragged straw-hatted scarecrow in a ripe rice field at sunset. Its sleeves flap, the rice rolls in waves, crows come and go, red dragonflies drift by. |
+| **Kamakura** 雪洞 | Snow huts glow on a blue winter evening below a dark mountain, children kneeling round a brazier in the nearest. Snow falls, candles breathe, cloud drifts over the stars. |
+| **Tsurara** 氷柱 | Long icicles hang from a snow-laden thatched eave in bright winter sun. Glints slide down the ice, drops fall into the snow, and small slides of snow puff off now and then. |
+| **Ryuhyo** 流氷 | Drift ice fills a northern sea under a low winter sun. Floes jostle and turn, seals on the near floe lift their heads, and eagles wait on the ice far off. |
+| **Tanabata** 七夕 | A tall bamboo hung with blank paper strips, chains and folded cranes under the Milky Way. Strips flutter as air passes; a small lantern glows on the veranda. |
+| **Niji** 虹 | A faint rainbow over a wet green valley and a small village, rain still falling on one side. Light slides over the fields and mist rises from the woods. |
+| **Meoto** 夫婦岩 | Two sea rocks joined by a straw rope, with the sun rising between them. Waves wash past in white lines, the sky turns rose to gold, gulls cross. |
+| **Sakyu** 砂丘 | Great sand dunes above a dark sea under a wide blue sky. Sand streams off the sharp crests, and a line of tiny walkers crosses the far ridge. |
+| **Kabuto** 兜虫 | A big rhinoceros beetle climbs an oak at night, a stag beetle at the sap above. Its legs step slowly and moths circle a paper lantern. |
+| **Jizo** 地蔵 | A row of small stone guardians in red knitted caps beside a forest path. Paper pinwheels spin before them, fallen leaves blow past and afternoon light shifts through the trees. |
+| **Enso** 円相 | A large ink circle on pale washi with a blank red seal. An unseen brush draws it slowly in dry streaks, it rests, then fades as the next one begins. |
+| **Asanoha** 麻の葉 | Sliding doors of hemp-leaf kumiko lit from behind by warm paper. A lamp is carried slowly past on the far side, and maple shadows move with it. |
 | **Yours** | Drop any video, gif or picture (png, jpg, webp, heic, avif, tiff…) into the library and it gets woven the same way. Gifs play as looping clips. |
 
 Every scene has its own settings (season, wind, fish, inks…) plus the weave:
