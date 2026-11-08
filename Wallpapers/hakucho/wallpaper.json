@@ -1,0 +1,16 @@
+{
+  "id": "hakucho",
+  "name": "Hakucho",
+  "title": "白鳥",
+  "description": "Whooper swans on a winter lake at sunrise, snowy mountains behind. They glide, dip and preen, and one slowly stretches its wings as mist lifts off the water.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "mist", "label": "mist", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "ripple", "label": "ripples", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot", "raw"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
