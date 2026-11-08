@@ -27,13 +27,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         menu.addItem(status)
         menu.addItem(.separator())
 
-        for wallpaper in model.wallpapers {
-            let entry = action(label(for: wallpaper), #selector(pick(_:)))
-            entry.representedObject = wallpaper.id
-            entry.state = model.settings.fallbackWallpaper == wallpaper.id && model.settings.assignments.isEmpty ? .on : .off
-            if model.settings.assignments.values.contains(wallpaper.id) { entry.state = .mixed }
-            menu.addItem(entry)
-        }
+        addScenes(to: menu)
         menu.addItem(.separator())
 
         menu.addItem(action(model.settings.userPaused ? "Resume" : "Pause", #selector(togglePause), key: "p"))
@@ -45,6 +39,24 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         login.state = LaunchAtLogin.isEnabled ? .on : .off
         menu.addItem(login)
         menu.addItem(action("Quit Tokonoma", #selector(quit), key: "q"))
+    }
+
+    /// Only your favourites, plus whatever is hanging now, so the menu stays short
+    /// however big the library grows. Everything else is one click away in the library.
+    private func addScenes(to menu: NSMenu) {
+        let listed = model.wallpapers.filter { model.settings.isFavourite($0.id) || model.isShownAnywhere($0.id) }
+        for wallpaper in listed {
+            let entry = action(label(for: wallpaper), #selector(pick(_:)))
+            entry.representedObject = wallpaper.id
+            entry.state = model.settings.fallbackWallpaper == wallpaper.id && model.settings.assignments.isEmpty ? .on : .off
+            if model.settings.assignments.values.contains(wallpaper.id) { entry.state = .mixed }
+            menu.addItem(entry)
+        }
+        if model.favourites.isEmpty {
+            let hint = NSMenuItem(title: "Star scenes in the library to list them here", action: nil, keyEquivalent: "")
+            hint.isEnabled = false
+            menu.addItem(hint)
+        }
     }
 
     private func label(for wallpaper: Wallpaper) -> String {

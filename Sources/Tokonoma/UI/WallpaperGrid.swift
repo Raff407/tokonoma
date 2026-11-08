@@ -1,13 +1,41 @@
 import SwiftUI
 import TokonomaCore
 
+enum LibraryFilter: String, CaseIterable {
+    case all, favourites
+}
+
 struct WallpaperGrid: View {
     @EnvironmentObject private var model: AppModel
     @Binding var selection: String?
+    // A per-window convenience, so it lives in defaults rather than settings.json.
+    @AppStorage("libraryFilter") private var filter = LibraryFilter.all.rawValue
 
     private let columns = [GridItem(.adaptive(minimum: 200, maximum: 280), spacing: Space.xl, alignment: .top)]
 
     var body: some View {
+        VStack(alignment: .leading, spacing: Space.xl) {
+            ChoiceBar(options: LibraryFilter.allCases.map(\.rawValue), selection: $filter) { $0.sentenceCased }
+                .fixedSize()
+            if filter == LibraryFilter.favourites.rawValue { favouritesOnly } else { everything }
+        }
+    }
+
+    @ViewBuilder private var favouritesOnly: some View {
+        let starred = model.favourites
+        if starred.isEmpty {
+            VStack(alignment: .leading, spacing: Space.s) {
+                Text("Favourites").font(Face.label).foregroundStyle(Ink.secondary)
+                Text("Star a scene to keep it here. Your favourites are what the menu bar lists, and what Next steps through")
+                    .font(Face.body)
+                    .foregroundStyle(Ink.muted)
+            }
+        } else {
+            section("Favourites", starred)
+        }
+    }
+
+    private var everything: some View {
         VStack(alignment: .leading, spacing: Space.xxl) {
             section("Scenes", model.wallpapers.filter(\.isBuiltIn))
             let community = model.wallpapers.filter(\.isCommunity)
@@ -38,13 +66,21 @@ struct WallpaperGrid: View {
                         wallpaper: wallpaper,
                         image: model.thumbnails[wallpaper.id],
                         selected: selection == wallpaper.id,
-                        hanging: model.isShownAnywhere(wallpaper.id)
+                        hanging: model.isShownAnywhere(wallpaper.id),
+                        favourite: model.settings.isFavourite(wallpaper.id),
+                        toggleFavourite: { model.toggleFavourite(wallpaper.id) }
                     )
                     .onTapGesture {
                         selection = wallpaper.id
                         // AppKit's count follows the system double-click speed. SwiftUI's
                         // count: 2 gives up after about 300 ms and misses ordinary double clicks.
                         if (NSApp.currentEvent?.clickCount ?? 1) >= 2 { model.show(wallpaper.id) }
+                    }
+                    .contextMenu {
+                        Button("Hang") { model.show(wallpaper.id) }
+                        Button(model.settings.isFavourite(wallpaper.id) ? "Remove from Favourites" : "Add to Favourites") {
+                            model.toggleFavourite(wallpaper.id)
+                        }
                     }
                 }
             }
@@ -57,6 +93,8 @@ struct WallpaperCard: View {
     let image: NSImage?
     let selected: Bool
     let hanging: Bool
+    let favourite: Bool
+    let toggleFavourite: () -> Void
     @State private var hovering = false
 
     var body: some View {
@@ -77,6 +115,9 @@ struct WallpaperCard: View {
                 RoundedRectangle(cornerRadius: Radius.thumb, style: .continuous)
                     .strokeBorder(selected ? Ink.ring : (hovering ? Ink.hairline.opacity(2) : Ink.hairline), lineWidth: 1)
             )
+            .overlay(alignment: .topTrailing) {
+                if favourite || hovering { StarButton(on: favourite, action: toggleFavourite).padding(Space.s) }
+            }
             .padding(3)
             .overlay(
                 RoundedRectangle(cornerRadius: Radius.thumb + 3, style: .continuous)
@@ -100,5 +141,25 @@ struct WallpaperCard: View {
         .onHover { inside in withAnimation(Motion.quick) { hovering = inside } }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(selected ? [.isSelected, .isButton] : .isButton)
+        .accessibilityAction(named: favourite ? "Remove from Favourites" : "Add to Favourites", toggleFavourite)
+    }
+}
+
+/// Shu when starred (it means "on"), a quiet outline while hovering otherwise.
+struct StarButton: View {
+    let on: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: on ? "star.fill" : "star")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(on ? Ink.shu : Ink.text)
+                .frame(width: 24, height: 24)
+                .background(Circle().fill(Ink.deepest.opacity(0.75)))
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .help(on ? "Remove from Favourites" : "Add to Favourites")
     }
 }

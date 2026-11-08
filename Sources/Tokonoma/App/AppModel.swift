@@ -205,10 +205,21 @@ final class AppModel: ObservableObject {
         update(transform)
     }
 
-    /// Moves the shared scene along. Displays you gave their own scene keep it.
+    /// Moves the shared scene along, through your favourites once you have two.
+    /// Displays you gave their own scene keep it.
     func showNext() {
-        guard let next = Rotation.next(after: settings.fallbackWallpaper, in: wallpapers.map(\.id)) else { return }
+        let pool = settings.rotationPool(in: wallpapers.map(\.id))
+        guard let next = Rotation.next(after: settings.fallbackWallpaper, in: pool) else { return }
         update { $0.with(\.fallbackWallpaper, next) }
+    }
+
+    func toggleFavourite(_ id: String) {
+        update { $0.togglingFavourite(id) }
+    }
+
+    /// Starred wallpapers still in the library, in library order.
+    var favourites: [Wallpaper] {
+        wallpapers.filter { settings.isFavourite($0.id) }
     }
 
     /// Copies happen off the main thread, so a big video never freezes the
