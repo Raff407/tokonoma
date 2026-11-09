@@ -1,0 +1,17 @@
+{
+  "id": "kiyomizu",
+  "name": "Kiyomizu",
+  "title": "清水寺",
+  "description": "The great wooden stage of a hillside temple, held up on a forest of tall pillars over a valley of autumn maples. Leaves drift down, mist slides through the valley and the light follows your clock.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "time", "label": "time of day", "type": "choice", "options": ["auto", "dawn", "day", "dusk", "night"], "default": "auto"},
+    {"key": "leaves", "label": "leaves", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mist", "label": "mist", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
