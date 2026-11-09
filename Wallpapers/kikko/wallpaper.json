@@ -1,0 +1,16 @@
+{
+  "id": "kikko",
+  "name": "Kikko",
+  "title": "亀甲",
+  "description": "A turtle-shell hexagon lattice in gold thread on deep indigo, each cell holding a small blossom, with a slow band of light rolling across it like silk.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "sheen", "label": "sheen", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "scale", "label": "pattern size", "type": "range", "min": 0.6, "max": 1.8, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
