@@ -58,7 +58,6 @@ whenever nobody can see them.
 | **Chawan** 茶碗 | A bowl of matcha and an iron kettle in a quiet tea room. Only the steam moves, and the light, very slowly. |
 | **Jihanki** 自販機 | A lone drinks machine glowing on a country road at night, paddies and telegraph poles behind. Moths circle its light, the tube hums unevenly. |
 | **Kintsugi** 金継ぎ | A dark raku bowl mended with gold on a low table in window light. Gold creeps along the seams and a soft sheen slides over the glaze. |
-| **Kuma** 熊 | A big brown bear stands belly-deep in a fast autumn river below the spruce. Red salmon leap upstream past it and it turns its head to watch them. |
 | **Tombo** 蜻蛉 | Red and blue-green dragonflies among tall reeds at a late-summer pond. They hover, dart and settle on the reed tips while seed fluff drifts past. |
 | **Kaeru** 蛙 | A big green frog on a mossy stone at a pond's edge in soft rain. Its throat pulses, it blinks now and then, and rings spread across the dark water. |
 | **Komorebi** 木漏れ日 | Midday sun through a maple canopy onto a mossy stone path and a temple gate. Pools of light drift over the moss as the leaves sway, with thin shafts and floating dust. |
@@ -79,7 +78,6 @@ whenever nobody can see them.
 | **Shishi** 鹿威し | A bamboo deer-scarer in a mossy garden. Water trickles in, the tube tips and spills into a stone basin, then falls back onto its rock. |
 | **Bonsai** 盆栽 | An old windswept pine in a shallow glazed tray on a low stand. Its needles stir, one falls now and then, and the window's light creeps along the plaster wall. |
 | **Ikebana** 生花 | A branch, a camellia and long leaves in a dark vase, beside a scroll of a misty mountain. Shadows drift on the wall and a petal falls now and then to the lacquer floor. |
-| **Daruma** 達磨 | Rows of red daruma dolls on a wooden temple stall in low afternoon sun. They rock very slightly, out of step, while incense smoke drifts past. |
 | **Maneki** 招き猫 | White beckoning cats on a lit shop shelf at night, seen through wet glass. Each lifts a paw on its own slow beat while rain runs down. |
 | **Orizuru** 折鶴 | Long strings of folded paper cranes hang along a sunlit temple corridor. A breeze passes down the row and they sway and turn in sequence. |
 | **Yatai** 屋台 | A noodle cart on a street corner on a snowy winter night, one customer at the counter. Steam rolls from the pot, snow falls, and the warm light shivers on the wet road. |
@@ -166,6 +164,93 @@ whenever nobody can see them.
 | **Veranda** 縁側 | A wooden veranda on a summer evening, looking out over a small garden. Smoke from a mosquito coil curls up past the posts, a glass wind chime turns under the eaves, and the light follows your clock. |
 | **Mikan** 蜜柑 | Mandarin orchards on stone terraces above a calm sea, the fruit glowing among dark leaves. Clouds pass and their shadows slide over the slope, a small boat crosses the bay and the light follows your clock. |
 | **Ginkaku** 銀閣 | The Silver Pavilion on a moonlit night, its raked sand cone pale beside a still pond under dark pines. Clouds cross the moon and its light trembles on the water. |
+| **Matsumoto** 松本城 | The black castle keep of Matsumoto standing in its moat, a red bridge at its side and the snowy Alps behind. Swans drift over the reflection, cherry petals fall, and the light follows your clock. |
+| **Todaiji** 東大寺 | The great timber hall of a Nara temple at dusk. Stone lanterns light one by one along the approach, mist slides between the pines and a few crows cross the afterglow. |
+| **Nikko** 日光 | A carved and gilded shrine gate among tall cedars at Nikko. Mist drifts through the trunks, light slants down and cedar needles fall onto mossy stone steps. |
+| **Kegon** 華厳 | A single tall waterfall drops into an autumn gorge at Nikko. Spray rises from the pool, mist drifts between the cliffs and maple leaves fall, with a small vermilion torii on the bank. |
+| **Kenrokuen** 兼六園 | A stroll garden in snow. A stone lantern stands at the edge of the pond, pines are roped into cones against the weight of snow, and flakes drift down over the still water. |
+| **Togetsukyo** 渡月橋 | A long wooden bridge on low piers crosses a wide river below maple hills in autumn colour. Mist drifts over the water, a small boat glides by, and the light follows your clock. |
+| **Kintaikyo** 錦帯橋 | The five-arched wooden bridge at Iwakuni over a clear river, the castle on the hill behind it. Cherry petals drift, the water shimmers, an egret crosses the sky, and the light follows your clock. |
+| **Yakushima** 屋久島 | An ancient moss-grown cedar forest in rain. A rope and paper streamers hang on the great trunk, a stone lantern sleeps in the ferns, and mist drifts between the trees while pale light shifts in shafts. |
+| **Kamikochi** 上高地 | A clear river on a high alpine plain. Jagged peaks stand mirrored in the water, larches turn gold along the banks, a wooden footbridge crosses, mist drifts, and the light follows your clock. |
+| **Ashinoko** 芦ノ湖 | A vermilion torii standing in a mountain lake, Mount Fuji faint in the morning mist. A small wooden boat drifts across the still water. |
+| **Shuri Castle** 首里城 | The vermilion Ryukyu palace on its limestone hill above the Okinawan sea. Curved red roofs carry gold dragons, shisa lions guard the wall, clouds and gulls drift past and a lone sail crosses the water as the light follows your clock. |
+| **Ishigaki** 石垣 | A turquoise coral lagoon off Ishigaki with a white sand bar. A red-tiled island house keeps a pair of shisa on its roof ridge, gentle waves lap the reef and an egret crosses the sky, with the light following your clock. |
+| **Asakusa** 浅草 | A great red paper lantern hanging in a temple gate at dusk. Rain falls on wet stone that holds its warm light, and a five-storey pagoda stands in the far blue haze. |
+| **Snow Festival** 雪まつり | A snow festival at night: a carved snow castle with tiled eaves and a great ice torii glow from within, stone lanterns and pines wear snow, and flakes drift down. |
+| **Otaru** 小樽 | A snowy night on the Otaru canal. Stone warehouses with tiled gables line the far bank, gas lamps glow gold and wobble in the black water, and snow keeps falling. |
+| **Takayama** 高山 | An old merchant street in the mountains of Hida at first light. Dark latticed wooden houses line a stone lane and its water channels, sake cedar balls sway beneath the eaves and thin mist drifts along the road. |
+| **Kurashiki** 倉敷 | The old canal quarter of Kurashiki: white plaster storehouses with black lattice walls and tile roofs, weeping willows over still water, and a flat boat drifting by. The light follows your clock. |
+| **Kawagoe** 川越 | The wooden bell tower of Kawagoe over rows of old kura warehouse roofs at dusk. Swallows circle the bell, lanterns sway, and the lamps come on as the light follows your clock. |
+| **Tsumago** 妻籠 | An old post-town lane at dusk. Paper lanterns glow under deep eaves, lattice windows warm up, mist drifts off the mountain behind, and the light follows your clock. |
+| **Ginzan** 銀山 | A snowy hot-spring town of timber inns on both banks of a river in the blue hour. Gas lamps glow, steam rises off the water and snow drifts down. |
+| **Gion** 祇園 | A narrow Kyoto lane of wooden machiya on a rainy night. Red paper lanterns sway under the eaves, lattice windows glow, and rain ripples across the wet cobbles. |
+| **Kotohira** 金刀比羅 | A long stone stairway climbing through cedars to a vermilion gate, stone lanterns glowing on both sides, mist drifting between the trunks and maple leaves falling. The light follows your clock. |
+| **Nachi** 那智 | A tall waterfall falling past dark cedars, with a vermilion three-storey pagoda on the ledge beside it. Water streams down, spray and mist rise from the pool and a few maple leaves drift. |
+| **Aso** 阿蘇 | The great grassy caldera of Aso in Kyushu, with Nakadake steaming above the plain, a small shrine gate, silver grass and horses grazing while clouds and their shadows cross. The light follows your clock. |
+| **Sakurajima** 桜島 | The volcano of Kagoshima across a calm bay at sunset. A slow plume of ash leans east on the wind, a ferry crosses the water, a black pine and a stone lantern keep the shore, and the light follows your clock. |
+| **Oirase** 奥入瀬 | A mossy mountain stream tumbling over rocks through a cedar forest in Tohoku. A mossy stone lantern stands on the bank, light falls in soft shafts, mist drifts and maple leaves float downstream. |
+| **Nemophila** ネモフィラ | A rolling hill of blue nemophila in Hitachi Seaside Park, with Mount Fuji faint on the horizon. Wind ripples the blossoms, clouds drift and cranes cross the sky. |
+| **Furano** 富良野 | Rows of purple lavender curving over the hills of Furano in Hokkaido, with snowy Tokachi peaks, a larch windbreak, a red-roofed farmhouse and a small torii. Wind ripples through the rows, clouds drift, and the light follows your clock. |
+| **Vine Bridge** かずら橋 | The vine bridge of Iya hung across a deep green gorge. Cedars and maples crown the cliffs, mist rises from the river and the old planks sway a little. |
+| **Ropeway** ロープウェイ | A mountain gondola glides up its cable over a cedar and maple valley toward a red torii and shrine on the summit, with Mount Fuji faint in the haze. Mist drifts, kites circle, and the light follows your clock. |
+| **Hatsuyuki** 初雪 | The first snow of winter settling on a persimmon branch. A few orange fruit are left, capped in white, against a soft grey sky and quiet hills. |
+| **Tsuyukusa** 露草 | Blue dayflowers wet with dew in tall grass at dawn, below a thatched farmhouse in the mist. A droplet slides down a blade, the grass leans and morning mist drifts by. |
+| **Kinmokusei** 金木犀 | An osmanthus tree in orange bloom beside a tiled wall on a quiet night street. A paper lantern sways and glows, and tiny blossoms drift down onto the stones. |
+| **Sazanka** 山茶花 | Pink sazanka camellias on a clipped hedge before an earthen tile-capped wall, dropping petals onto a frosty garden path with a stone lantern in the winter morning light. |
+| **Nadeshiko** 撫子 | Pink fringed nadeshiko swaying in a summer meadow at dusk, with Fuji far off, a stone lantern in the grass, butterflies and the first fireflies. |
+| **Kikyo** 桔梗 | Purple bellflowers in a mountain meadow at dusk, a stone lantern among them. Mist slides across the slope, the flowers lean in the breeze and fireflies rise as the light follows your clock. |
+| **Hagi** 萩 | Bush clover heavy with pink-purple blossom arches over a still pond under the autumn moon. A stone lantern glows on the far bank, branches sway and petals drift down onto the water. |
+| **Suisen** 水仙 | White narcissus nodding on a windswept winter headland. A vermilion torii and a bent pine stand above the surf, waves break on the rocks below and gulls ride the wind. |
+| **Yamabuki** 山吹 | Golden kerria bushes arch over a quick spring stream beside a mossy stone lantern. Petals drift down the water and a few fall from the branches. |
+| **Fuyubotan** 冬牡丹 | Winter peonies in a snowy garden, each sheltered under a little straw tent. Red blooms glow warm inside, a tiled earthen wall and a stone lantern stand behind, and snow keeps falling. |
+| **Tsutsuji** 躑躅 | A spring hillside of clipped pink and red azaleas around a mossy stone lantern. Haze drifts through the cedars and petals fall slowly. |
+| **Asagao** 朝顔 | Morning glories climbing a bamboo trellis at first light. Blue trumpets slowly open, a wind bell sways under the eave and mist drifts past a farmhouse with the sun rising behind its tiled roof. |
+| **Shigure** 時雨 | A passing autumn drizzle over the slate roofs of an old town. Rain curtains drift across the tiles, maple leaves fall and rings spread in the puddles of the lane. |
+| **Nyudogumo** 入道雲 | A towering summer thunderhead boils slowly above green rice paddies. A shrine roof with crossed finials sits among cedars, cloud shadows slide over the fields and a white heron crosses the sky. |
+| **Yuyake** 夕焼け | A crimson sunset over a harbour town: tiled roofs, a pagoda, a vermilion torii standing in the water and fishing boats with tall masts. The sky slowly shifts colour while swallows cross the light. |
+| **Akatsuki** 暁 | Before sunrise on a calm sea. A bright planet fades into the first orange light, Mount Fuji waits far off, a vermilion torii stands in the water and a lone squid boat shows its row of lamps. The light follows your clock. |
+| **Shimobashira** 霜柱 | Frost pillars lifting the soil on a cedar forest floor in low winter sun. A stone lantern stands in the moss, frozen maple leaves lie about and a breath of mist drifts through the light. |
+| **Rainy season ends** 梅雨明け | The last grey clouds of the rainy season break over cedar hills and a tiled village. Sunbeams roll across wet rice terraces, swallows cut through the clearing air and hydrangeas hold the last of the rain. |
+| **Kitsutsuki** 啄木鳥 | A pygmy woodpecker clings to an old pine marked with a shimenawa rope, tapping in short bursts. Bark chips fall, and soft light slips through the cedars past a far torii and a stone lantern. |
+| **Skylark** 雲雀 | A skylark climbs singing over a green barley field in spring. Wind runs through the barley in slow waves, with rapeseed in bloom along the edge, Fuji pale in the haze, a cherry tree and a small vermilion torii. |
+| **Uguisu** 鶯 | A bush warbler sings from a bamboo branch in early spring mist while plum petals drift down past distant bamboo. |
+| **Semi** 蝉 | A cicada clinging to an old shrine cedar bound with a straw rope and paper streamers. Dappled summer light drifts over the bark, sunbeams slide through the grove and the heat shimmers. |
+| **Takotsubo** 蛸壺 | A clay octopus pot tied with hemp rope on the sandy seabed, an octopus peeking out. Sunbeams slant down through seigaiha waves, a red sea bream passes a mossy stone lantern, and wakame sways. |
+| **Ayu** 鮎 | Sweetfish holding and darting in a clear gravel stream. Sunlight nets drift over the stones, maple and bamboo leaves float by, and mossy stepping stones cross the water. |
+| **Umineko** 海猫 | Black-tailed gulls nest on a rocky sea cliff crowned by a small shrine, as the first sun of the year rises over the water. Swells roll in, foam breathes at the foot of the rock and gulls glide in and out. |
+| **Sea eagle** 鷲 | A sea eagle soaring over snowy Shiretoko peaks and a bay of drift ice at dawn. Slow wing beats, cloud drifting past a vermilion sun. |
+| **Kamoshika** 羚羊 | A Japanese serow standing on a misty rock ledge among beeches in the first snow. A pagoda sleeps far off in the cloud, mist drifts and flakes settle. |
+| **Red squirrel** 栗鼠 | A red squirrel sits on a mossy oak bough in autumn gold, an acorn in its paws. Maple leaves drift past a misty torii and the light slowly breathes. |
+| **Suzumushi** 鈴虫 | Bell crickets in autumn grass on a moonlit night. Susuki plumes sway beneath a full moon, thin cloud drifts across it, a pagoda sleeps on the far hill and tiny glints wake in the grass. |
+| **Oshidori** 鴛鴦 | A pair of mandarin ducks on a still autumn pond. A stone lantern and a small torii stand on the far bank, maple leaves float and ripples widen around the birds. |
+| **Momonga** ムササビ | A flying squirrel glides between huge cedars on a moonlit night, past a shrine gate and a stone lantern. Mist drifts through the trunks and a few fireflies glow. |
+| **Kiji** 雉 | A green pheasant walks through tall dewy grass at dawn. Mist lies over the hills, a small torii stands far off and the pampas heads sway. |
+| **Alcove** 床の間 | A tokonoma alcove in a tatami room: a hanging scroll of misty mountains, camellias in a bronze vase, incense smoke rising, and window light that crosses the tatami with your clock. |
+| **Furoshiki** 風呂敷 | An indigo wrapping cloth with a hemp-leaf pattern, knotted around a gift on a wooden floor. A soft breeze ripples its edge while a patch of window light drifts across. |
+| **Kokeshi** こけし | A shelf of small wooden kokeshi dolls beside a rainy window. A paper lamp glows, a wind bell turns in the draught and the curtain stirs. |
+| **Hinadan** 雛壇 | The tiered doll stand of the Hina festival, red carpet steps under a gold screen. Paper lanterns flicker warmly beside the dolls while peach blossom petals drift down. |
+| **Koto** 琴 | A koto lies across a tatami room beside an open shoji. Cherry petals drift in from the garden, the thin strings tremble faintly, and a lattice of light rests on the mats. |
+| **Nabe** 鍋 | A clay hot-pot simmering on a low table in a snowy farmhouse room. Steam curls from the lid, a paper lantern glows overhead and snow falls past the lattice window. |
+| **Wagashi** 和菓子 | Autumn sweets on a lacquer tray beside a bowl of matcha. Steam curls up from the bowl, shoji light rests on the table and a maple leaf drifts down. |
+| **Tokkuri** 徳利 | A sake flask and a small cup on a wooden counter, a red paper lantern glowing beside them. Steam curls up and snow drifts past the lattice window. |
+| **Shippo** 七宝 | The shippo seven treasures pattern, interlocking circles in indigo with gold lines and vermilion stars, rippling slowly like dyed cloth as a soft band of light crosses it. |
+| **Uroko** 鱗 | The triangle scale pattern of Japanese cloth and lacquer, ink on washi. A slow sheen runs across the scales like light over a school of fish and the colour drifts between indigo, moss and vermilion. |
+| **Kikko** 亀甲 | A turtle-shell hexagon lattice in gold thread on deep indigo, each cell holding a small blossom, with a slow band of light rolling across it like silk. |
+| **Kasuri** 絣 | Indigo ikat cloth with small white cross marks. The warp threads slide slowly past one another and a soft sheen crosses the weave. |
+| **Ichimatsu** 市松 | An ichimatsu checkerboard of ink and washi squares rolling in a slow wave under soft lantern light, with a few indigo, moss and vermilion squares and drifting cherry petals. |
+| **Dojo** 道場 | An empty wooden dojo floor. Long sunbeams fall through paper windows, dust drifts in the light, wooden swords rest on their rack and a small bronze bell sways. The light follows your clock. |
+| **Kyoshitsu** 教室 | An empty wooden school classroom at sunset. Desks stand in rows, the curtains breathe, dust turns in the amber light, paper cranes and a wind bell sway, and the wall clock keeps your time. |
+| **Minka** 民家 | A thatched farmhouse with a curl of smoke, rice paddies in front and cedar hills behind, a wooden gate at the lane. Light follows your clock, and the season is yours to pick. |
+| **Shotengai** 商店街 | An empty covered shopping arcade at night. Paper lanterns sway over shuttered shopfronts, rain runs down the glass roof, and the wet floor holds their reflections. |
+| **Hiraizumi** 平泉 | A small golden hall under its timber canopy in a mossy cedar grove. Mist drifts between the trunks, pale light slants through and maple leaves fall. |
+| **Izumo** 出雲 | A huge braided shimenawa rope hangs across a shrine hall entrance beneath old pines. It sways slowly while morning light falls through the mist. |
+| **Yoshino** 吉野 | Mountainsides of Yoshino layered in cherry blossom with mist between the ridges. A temple roof and a small pagoda sit among the trees while petals blow past. |
+| **Daibutsu** 大仏 | A great bronze Buddha sits in the open air between cherry trees and pines. Petals drift down, morning mist slides past the hills and a slow shaft of light moves over his shoulders. |
+| **Rishiri** 利尻 | Rishiri, a lone conical island peak above a calm northern sea. Cloud drifts around the summit, a small fishing boat rides the swell, kelp floats in the shallows, and the light follows your clock. |
+| **Snow Corridor** 雪の大谷 | A mountain road cut between towering walls of snow in spring. Sunbeams slant across the cut, small snow drifts down and a few clouds pass over the Tateyama ridge. |
+| **Hanamizuki** 花水木 | A white dogwood in full bloom above a tiled wooden roof, on a clear spring morning. Branches sway in the breeze, petals drift down and dappled light slides over the tiles. |
+| **Kohan** 湖畔 | A lakeshore at first light. A small wooden rowboat is moored beside a red torii standing in the water, Mount Fuji and pine hills fade into the mist, and susuki reeds sway as the light follows your clock. |
 | **Yours** | Drop any video, gif or picture (png, jpg, webp, heic, avif, tiff…) into the library and it gets woven the same way. Gifs play as looping clips. |
 
 Every scene has its own settings (season, wind, fish, inks…) plus the weave:

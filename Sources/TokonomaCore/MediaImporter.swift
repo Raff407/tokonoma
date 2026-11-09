@@ -127,7 +127,7 @@ public enum BundleSync {
 
     /// Scenes that used to ship. Older builds copied them into the library, and nothing
     /// else would ever clean them up.
-    public static let retired = ["sumi", "niwa"]
+    public static let retired = ["sumi", "niwa", "kuma", "daruma"]
 
     public struct Installation: Equatable, Sendable {
         public let ids: [String]
