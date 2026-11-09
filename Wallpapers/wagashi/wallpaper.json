@@ -1,0 +1,16 @@
+{
+  "id": "wagashi",
+  "name": "Wagashi",
+  "title": "和菓子",
+  "description": "Autumn sweets on a lacquer tray beside a bowl of matcha. Steam curls up from the bowl, shoji light rests on the table and a maple leaf drifts down.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "steam", "label": "steam", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "leaf", "label": "falling leaf", "type": "toggle", "default": true},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
