@@ -1,0 +1,18 @@
+{
+  "id": "togetsukyo",
+  "name": "Togetsukyo",
+  "title": "渡月橋",
+  "description": "A long wooden bridge on low piers crosses a wide river below maple hills in autumn colour. Mist drifts over the water, a small boat glides by, and the light follows your clock.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "time", "label": "time of day", "type": "choice", "options": ["auto", "dawn", "day", "dusk", "night"], "default": "auto"},
+    {"key": "mist", "label": "mist", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "leaves", "label": "falling leaves", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "boat", "label": "boat", "type": "toggle", "default": true},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
