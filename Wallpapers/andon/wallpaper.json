@@ -1,0 +1,16 @@
+{
+  "id": "andon",
+  "name": "Andon",
+  "title": "行灯",
+  "description": "A paper floor lamp in a dark tatami room at night. Its glow breathes softly on the walls and mats while a moth circles it, its shadow sweeping the wall.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "breath", "label": "breathing", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "moths", "label": "moths", "type": "range", "min": 0, "max": 3, "step": 1, "default": 2},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
