@@ -1,0 +1,17 @@
+{
+  "id": "yamabuki",
+  "name": "Yamabuki",
+  "title": "山吹",
+  "description": "Golden kerria bushes arch over a quick spring stream beside a mossy stone lantern. Petals drift down the water and a few fall from the branches.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "petals", "label": "petals", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "current", "label": "current", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mist", "label": "mist", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
