@@ -121,4 +121,20 @@ private let toriiJSON = """
         let values = PropertyResolver.resolve([spec, spec], overrides: [:])
         #expect(values == ["a": .flag(true)])
     }
+
+    @Test func rawIsNoLongerOfferedAndOldRawFallsBackToGlyph() throws {
+        let json = #"{"id":"x","name":"X","entry":"index.html","properties":[{"key":"mode","label":"weave","type":"choice","options":["glyph","block","dot","raw"],"default":"raw"}]}"#
+        let mode = try #require(try Manifest.decode(Data(json.utf8)).properties.first)
+        #expect(mode.options == ["glyph", "block", "dot"])
+        #expect(mode.defaultValue == .text("glyph"))
+        let values = PropertyResolver.resolve([mode], overrides: ["mode": .text("raw")])
+        #expect(values == ["mode": .text("glyph")])
+    }
+
+    @Test func otherChoicesMayStillSayRaw() throws {
+        let json = #"{"id":"x","name":"X","entry":"index.html","properties":[{"key":"fish","label":"fish","type":"choice","options":["raw","cooked"],"default":"raw"}]}"#
+        let fish = try #require(try Manifest.decode(Data(json.utf8)).properties.first)
+        #expect(fish.options == ["raw", "cooked"])
+        #expect(fish.defaultValue == .text("raw"))
+    }
 }

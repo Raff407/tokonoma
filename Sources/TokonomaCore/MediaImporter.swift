@@ -103,7 +103,7 @@ public enum MediaImporter {
 
     static func properties(for kind: Kind) -> [PropertySpec] {
         var specs: [PropertySpec] = [
-            PropertySpec(key: "mode", label: "weave", kind: .choice, options: ["glyph", "block", "dot", "raw"], defaultValue: .text("glyph")),
+            PropertySpec(key: "mode", label: "weave", kind: .choice, options: ["glyph", "block", "dot"], defaultValue: .text("glyph")),
             PropertySpec(key: "ramp", label: "glyphs", kind: .choice, options: ["lines", "ascii", "kana", "dense"], defaultValue: .text("lines")),
             PropertySpec(key: "cell", label: "cell size", kind: .range, min: 3, max: 24, step: 1, defaultValue: .number(8)),
             PropertySpec(key: "fit", label: "fit", kind: .choice, options: ["cover", "contain"], defaultValue: .text("cover")),

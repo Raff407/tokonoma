@@ -68,7 +68,9 @@ python3 -m http.server 8765 --directory Wallpapers   # preview scenes; ?mode=raw
 - Budget: under ~2 ms/frame in `bench.swift`; never over 6 (the community limit).
   Ask for `maxFps` 20–24 if motion is slow. No per-frame allocation in hot loops.
 - Palette: ink, washi, indigo, vermilion, moss, gold. No neon, nothing flashes.
-- Default weave glyph/block/dot, never raw. Declare `mode` and `cell` properties.
+- Default weave glyph/block/dot. Raw is not offered: the "mode" choice lists only glyph/block/dot
+  (the validator refuses raw; old manifests and saved settings that ask for it get glyph).
+  kasuri still draws `?mode=raw` for debug previews. Declare `mode` and `cell` properties.
 - Interactive scenes set `"interactive": true` and use `api.pointer` / `onClick`.
 - Adding a built-in: folder + manifest + index.html, then add the id to
   `AppModel.builtInOrder`, `ShippedWallpaperTests`, `market/src/server.js` EXAMPLES,

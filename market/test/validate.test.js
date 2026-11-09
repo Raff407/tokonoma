@@ -23,7 +23,7 @@ const manifest = (over = {}) => ({
   author: { name: 'Mika', url: 'https://example.com/mika' },
   version: 1,
   properties: [
-    { key: 'mode', label: 'weave', type: 'choice', options: ['glyph', 'block', 'dot', 'raw'], default: 'glyph' },
+    { key: 'mode', label: 'weave', type: 'choice', options: ['glyph', 'block', 'dot'], default: 'glyph' },
     { key: 'cell', label: 'cell size', type: 'range', min: 4, max: 24, step: 1, default: 9 },
   ],
   ...over,
@@ -64,6 +64,12 @@ test('the scene must be woven by kasuri', () => {
 
 test('raw pixels cannot be the default look', () => {
   const props = manifest().properties.map((p) => (p.key === 'mode' ? { ...p, default: 'raw' } : p));
+  const r = V.validatePackage(pkg({ manifest: { properties: props } }));
+  assert.ok(codes(r).includes('off-theme-mode'));
+});
+
+test('raw is not even offered by scenes', () => {
+  const props = manifest().properties.map((p) => (p.key === 'mode' ? { ...p, options: [...p.options, 'raw'] } : p));
   const r = V.validatePackage(pkg({ manifest: { properties: props } }));
   assert.ok(codes(r).includes('off-theme-mode'));
 });

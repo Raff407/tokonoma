@@ -53,7 +53,7 @@ KasuriSky.hour('auto' | 'dawn' | 'day' | 'dusk' | 'night'), KasuriSky.at(hour) â
 { top, low, amb, haze, night }, KasuriSky.sunT(h), KasuriSky.moonT(h).
 
 ## Built-in props every scene gets
-mode (glyph/block/dot/raw), cell, ramp (lines/ascii/kana/dense/sparse),
+mode (glyph/block/dot), cell, ramp (lines/ascii/kana/dense/sparse),
 gain, dither, boost, tint, invert (for light/paper scenes), bg, speed.
 
 ## wallpaper.json

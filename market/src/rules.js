@@ -40,7 +40,6 @@
   });
 
   const WOVEN = Object.freeze(['glyph', 'block', 'dot']);
-  const MODES = Object.freeze(['glyph', 'block', 'dot', 'raw']);
 
   // Reference screen used to describe a wallpaper's grid (a 14" MacBook Pro).
   const REFERENCE = Object.freeze({ width: 1512, height: 982 });
@@ -52,7 +51,7 @@ cell) and the kasuri renderer turns every cell into a glyph, block or dot.
 Shared wallpapers must look like they belong next to the official ones.
 
 ## Look
-- Default weave is glyph, block or dot. "raw" may be offered, never the default.
+- Always woven: the "mode" choice offers only glyph, block or dot (no raw).
 - Subjects from the same world as the official scenes: Japanese landscapes,
   water, ink, weather, gardens, night skies, small animals, seasons.
 - Calm, low-contrast palettes: sumi black, washi cream, indigo, vermilion,
@@ -79,7 +78,7 @@ Shared wallpapers must look like they belong next to the official ones.
 - scene.js ≤ ${LIMITS.sceneBytes / 1024} KB, readable source (no minified or packed code).
 - Whole package ≤ ${LIMITS.packageBytes / 1024} KB.
 - Must call Kasuri.run({ defaults, setup, draw }) exactly as the official scenes do.
-- Declare a "mode" choice property (glyph/block/dot/raw) and a "cell" range.
+- Declare a "mode" choice property (glyph/block/dot) and a "cell" range.
 - An author name is required; it is shown to everyone who installs it.
 
 ## Safety
@@ -93,7 +92,7 @@ Under ${RENDER.maxMsPerFrame} ms per frame in WebKit at the reference size.
 Paint into the cols × rows canvas only; cache anything still into layers.
 `;
 
-  const api = Object.freeze({ LIMITS, RENDER, SAFETY, WOVEN, MODES, REFERENCE, GUIDE });
+  const api = Object.freeze({ LIMITS, RENDER, SAFETY, WOVEN, REFERENCE, GUIDE });
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.TokonomaRules = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

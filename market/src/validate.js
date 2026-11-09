@@ -10,7 +10,7 @@
   'use strict';
 
   const R = typeof module === 'object' && module.exports ? require('./rules.js') : root.TokonomaRules;
-  const { LIMITS, RENDER, SAFETY, WOVEN, MODES, REFERENCE } = R;
+  const { LIMITS, RENDER, SAFETY, WOVEN, REFERENCE } = R;
 
   const ID = /^[a-z0-9][a-z0-9-]{2,39}$/;
   const ASSET = /^assets\/[a-z0-9][a-z0-9._-]{0,60}\.(png|jpe?g|webp)$/;
@@ -136,13 +136,12 @@
 
   function checkTheme(props, scene, errors, warnings, isMedia) {
     const mode = props.find((p) => p.key === 'mode');
-    const offered = isMedia ? WOVEN : MODES;
-    if (!mode || mode.type !== 'choice' || !mode.options.every((o) => offered.includes(o)) || !WOVEN.includes(mode.default)) {
+    if (!mode || mode.type !== 'choice' || !WOVEN.includes(mode.default)) {
+      errors.push({ code: 'off-theme-mode', message: 'declare a "mode" choice whose default is glyph, block or dot' });
+    } else if (!mode.options.every((o) => WOVEN.includes(o))) {
       errors.push({
         code: 'off-theme-mode',
-        message: isMedia
-          ? 'shared media is always woven: the "mode" choice may only offer glyph, block or dot'
-          : 'declare a "mode" choice whose default is glyph, block or dot',
+        message: `${isMedia ? 'shared media' : 'every wallpaper'} is always woven: the "mode" choice may only offer glyph, block or dot`,
       });
     }
     const cell = props.find((p) => p.key === 'cell');

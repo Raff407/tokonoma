@@ -119,7 +119,7 @@ whenever nobody can see them.
 | **Yours** | Drop any video, gif or picture (png, jpg, webp, heic, avif, tiff…) into the library and it gets woven the same way. Gifs play as looping clips. |
 
 Every scene has its own settings (season, wind, fish, inks…) plus the weave:
-`glyph`, `block`, `dot` or `raw`, the glyph set, and the cell size.
+`glyph`, `block` or `dot`, the glyph set, and the cell size.
 
 ## Run it
 

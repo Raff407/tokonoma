@@ -50,6 +50,34 @@ public struct PropertySpec: Codable, Equatable, Hashable, Sendable {
         self.defaultValue = defaultValue
     }
 
+    /// Weaves no longer offered. kasuri can still draw them (`?mode=raw` previews),
+    /// but a manifest that offers or defaults to one loses it on read: the choice
+    /// shows only woven options and an old saved "raw" falls back to glyph.
+    public static let retiredModes: Set<String> = ["raw"]
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let key = try c.decode(String.self, forKey: .key)
+        var options = try c.decodeIfPresent([String].self, forKey: .options)
+        var defaultValue = try c.decode(PropertyValue.self, forKey: .defaultValue)
+        if key == "mode", let offered = options {
+            let woven = offered.filter { !Self.retiredModes.contains($0) }
+            let kept = woven.isEmpty ? ["glyph"] : woven
+            if let d = defaultValue.text, !kept.contains(d) {
+                defaultValue = .text(kept.contains("glyph") ? "glyph" : kept[0])
+            }
+            options = kept
+        }
+        self.init(key: key,
+                  label: try c.decode(String.self, forKey: .label),
+                  kind: try c.decode(Kind.self, forKey: .kind),
+                  min: try c.decodeIfPresent(Double.self, forKey: .min),
+                  max: try c.decodeIfPresent(Double.self, forKey: .max),
+                  step: try c.decodeIfPresent(Double.self, forKey: .step),
+                  options: options,
+                  defaultValue: defaultValue)
+    }
+
     /// Everything the UI and the resolver rely on: a usable key, a sane range
     /// (both ends, finite, low ≤ high, positive step, default inside), and a
     /// default of the right type. Anything else could crash a Slider.

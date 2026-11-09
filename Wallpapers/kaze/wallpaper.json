@@ -38,8 +38,7 @@
       "options": [
         "glyph",
         "block",
-        "dot",
-        "raw"
+        "dot"
       ],
       "default": "glyph"
     },

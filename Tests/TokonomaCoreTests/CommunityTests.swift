@@ -14,7 +14,7 @@ private func manifest(id: String = "paper-moon", author: String = "Mika") -> [St
     [
         "id": id, "name": "Paper moon", "title": "月", "author": ["name": author], "version": 1,
         "properties": [
-            ["key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot", "raw"], "default": "glyph"],
+            ["key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"],
             ["key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 9],
         ],
     ]
