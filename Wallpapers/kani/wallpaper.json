@@ -1,0 +1,16 @@
+{
+  "id": "kani",
+  "name": "Kani",
+  "title": "蟹",
+  "description": "Low tide on a rocky shore. Small red crabs scuttle sideways between the rock pools while the waves wash in over the sand and slip back out.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "crabs", "label": "crabs", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "surf", "label": "surf", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
