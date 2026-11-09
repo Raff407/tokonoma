@@ -187,3 +187,13 @@ public enum MediaPrep {
         return buffer
     }
 }
+
+extension MediaPrep {
+    /// When to grab a clip's poster frame: the middle, where something is
+    /// happening. The first moments are often empty (a lantern not yet in frame),
+    /// and the poster is what the thumbnail and market preview are woven from.
+    public static func posterSeconds(duration: Double) -> Double {
+        guard duration.isFinite, duration > 0 else { return 0 }
+        return duration / 2
+    }
+}
