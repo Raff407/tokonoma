@@ -1,0 +1,17 @@
+{
+  "id": "kanransha",
+  "name": "Kanransha",
+  "title": "観覧車",
+  "description": "A great wheel turning slowly on the edge of a bay at night. Its lamps and cabins glow over the dark water, the far shore keeps a few windows lit, and the whole of it wavers in the reflection.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "turn", "label": "wheel speed", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "ripple", "label": "ripples", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "stars", "label": "stars", "type": "toggle", "default": true},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
