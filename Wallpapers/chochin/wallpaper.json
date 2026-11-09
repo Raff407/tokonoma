@@ -1,0 +1,17 @@
+{
+  "id": "chochin",
+  "name": "Lanterns",
+  "title": "提灯",
+  "description": "A row of red paper lanterns hangs along an old eave on a damp night. They sway a little in the air, a light drizzle falls, and their warm glow lies on the wet stones below.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "sway", "label": "sway", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "glow", "label": "glow", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "rain", "label": "drizzle", "type": "toggle", "default": true},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
