@@ -1,0 +1,17 @@
+{
+  "id": "engawa",
+  "name": "Veranda",
+  "title": "縁側",
+  "description": "A wooden veranda on a summer evening, looking out over a small garden. Smoke from a mosquito coil curls up past the posts, a glass wind chime turns under the eaves, and the light follows your clock.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "time", "label": "time of day", "type": "choice", "options": ["auto", "dawn", "day", "dusk", "night"], "default": "auto"},
+    {"key": "smoke", "label": "smoke", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "breeze", "label": "breeze", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
