@@ -21,8 +21,8 @@ enum MainMenu {
         edit.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
 
         let wallpaper = submenu(in: bar, "Wallpaper")
-        item(wallpaper, "Pause or Resume", #selector(AppDelegate.togglePause), "p", target)
-        item(wallpaper, "Next Wallpaper", #selector(AppDelegate.nextWallpaper), "n", target)
+        item(wallpaper, "Pause or resume", #selector(AppDelegate.togglePause), "p", target)
+        item(wallpaper, "Next wallpaper", #selector(AppDelegate.nextWallpaper), "n", target)
 
         let window = submenu(in: bar, "Window")
         window.addItem(withTitle: "Minimize", action: #selector(NSWindow.performMiniaturize(_:)), keyEquivalent: "m")

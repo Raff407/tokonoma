@@ -46,7 +46,7 @@ struct InspectorView: View {
                 }
                 Spacer(minLength: 0)
                 if model.isShownAnywhere(wallpaper.id) {
-                    HStack(spacing: 6) {
+                    HStack(spacing: Space.s) {
                         Seal()
                         Text("on the wall").font(Face.meta).foregroundStyle(Ink.muted)
                     }
@@ -68,10 +68,13 @@ struct InspectorView: View {
 
     private var actions: some View {
         HStack(spacing: Space.s) {
-            Button(everywhere ? "Hanging on every display" : "Hang on every display") { model.show(wallpaper.id) }
-                .buttonStyle(PrimaryButtonStyle())
-                .disabled(everywhere)
-                .opacity(everywhere ? 0.6 : 1)
+            // Once it hangs everywhere there is nothing to press: say so instead of a dead button.
+            if everywhere {
+                Text("hanging on every display").font(Face.meta).foregroundStyle(Ink.muted).frame(height: 32)
+            } else {
+                Button("Hang on every display") { model.show(wallpaper.id) }
+                    .buttonStyle(PrimaryButtonStyle())
+            }
             if model.displays.count > 1 {
                 Menu {
                     ForEach(model.displays) { display in
@@ -111,10 +114,10 @@ struct InspectorView: View {
     private var properties: some View {
         VStack(alignment: .leading, spacing: Space.s) {
             HStack {
-                Text("Adjust").font(Face.label).foregroundStyle(Ink.secondary)
+                SectionTitle("Adjust")
                 Spacer()
                 if model.settings.overrides[wallpaper.id] != nil {
-                    Button("Reset") { model.reset(wallpaper.id) }
+                    Button("reset") { model.reset(wallpaper.id) }
                         .buttonStyle(.plain)
                         .font(Face.meta)
                         .foregroundStyle(Ink.muted)

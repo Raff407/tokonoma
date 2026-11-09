@@ -26,7 +26,7 @@ struct LibraryView: View {
             }
         }
         .background(Ink.page)
-        .tint(Ink.shu)
+        .tint(Ink.ring)
         .preferredColorScheme(.dark)
         .onAppear { if selection == nil { selection = model.settings.fallbackWallpaper } }
         .sheet(item: $model.pendingInstall) { pending in
@@ -42,7 +42,7 @@ struct LibraryView: View {
     private var header: some View {
         HStack(spacing: Space.xl) {
             HStack(spacing: Space.s) {
-                Text("Tokonoma").font(.system(size: 15, weight: .medium)).foregroundStyle(Ink.text)
+                Text("Tokonoma").font(Face.brand).foregroundStyle(Ink.text)
                 Text("床の間").font(Face.kanji(13)).foregroundStyle(Ink.muted)
             }
             .fixedSize()
@@ -114,7 +114,7 @@ struct LibraryView: View {
         panel.allowsMultipleSelection = true
         panel.canChooseDirectories = false
         panel.allowedContentTypes = (MediaImporter.acceptedExtensions + ["tokonoma"]).compactMap { UTType(filenameExtension: $0) }
-        panel.message = "Videos, gifs and pictures (png, jpg, webp, heic, avif, tiff, bmp…) get woven like the rest. Wallpaper packages (.tokonoma) are checked before anything is installed"
+        panel.message = "Videos, gifs, pictures or .tokonoma packages. Packages are checked before anything is installed"
         guard panel.runModal() == .OK else { return }
         let urls = panel.urls
         Task { if let first = await model.importFiles(urls).first { selection = first } }
@@ -144,22 +144,26 @@ struct LibraryView: View {
 
 struct NoticeBar: View {
     let text: String
-    let dismiss: () -> Void
+    var dismiss: (() -> Void)?
+    /// Inline notices sit in a column of rounded panels; the window-wide one runs edge to edge.
+    var inline = false
 
     var body: some View {
         HStack(alignment: .top, spacing: Space.m) {
             Image(systemName: "exclamationmark.circle")
-                .font(.system(size: 13))
+                .font(Face.icon)
                 .foregroundStyle(Ink.secondary)
             Text(text)
                 .font(Face.body)
                 .foregroundStyle(Ink.text)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .textSelection(.enabled)
-            Button("Dismiss", action: dismiss).buttonStyle(.plain).font(Face.meta).foregroundStyle(Ink.muted)
+            if let dismiss {
+                Button("dismiss", action: dismiss).buttonStyle(.plain).font(Face.meta).foregroundStyle(Ink.muted)
+            }
         }
         .padding(.horizontal, Space.l)
         .padding(.vertical, Space.m)
-        .background(Ink.raised)
+        .background(Ink.raised, in: RoundedRectangle(cornerRadius: inline ? Radius.panel : 0, style: .continuous))
     }
 }

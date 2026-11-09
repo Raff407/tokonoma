@@ -15,7 +15,7 @@ struct WallpaperGrid: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.xl) {
-            ChoiceBar(options: LibraryFilter.allCases.map(\.rawValue), selection: $filter) { $0.sentenceCased }
+            ChoiceBar(options: LibraryFilter.allCases.map(\.rawValue), selection: $filter)
                 .fixedSize()
             if filter == LibraryFilter.favourites.rawValue { favouritesOnly } else { everything }
         }
@@ -25,7 +25,7 @@ struct WallpaperGrid: View {
         let starred = model.favourites
         if starred.isEmpty {
             VStack(alignment: .leading, spacing: Space.s) {
-                Text("Favourites").font(Face.label).foregroundStyle(Ink.secondary)
+                SectionTitle("Favourites")
                 Text("Star a scene to keep it here. Your favourites are what the menu bar lists, and what Next steps through")
                     .font(Face.body)
                     .foregroundStyle(Ink.muted)
@@ -43,7 +43,7 @@ struct WallpaperGrid: View {
             let yours = model.wallpapers.filter { !$0.isBuiltIn && !$0.isCommunity }
             if yours.isEmpty {
                 VStack(alignment: .leading, spacing: Space.s) {
-                    Text("Yours").font(Face.label).foregroundStyle(Ink.secondary)
+                    SectionTitle("Yours")
                     Text("Drop a video, gif or picture here and it gets woven like the scenes above. Wallpaper packages (.tokonoma) go here too")
                         .font(Face.body)
                         .foregroundStyle(Ink.muted)
@@ -57,7 +57,7 @@ struct WallpaperGrid: View {
     private func section(_ title: String, _ items: [Wallpaper]) -> some View {
         VStack(alignment: .leading, spacing: Space.m) {
             HStack(spacing: Space.s) {
-                Text(title).font(Face.label).foregroundStyle(Ink.secondary)
+                SectionTitle(title)
                 Text("\(items.count)").font(Face.meta).foregroundStyle(Ink.muted).monospacedDigit()
             }
             LazyVGrid(columns: columns, alignment: .leading, spacing: Space.xl) {
@@ -78,7 +78,7 @@ struct WallpaperGrid: View {
                     }
                     .contextMenu {
                         Button("Hang") { model.show(wallpaper.id) }
-                        Button(model.settings.isFavourite(wallpaper.id) ? "Remove from Favourites" : "Add to Favourites") {
+                        Button(model.settings.isFavourite(wallpaper.id) ? "Remove from favourites" : "Add to favourites") {
                             model.toggleFavourite(wallpaper.id)
                         }
                     }
@@ -113,14 +113,14 @@ struct WallpaperCard: View {
             .clipShape(RoundedRectangle(cornerRadius: Radius.thumb, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: Radius.thumb, style: .continuous)
-                    .strokeBorder(selected ? Ink.ring : (hovering ? Ink.hairline.opacity(2) : Ink.hairline), lineWidth: 1)
+                    .strokeBorder(selected ? Ink.ring : (hovering ? Ink.hairlineStrong : Ink.hairline), lineWidth: 1)
             )
             .overlay(alignment: .topTrailing) {
                 if favourite || hovering { StarButton(on: favourite, action: toggleFavourite).padding(Space.s) }
             }
-            .padding(3)
+            .padding(Space.xs)
             .overlay(
-                RoundedRectangle(cornerRadius: Radius.thumb + 3, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.thumb + Space.xs, style: .continuous)
                     .strokeBorder(selected ? Ink.ring : .clear, lineWidth: 1)
             )
 
@@ -132,16 +132,16 @@ struct WallpaperCard: View {
                 Spacer(minLength: 0)
                 if hanging { Seal() }
             }
-            .padding(.horizontal, 3)
+            .padding(.horizontal, Space.xs)
             if let origin = wallpaper.origin {
-                Text("by \(origin.author)").font(Face.meta).foregroundStyle(Ink.muted).lineLimit(1).padding(.horizontal, 3)
+                Text("by \(origin.author)").font(Face.meta).foregroundStyle(Ink.muted).lineLimit(1).padding(.horizontal, Space.xs)
             }
         }
         .contentShape(Rectangle())
         .onHover { inside in withAnimation(Motion.quick) { hovering = inside } }
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(selected ? [.isSelected, .isButton] : .isButton)
-        .accessibilityAction(named: favourite ? "Remove from Favourites" : "Add to Favourites", toggleFavourite)
+        .accessibilityAction(named: favourite ? "Remove from favourites" : "Add to favourites", toggleFavourite)
     }
 }
 
@@ -153,13 +153,13 @@ struct StarButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: on ? "star.fill" : "star")
-                .font(.system(size: 11, weight: .medium))
+                .font(Face.icon.weight(.medium))
                 .foregroundStyle(on ? Ink.shu : Ink.text)
                 .frame(width: 24, height: 24)
                 .background(Circle().fill(Ink.deepest.opacity(0.75)))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .help(on ? "Remove from Favourites" : "Add to Favourites")
+        .help(on ? "Remove from favourites" : "Add to favourites")
     }
 }

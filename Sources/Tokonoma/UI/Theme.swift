@@ -18,6 +18,10 @@ enum Ink {
     static let muted = Color(hex: 0x8A847A)
     static let hairline = Color(hex: 0xEFE9DE).opacity(0.08)
     static let ring = Color(hex: 0xEFE9DE).opacity(0.28)
+    /// A hovered or selected card's edge: the hairline, one step louder.
+    static let hairlineStrong = Color(hex: 0xEFE9DE).opacity(0.16)
+    /// Controls that can't be used right now.
+    static let disabled = 0.5
     /// The chosen option in a ChoiceBar: one step up from raised, still neutral.
     static let selected = Color(hex: 0x37332E)
     /// Shu, the vermilion of torii and seals. Used for the seal and almost nothing else.
@@ -44,6 +48,11 @@ enum Face {
     static let label = Font.system(size: 13, weight: .medium)
     static let meta = Font.system(size: 12, design: .monospaced)
     static let title = Font.system(size: 22, weight: .medium)
+    static let brand = Font.system(size: 15, weight: .medium)
+    /// Group titles above settings and sections: words, so SF Pro, quiet.
+    static let section = Font.system(size: 13, weight: .medium)
+    /// Every line icon in the chrome sits at one size.
+    static let icon = Font.system(size: 12, weight: .regular)
     /// Mincho for the kanji names only.
     static func kanji(_ size: CGFloat) -> Font { .custom("Hiragino Mincho ProN", size: size) }
 }
@@ -145,9 +154,9 @@ struct ChoiceBar: View {
                         .font(Face.meta)
                         .foregroundStyle(option == selection ? Ink.text : Ink.muted)
                         .padding(.horizontal, Space.s)
-                        .frame(height: 22)
+                        .frame(height: 24)
                         .background(
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            RoundedRectangle(cornerRadius: Radius.control - 2, style: .continuous)
                                 .fill(option == selection ? Ink.selected : .clear)
                         )
                         .contentShape(Rectangle())
@@ -174,12 +183,12 @@ struct MenuChoice: View {
                 Button(label(option)) { selection = option }
             }
         } label: {
-            HStack(spacing: 6) {
+            HStack(spacing: Space.xs) {
                 Text(label(selection)).font(Face.meta).foregroundStyle(Ink.text)
-                Image(systemName: "chevron.up.chevron.down").font(.system(size: 9, weight: .medium)).foregroundStyle(Ink.muted)
+                Image(systemName: "chevron.up.chevron.down").font(.system(size: 10, weight: .medium)).foregroundStyle(Ink.muted)
             }
             .padding(.horizontal, Space.s)
-            .frame(height: 26)
+            .frame(height: 28)
             .background(RoundedRectangle(cornerRadius: Radius.control, style: .continuous).fill(Ink.deepest))
             .overlay(RoundedRectangle(cornerRadius: Radius.control, style: .continuous).strokeBorder(Ink.hairline))
         }
@@ -226,4 +235,27 @@ extension View {
 extension String {
     /// "time of day" → "Time of day": manifests write lowercase, the UI reads in sentence case.
     var sentenceCased: String { prefix(1).uppercased() + dropFirst() }
+}
+
+/// A group title above a run of rows: the same everywhere.
+struct SectionTitle: View {
+    let text: String
+    init(_ text: String) { self.text = text }
+
+    var body: some View {
+        Text(text).font(Face.section).foregroundStyle(Ink.secondary)
+    }
+}
+
+/// One fact in a review list: a mono label column, then the value.
+struct FactRow: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: Space.m) {
+            Text(label).font(Face.meta).foregroundStyle(Ink.muted).frame(width: 88, alignment: .leading)
+            Text(value).font(Face.meta).foregroundStyle(Ink.secondary).textSelection(.enabled)
+        }
+    }
 }

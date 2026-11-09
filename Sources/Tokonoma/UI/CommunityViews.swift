@@ -15,7 +15,7 @@ struct CommunityNote: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Space.s) {
             HStack(spacing: Space.s) {
-                Image(systemName: "person.2").font(.system(size: 12)).foregroundStyle(Ink.secondary)
+                Image(systemName: "person.2").font(Face.icon).foregroundStyle(Ink.secondary)
                 Text("Community wallpaper by \(origin.author)").font(Face.label).foregroundStyle(Ink.text)
             }
             Text("Made by someone else, not by Tokonoma. It passed the automatic checks and runs with no network and no access outside its own folder, but nobody has reviewed it by hand.")
@@ -23,7 +23,7 @@ struct CommunityNote: View {
                 .foregroundStyle(Ink.secondary)
                 .lineSpacing(3)
                 .fixedSize(horizontal: false, vertical: true)
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 if let bytes = origin.packageBytes { fact("size", byteFormat.string(fromByteCount: Int64(bytes))) }
                 if let grid = origin.grid { fact("grid", grid) }
                 fact("installed", origin.installedAt.formatted(date: .abbreviated, time: .omitted))
@@ -36,10 +36,7 @@ struct CommunityNote: View {
     }
 
     private func fact(_ label: String, _ value: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: Space.m) {
-            Text(label).font(Face.meta).foregroundStyle(Ink.muted).frame(width: 72, alignment: .leading)
-            Text(value).font(Face.meta).foregroundStyle(Ink.secondary).textSelection(.enabled)
-        }
+        FactRow(label: label, value: value)
     }
 }
 
@@ -61,7 +58,7 @@ struct InstallSheet: View {
             }
 
             HStack(alignment: .top, spacing: Space.m) {
-                Image(systemName: "exclamationmark.triangle").font(.system(size: 13)).foregroundStyle(Ink.shu)
+                Image(systemName: "exclamationmark.triangle").font(Face.icon).foregroundStyle(Ink.secondary)
                 Text("This wallpaper comes from a third party, not from Tokonoma. It passed every automatic check on this Mac and will run with no network and no access outside its own folder, but nobody has reviewed it by hand. Only install wallpapers from people you trust.")
                     .font(Face.body)
                     .foregroundStyle(Ink.text)
@@ -71,7 +68,7 @@ struct InstallSheet: View {
             .padding(Space.l)
             .background(RoundedRectangle(cornerRadius: Radius.panel, style: .continuous).fill(Ink.raised))
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: Space.xs) {
                 fact("made by", [pending.package.author, pending.package.authorURL].compactMap { $0 }.joined(separator: " · "))
                 fact("size", byteFormat.string(fromByteCount: Int64(facts.packageBytes)))
                 if let media = facts.media {
@@ -104,9 +101,6 @@ struct InstallSheet: View {
     }
 
     private func fact(_ label: String, _ value: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: Space.m) {
-            Text(label).font(Face.meta).foregroundStyle(Ink.muted).frame(width: 88, alignment: .leading)
-            Text(value).font(Face.meta).foregroundStyle(Ink.secondary).textSelection(.enabled)
-        }
+        FactRow(label: label, value: value)
     }
 }

@@ -22,7 +22,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
     func menuNeedsUpdate(_ menu: NSMenu) {
         menu.removeAllItems()
 
-        let status = NSMenuItem(title: model.summary, action: nil, keyEquivalent: "")
+        let status = NSMenuItem(title: model.summary.prefix(1).uppercased() + model.summary.dropFirst(), action: nil, keyEquivalent: "")
         status.isEnabled = false
         menu.addItem(status)
         menu.addItem(.separator())
@@ -31,11 +31,11 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         menu.addItem(.separator())
 
         menu.addItem(action(model.settings.userPaused ? "Resume" : "Pause", #selector(togglePause), key: "p"))
-        menu.addItem(action("Next Wallpaper", #selector(next), key: "n"))
-        menu.addItem(action("Open Library…", #selector(library), key: "l"))
+        menu.addItem(action("Next wallpaper", #selector(next), key: "n"))
+        menu.addItem(action("Open library…", #selector(library), key: "l"))
         menu.addItem(.separator())
 
-        let login = action("Open at Login", #selector(toggleLogin))
+        let login = action("Open at login", #selector(toggleLogin))
         login.state = LaunchAtLogin.isEnabled ? .on : .off
         menu.addItem(login)
         menu.addItem(action("Quit Tokonoma", #selector(quit), key: "q"))
