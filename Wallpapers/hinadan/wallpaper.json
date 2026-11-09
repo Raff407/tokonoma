@@ -1,0 +1,16 @@
+{
+  "id": "hinadan",
+  "name": "Hinadan",
+  "title": "雛壇",
+  "description": "The tiered doll stand of the Hina festival, red carpet steps under a gold screen. Paper lanterns flicker warmly beside the dolls while peach blossom petals drift down.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "glow", "label": "lantern glow", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "petals", "label": "petals", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
