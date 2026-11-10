@@ -2,7 +2,8 @@
  * 水引 Mizuhiki — gift cords in red, white and gold looping over washi paper.
  *
  * Paper and its fibres are baked once. Each cord is a slow looping curve drawn as
- * a shadow, a base stroke and a dashed second colour whose offset runs along the
+ * one dark band under the chain (shadow and the gaps between cords), a base
+ * stroke and a dashed second colour whose offset runs along the
  * cord, which gives the twisted two-colour look. The loop shapes drift a little so
  * the cords seem to tie and untie.
  */
@@ -11,18 +12,19 @@
 
   const K = KasuriCore;
   const TAU = Math.PI * 2;
-  const STEPS = 240;
-  const PAPER = ['#e8dfc8', '#e2d8bf', '#ece4d0', '#ddd2b6'];
+  const STEPS = 128;
+  const PAPER = ['#d9cdb0', '#d3c6a8', '#ddd2b6', '#cdbf9f'];
+  const BAND = 'rgba(48,34,26,0.6)';
   const CHAINS = [
-    { y: 0.3, loops: 3, round: 1.8, slide: 0.5, dir: 1, ph: 0 },
-    { y: 0.7, loops: 3, round: 1.8, slide: 0.5, dir: -1, ph: 2 },
-    { y: 0.5, loops: 2, round: 2, slide: 0.35, dir: 1, ph: 4 },
+    { y: 0.3, loops: 3, round: 1.8, slide: 0.5, dir: 1, flip: 1, ph: 0 },
+    { y: 0.7, loops: 3, round: 1.8, slide: 0.5, dir: -1, flip: -1, ph: 2 },
+    { y: 0.5, loops: 2, round: 2, slide: 0.35, dir: 1, flip: 1, ph: 4 },
   ];
-  const ONE = { y: 0.5, loops: 3, round: 1.8, slide: 0.5, dir: 1, ph: 0 };
+  const ONE = { y: 0.5, loops: 3, round: 1.8, slide: 0.5, dir: 1, flip: 1, ph: 0 };
   const CORDS = [
-    { off: -1, base: '#b5301f', twist: '#ece4d0', flow: 1 },
-    { off: 0, base: '#ece4d0', twist: '#b5301f', flow: -1, light: true },
-    { off: 1, base: '#cfa94c', twist: '#a38234', flow: 1, gold: true },
+    { off: -1, base: '#b5301f', twist: '#f6f1e4', flow: 1 },
+    { off: 0, base: '#f8f4ea', twist: '#c23a26', flow: -1, light: true },
+    { off: 1, base: '#cfa94c', twist: '#8f7029', flow: 1, gold: true },
   ];
   const state = { dash: [0, 0], none: [] };
 
@@ -91,9 +93,9 @@
       const sn = Math.sin(u);
       const cs = Math.cos(u);
       const x = g.cx + ch.dir * (a * th - b * sn);
-      const y = ch.y * g.H + b * cs * 0.9 + Math.sin(th * 0.35 + t * 0.4 + ch.ph) * wave;
+      const y = ch.y * g.H + ch.flip * b * cs * 1.15 + Math.sin(th * 0.35 + t * 0.4 + ch.ph) * wave;
       const dx = ch.dir * (a - b * cs);
-      const dy = -b * sn * 0.9;
+      const dy = -ch.flip * b * sn * 1.15;
       const l = Math.hypot(dx, dy) || 1;
       P[i] = x;
       Q[i] = y;
@@ -111,16 +113,19 @@
     for (let i = 1; i <= STEPS; i++) ctx.lineTo(P[i] + NX[i] * off + dx, Q[i] + NY[i] * off + dy);
   }
 
+  // One dark band under the whole chain: shadow, outline and the gaps between cords.
+  function drawBand(ctx, g) {
+    const w = g.U * 2.7;
+    ctx.lineWidth = w * 1.25 * 2 + w * 1.4;
+    ctx.strokeStyle = BAND;
+    ctx.beginPath();
+    traceOffset(ctx, 0, g.U * 0.5, g.U * 0.7);
+    ctx.stroke();
+  }
+
   function drawCord(ctx, g, c, t) {
     const w = g.U * 2.7;
-    const off = c.off * w * 1.05;
-    ctx.setLineDash(state.none);
-    ctx.lineWidth = w * 1.1;
-    ctx.strokeStyle = 'rgba(70,52,34,0.24)';
-    ctx.beginPath();
-    traceOffset(ctx, off, g.U * 0.6, g.U * 0.8);
-    ctx.stroke();
-
+    const off = c.off * w * 1.25;
     ctx.lineWidth = w;
     ctx.strokeStyle = c.base;
     ctx.beginPath();
@@ -159,6 +164,7 @@
     ctx.lineJoin = 'round';
     for (let k = 0; k < n; k++) {
       fillChain(g, n === 1 ? ONE : CHAINS[k], t);
+      drawBand(ctx, g);
       for (let i = 0; i < CORDS.length; i++) {
         const c = CORDS[i];
         if (c.gold) {
