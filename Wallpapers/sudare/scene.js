@@ -13,7 +13,7 @@
   const S = KasuriSky;
   const { lerp, mixColor, toHex, parseColor, smoothstep } = K;
 
-  const BLIND = [0.07, 0.835];
+  const BLIND = [0.07, 0.43];
   const SILL = 0.835;
   const FLOOR = 0.87;
   const POST = 0.03;
@@ -77,8 +77,8 @@
   function paintWall(ctx, g, sky) {
     const x0 = g.W * 0.02;
     const x1 = g.W * 0.64;
-    const top = g.H * 0.435;
-    const bot = g.H * 0.525;
+    const top = g.H * 0.47;
+    const bot = g.H * 0.55;
     ctx.fillStyle = hex(dim('#ece6d4', sky, 0.7));
     ctx.fillRect(x0, top, x1 - x0, bot - top);
     ctx.fillStyle = hex(dim('#6c6a66', sky, 0.7));
@@ -90,7 +90,7 @@
   }
 
   function paintGround(ctx, g, sky, rand) {
-    const top = g.H * 0.52;
+    const top = g.H * 0.545;
     const grad = ctx.createLinearGradient(0, top, 0, g.H);
     grad.addColorStop(0, hex(dim('#56733f', sky, 0.75)));
     grad.addColorStop(1, hex(dim('#3e5a30', sky, 0.75)));
@@ -105,10 +105,10 @@
   }
 
   function paintPond(ctx, g, sky, rand) {
-    const cx = g.W * 0.57;
-    const cy = g.H * 0.7;
-    const rx = g.W * 0.2;
-    const ry = g.H * 0.065;
+    const cx = g.W * 0.6;
+    const cy = g.H * 0.735;
+    const rx = g.W * 0.17;
+    const ry = g.H * 0.055;
     ctx.fillStyle = hex(dim('#6a7f8a', sky, 0.6));
     ellipse(ctx, cx, cy, rx + g.U, ry + g.U * 0.6);
     const water = ctx.createLinearGradient(0, cy - ry, 0, cy + ry);
@@ -126,7 +126,7 @@
     ctx.fillStyle = hex(dim('#d6a24a', sky, 0.7));
     ellipse(ctx, cx - rx * 0.15, cy + ry * 0.2, g.U * 0.5, g.U * 0.3);
     // Stepping stones from the front toward the lantern.
-    const stones = [[0.36, 0.95], [0.4, 0.88], [0.43, 0.82], [0.4, 0.76], [0.35, 0.72]];
+    const stones = [[0.4, 0.84], [0.43, 0.79], [0.4, 0.75]];
     for (const s of stones) {
       ctx.fillStyle = hex(dim('#8d8b84', sky, 0.7));
       ellipse(ctx, g.W * s[0], g.H * s[1], g.U * (3 - s[1] * 1.2) * 1.8, g.U * 1.3);
@@ -136,9 +136,9 @@
   }
 
   function paintLantern(ctx, g, sky) {
-    const u = g.U * 1.5;
-    const cx = g.W * 0.27;
-    const base = g.H * 0.72;
+    const u = g.U * 1.55;
+    const cx = g.W * 0.3;
+    const base = g.H * 0.8;
     const stone = dim('#8e8d86', sky, 0.7);
     const shade = mixColor(stone, rgb('#2a2c30'), 0.3);
     const rect = (x, y, w, h, c) => {
@@ -168,8 +168,8 @@
 
   function paintPine(ctx, g, sky, rand) {
     const u = g.U;
-    const x0 = g.W * 0.8;
-    const base = g.H * 0.64;
+    const x0 = g.W * 0.84;
+    const base = g.H * 0.74;
     ctx.strokeStyle = hex(dim('#5a3f30', sky, 0.8));
     ctx.lineWidth = u * 2.2;
     ctx.beginPath();
@@ -183,7 +183,7 @@
     ctx.moveTo(x0 + u * 2, base - u * 28);
     ctx.quadraticCurveTo(x0 + u * 14, base - u * 28, x0 + u * 24, base - u * 33);
     ctx.stroke();
-    const pads = [[-22, -28, 13], [24, -33, 12], [-2, -40, 14], [-10, -16, 9], [12, -20, 9]];
+    const pads = [[-22, -28, 11], [16, -33, 10], [-2, -40, 12], [-10, -16, 8], [12, -20, 8]];
     for (const p of pads) {
       ctx.fillStyle = hex(dim('#2e4a30', sky, 0.8));
       ellipse(ctx, x0 + p[0] * u, base + p[1] * u, p[2] * u, p[2] * u * 0.38);
@@ -196,20 +196,36 @@
 
   function paintMaple(ctx, g, sky, rand) {
     const u = g.U;
-    const x0 = g.W * 0.12;
-    const base = g.H * 0.62;
-    ctx.strokeStyle = hex(dim('#4b3a30', sky, 0.8));
-    ctx.lineWidth = u * 1.2;
+    const x0 = g.W * 0.13;
+    const base = g.H * 0.8;
+    ctx.fillStyle = 'rgba(20,30,20,0.25)';
+    ellipse(ctx, x0, base, u * 12, u * 1.4);
+    ctx.strokeStyle = hex(dim('#3e2e26', sky, 0.8));
+    ctx.lineCap = 'round';
+    ctx.lineWidth = u * 1.8;
     ctx.beginPath();
     ctx.moveTo(x0, base);
-    ctx.quadraticCurveTo(x0 + u * 3, base - u * 14, x0 - u * 2, base - u * 24);
+    ctx.quadraticCurveTo(x0 + u * 4, base - u * 10, x0 - u * 1, base - u * 18);
     ctx.stroke();
-    const cols = ['#c0452c', '#d6733a', '#a8362a', '#d9a24a', '#6a8a45'];
-    for (let i = 0; i < 70; i++) {
-      const a = rand() * 6.28;
-      const r = Math.sqrt(rand()) * u * 14;
-      ctx.fillStyle = hex(dim(cols[Math.floor(rand() * rand() * cols.length)], sky, 0.8));
-      ellipse(ctx, x0 + Math.cos(a) * r * 1.2, base - u * 24 + Math.sin(a) * r * 0.7, u * (1.2 + rand() * 1.6), u * (0.9 + rand() * 1.1));
+    ctx.lineWidth = u * 0.9;
+    ctx.beginPath();
+    ctx.moveTo(x0 + u * 1.5, base - u * 10);
+    ctx.quadraticCurveTo(x0 + u * 8, base - u * 14, x0 + u * 12, base - u * 17);
+    ctx.moveTo(x0, base - u * 15);
+    ctx.quadraticCurveTo(x0 - u * 7, base - u * 18, x0 - u * 11, base - u * 21);
+    ctx.stroke();
+    // Tiered lobes: dark underside, vermilion body, gold catching the light.
+    const lobes = [[-11, -22, 8], [12, -18, 8], [0, -26, 10], [-4, -17, 7], [7, -28, 7]];
+    const tiers = [['#7a2a22', 0.9, 0.6], ['#c0452c', -0.3, 0.75], ['#d6733a', -1.4, 0.45]];
+    for (const tier of tiers) {
+      ctx.fillStyle = hex(dim(tier[0], sky, 0.8));
+      for (const l of lobes) {
+        ellipse(ctx, x0 + l[0] * u, base + (l[1] + tier[1]) * u, l[2] * u * tier[2] * 1.15, l[2] * u * tier[2] * 0.5);
+      }
+    }
+    ctx.fillStyle = hex(dim('#d9a24a', sky, 0.8));
+    for (const l of lobes) {
+      for (let i = 0; i < 3; i++) ellipse(ctx, x0 + (l[0] + (rand() - 0.5) * l[2]) * u, base + (l[1] - 2.4) * u, u * 0.9, u * 0.4);
     }
   }
 
@@ -240,12 +256,12 @@
     const tones = ['#c2ad6e', '#b39e5e', '#a8a15c', '#cdb97c', '#9e9558'];
     for (let x = x0; x < x1; x += pitch) {
       ctx.fillStyle = hex(dim(tones[Math.floor(rand() * tones.length)], sky, 0.35));
-      ctx.globalAlpha = 0.66;
-      ctx.fillRect(Math.round(x), top, pitch - 1, h);
+      ctx.globalAlpha = 0.5;
+      ctx.fillRect(Math.round(x), top, Math.max(1, Math.round(pitch * 0.6)), h);
     }
-    ctx.globalAlpha = 0.75;
+    ctx.globalAlpha = 0.6;
     ctx.fillStyle = hex(dim('#4a3d26', sky, 0.4));
-    for (const f of [0.1, 0.32, 0.55, 0.76, 0.93]) ctx.fillRect(x0, top + h * f, x1 - x0, 1);
+    for (const f of [0.3, 0.62, 0.85]) ctx.fillRect(x0, top + h * f, x1 - x0, 1);
     ctx.globalAlpha = 1;
     // Cloth band at the head and the foot, with a pale stitch line.
     const indigo = hex(dim('#26335e', sky, 0.4));
@@ -259,9 +275,12 @@
     ctx.fillRect(x0, top + band * 0.5, x1 - x0, 1);
     // Two vermilion hanging cords with knots.
     ctx.fillStyle = hex(dim('#c9432c', sky, 0.4));
+    // Short tie cords hang from the head band and loop under the foot.
     for (const f of [0.14, 0.86]) {
-      ctx.fillRect(g.W * f, top + band, 1, h * 0.9);
-      ctx.fillRect(g.W * f - 1, top + band + h * 0.3, 3, 3);
+      ctx.globalAlpha = 0.8;
+      ctx.fillRect(g.W * f, top + band, 1, h - band * 1.8);
+      ctx.globalAlpha = 1;
+      ctx.fillRect(g.W * f - 1, bot - g.U * 0.5, 3, Math.max(2, g.U * 1.6));
     }
     return c;
   }
@@ -298,10 +317,10 @@
     ctx.fillStyle = hex(board);
     ctx.fillRect(0, fy, g.W, g.H - fy);
     ctx.fillStyle = hex(mixColor(board, rgb('#2a1c12'), 0.45));
-    for (let i = 0; i < 6; i++) ctx.fillRect(0, fy + (g.H - fy) * Math.pow(i / 5.2, 1.45) + 1, g.W, 1);
+    for (let i = 1; i < 4; i++) ctx.fillRect(0, fy + (g.H - fy) * Math.pow(i / 4, 1.3), g.W, 1);
     ctx.fillStyle = hex(mixColor(board, rgb('#d8b88a'), 0.35));
-    ctx.globalAlpha = 0.5;
-    for (let i = 0; i < 70; i++) ctx.fillRect(rand() * g.W, fy + rand() * (g.H - fy), 6 + rand() * 20, 1);
+    ctx.globalAlpha = 0.3;
+    for (let i = 0; i < 24; i++) ctx.fillRect(rand() * g.W, fy + rand() * (g.H - fy), 6 + rand() * 20, 1);
     ctx.globalAlpha = 1;
     return c;
   }
@@ -309,18 +328,25 @@
   // Light through the gaps: slanted bars, wider than the screen so they can slide.
   function paintStripes(g, sky) {
     const h = Math.ceil(g.H - g.H * FLOOR);
-    const pitch = g.pitch * 2;
+    const pitch = Math.round(g.W / 6);
     const c = layer(g.W + pitch * 4, h);
     const ctx = c.getContext('2d');
     const warm = mixColor(rgb('#f6e4b4'), sky.amb, 0.35);
     const colour = mixColor(warm, rgb('#b9c2e0'), sky.night);
-    ctx.fillStyle = hex(colour);
-    const lean = h * 0.35;
+    const lean = h * 0.6;
+    const wide = pitch * 0.42;
     for (let x = 0; x < c.width + lean; x += pitch) {
+      const soft = ctx.createLinearGradient(x - lean * 0.5, 0, x + wide - lean * 0.5, 0);
+      const cc = hex(colour);
+      soft.addColorStop(0, 'rgba(0,0,0,0)');
+      soft.addColorStop(0.3, cc);
+      soft.addColorStop(0.7, cc);
+      soft.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = soft;
       ctx.beginPath();
       ctx.moveTo(x, 0);
-      ctx.lineTo(x + pitch * 0.55, 0);
-      ctx.lineTo(x + pitch * 0.55 - lean, h);
+      ctx.lineTo(x + wide, 0);
+      ctx.lineTo(x + wide - lean, h);
       ctx.lineTo(x - lean, h);
       ctx.fill();
     }
@@ -336,7 +362,7 @@
     state.blind = paintBlind(g, sky, rand);
     state.front = paintFront(g, sky, rand);
     state.stripes = paintStripes(g, sky);
-    state.stripeAlpha = 0.3 * (1 - sky.night) + 0.1;
+    state.stripeAlpha = 0.3 * (1 - sky.night) + 0.08;
     state.night = sky.night;
     state.choice = choice;
     state.retintIn = RETINT_SECONDS;
@@ -361,7 +387,7 @@
     const bot = Math.ceil(g.H * BLIND[1]);
     const span = bot - top;
     const gust = 0.65 + 0.35 * Math.sin(t * 0.31) + 0.2 * Math.sin(t * 0.83 + 1);
-    const amp = g.U * 1.5 * breeze * gust;
+    const amp = g.U * 2.4 * breeze * gust;
     for (let y = top; y < bot; y += SLICE) {
       const k = (y - top) / span;
       const dx = (Math.sin(t * 1.5 - k * 3.4) * 0.65 + Math.sin(t * 0.6 + k * 1.3) * 0.35) * amp * k;
@@ -372,17 +398,17 @@
 
   function drawStripes(ctx, g, t, amp) {
     const s = state.stripes;
-    const off = Math.sin(t * 0.5) * g.pitch * 1.2 + Math.sin(t * 1.5 - 3.4) * amp * 0.6;
+    const off = Math.sin(t * 0.25) * g.pitch * 3 + Math.sin(t * 1.5 - 3.4) * amp * 0.4;
     const fy = g.H * FLOOR;
     ctx.globalAlpha = state.stripeAlpha;
-    ctx.drawImage(s, -g.pitch * 2 + off, fy);
+    ctx.drawImage(s, -s.width * 0.3 + off, fy);
     ctx.globalAlpha = 1;
   }
 
   // A glass wind bell on a cord with a paper strip below, swinging in the breeze.
   function drawBell(ctx, g, t, breeze) {
     const u = g.U;
-    const ax = g.W * 0.74;
+    const ax = g.W * 0.5;
     const ay = g.H * BLIND[0] + u * 4.4;
     const swing = Math.sin(t * 1.7) * 0.2 * (0.3 + breeze * 0.7) * (0.7 + 0.3 * Math.sin(t * 0.4));
     ctx.save();
@@ -390,12 +416,21 @@
     ctx.rotate(swing);
     ctx.fillStyle = '#c9432c';
     ctx.fillRect(0, 0, 1, u * 4);
-    ctx.fillStyle = state.night > 0.5 ? 'rgba(190,206,214,0.8)' : 'rgba(206,228,226,0.85)';
+    ctx.fillStyle = '#26335e';
+    ctx.beginPath();
+    ctx.arc(0, u * 7, u * 3.5, Math.PI, 0);
+    ctx.lineTo(u * 3.9, u * 8.6);
+    ctx.lineTo(-u * 3.9, u * 8.6);
+    ctx.fill();
+    ctx.fillStyle = state.night > 0.5 ? '#bccad0' : '#dcebe6';
     ctx.beginPath();
     ctx.arc(0, u * 7, u * 3, Math.PI, 0);
     ctx.lineTo(u * 3.4, u * 8.2);
     ctx.lineTo(-u * 3.4, u * 8.2);
     ctx.fill();
+    ctx.fillStyle = '#c9432c';
+    ctx.fillRect(-u * 2.6, u * 6, u * 1.2, u * 1.2);
+    ctx.fillRect(u * 1.4, u * 6, u * 1.2, u * 1.2);
     ctx.fillStyle = '#5a7a82';
     ctx.fillRect(-u * 3.4, u * 8.2, u * 6.8, 1);
     ctx.fillStyle = '#c9432c';
