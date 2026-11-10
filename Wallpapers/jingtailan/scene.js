@@ -282,17 +282,23 @@
 
   function drawSheen(ctx, g, t, amount) {
     if (amount <= 0) return;
-    const slant = g.H * 0.5;
-    const span = g.W + slant + g.U * 60;
+    const slant = g.H * 0.3;
+    const span = g.W + slant + g.U * 50;
     const p = (t / 15) % 1;
-    const cx = -g.U * 30 + p * span;
-    for (let k = 0; k < 3; k++) {
-      const half = g.U * (22 - k * 7);
+    const cx = -g.U * 25 + p * span;
+    const a = Math.min(1, amount);
+    // Two passes, each drawn only over its band's bounding box.
+    for (let k = 0; k < 2; k++) {
+      const half = g.U * (k === 0 ? 18 : 8);
+      const sx = Math.max(0, Math.floor(cx - half - slant));
+      const ex = Math.min(g.W, Math.ceil(cx + half));
+      const sw = ex - sx;
+      if (sw <= 0) continue;
       ctx.save();
       band(ctx, g, cx, half, slant);
       ctx.clip();
-      ctx.globalAlpha = Math.min(1, amount) * (k === 0 ? 0.35 : k === 1 ? 0.5 : 0.7);
-      ctx.drawImage(state.lit, 0, 0);
+      ctx.globalAlpha = a * (k === 0 ? 0.5 : 0.85);
+      ctx.drawImage(state.lit, sx, 0, sw, g.H, sx, 0, sw, g.H);
       ctx.restore();
     }
     ctx.globalAlpha = 1;
