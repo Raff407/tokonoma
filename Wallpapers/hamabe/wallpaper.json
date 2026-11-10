@@ -1,0 +1,17 @@
+{
+  "id": "hamabe",
+  "name": "Hamabe",
+  "title": "浜辺",
+  "description": "A pine-backed shore at evening. Glass fishing floats rest on the sand beside a net hung to dry, gentle surf slides up the beach, and the long light follows your clock.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "time", "label": "time of day", "type": "choice", "options": ["auto", "dawn", "day", "dusk", "night"], "default": "auto"},
+    {"key": "surf", "label": "surf", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "breeze", "label": "breeze", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
