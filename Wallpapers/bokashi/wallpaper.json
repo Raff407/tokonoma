@@ -1,0 +1,17 @@
+{
+  "id": "bokashi",
+  "name": "Bokashi",
+  "title": "暈し",
+  "description": "Broad bands of dyed colour in the woodblock bokashi style, indigo fading through washi into vermilion above layered ridges. The bands slowly shift like a dawn sky while a low sun rises and sinks and mist drifts between the hills.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "drift", "label": "band shift", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mist", "label": "mist", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "sun", "label": "sun", "type": "toggle", "default": true},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
