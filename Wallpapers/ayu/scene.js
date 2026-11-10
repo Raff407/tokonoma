@@ -72,46 +72,33 @@
     const ctx = c.getContext('2d');
     const img = ctx.createImageData(g.W, g.H);
     const d = img.data;
-    const inks = GRAVEL.map(K.parseColor);
+    const lo = K.parseColor('#8c8b7a');
+    const hi = K.parseColor('#ada78e');
     for (let y = 0; y < g.H; y++) {
       for (let x = 0; x < g.W; x++) {
-        const n = fbm(x / (g.U * 7), y / (g.U * 7), 3, 7) + (rand() - 0.5) * 0.35;
-        const ink = inks[Math.max(0, Math.min(inks.length - 1, Math.floor(n * inks.length)))];
+        const n = fbm(x / (g.U * 16), y / (g.U * 16), 3, 7) * 0.8 + rand() * 0.2;
         const i = (y * g.W + x) * 4;
-        d[i] = ink[0];
-        d[i + 1] = ink[1];
-        d[i + 2] = ink[2];
+        d[i] = lerp(lo[0], hi[0], n);
+        d[i + 1] = lerp(lo[1], hi[1], n);
+        d[i + 2] = lerp(lo[2], hi[2], n);
         d[i + 3] = 255;
       }
     }
     ctx.putImageData(img, 0, 0);
-    const count = Math.floor((g.W * g.H) / (g.U * g.U * 5));
+    const count = Math.floor((g.W * g.H) / (g.U * g.U * 14));
     for (let i = 0; i < count; i++) {
       const x = rand() * g.W;
       const y = rand() * g.H;
-      const r = g.U * (0.45 + rand() * 0.9);
-      ctx.fillStyle = 'rgba(30,48,52,0.35)';
-      blob(ctx, x + r * 0.25, y + r * 0.3, r, r * 0.8);
-      ctx.fillStyle = GRAVEL[Math.floor(rand() * GRAVEL.length)];
+      const r = g.U * (0.6 + rand() * 1.1);
+      ctx.fillStyle = 'rgba(40,58,60,0.14)';
+      blob(ctx, x + r * 0.3, y + r * 0.35, r, r * 0.8);
+      ctx.fillStyle = rand() < 0.5 ? 'rgba(178,170,140,0.35)' : 'rgba(120,118,100,0.3)';
       blob(ctx, x, y, r, r * 0.8);
-      ctx.fillStyle = 'rgba(232,220,186,0.18)';
-      blob(ctx, x - r * 0.3, y - r * 0.3, r * 0.4, r * 0.28);
-    }
-    for (let i = 0; i < 14; i++) {
-      const x = rand() * g.W;
-      const y = g.H * (0.25 + rand() * 0.5);
-      const r = g.U * (2.2 + rand() * 2.2);
-      ctx.fillStyle = 'rgba(24,40,44,0.4)';
-      blob(ctx, x + r * 0.2, y + r * 0.3, r * 1.1, r * 0.8);
-      ctx.fillStyle = rand() < 0.5 ? '#5f5d52' : '#76705f';
-      blob(ctx, x, y, r, r * 0.75);
-      ctx.fillStyle = 'rgba(210,200,165,0.3)';
-      blob(ctx, x - r * 0.3, y - r * 0.3, r * 0.45, r * 0.3);
     }
     const grad = ctx.createLinearGradient(0, 0, 0, g.H);
-    grad.addColorStop(0, 'rgba(40,90,96,0.34)');
-    grad.addColorStop(0.5, 'rgba(36,86,94,0.52)');
-    grad.addColorStop(1, 'rgba(40,90,96,0.34)');
+    grad.addColorStop(0, 'rgba(46,92,98,0.3)');
+    grad.addColorStop(0.5, 'rgba(40,86,96,0.46)');
+    grad.addColorStop(1, 'rgba(46,92,98,0.3)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, g.W, g.H);
     return c;
@@ -140,7 +127,7 @@
         d[i] = 244;
         d[i + 1] = 230;
         d[i + 2] = 176;
-        d[i + 3] = level * 190;
+        d[i + 3] = level * 150;
       }
     }
     ctx.putImageData(img, 0, 0);
@@ -212,31 +199,33 @@
 
   function stone(ctx, g, rand, x, y, rx, ry) {
     const u = g.U;
-    ctx.fillStyle = 'rgba(16,30,34,0.42)';
-    blob(ctx, x + u * 1.2, y + u * 1.6, rx * 1.08, ry * 1.05);
-    ctx.fillStyle = 'rgba(224,216,186,0.55)';
-    blob(ctx, x, y, rx * 1.12, ry * 1.12);
+    // wake downstream (current runs to the right)
+    ctx.fillStyle = 'rgba(232,226,204,0.4)';
+    for (let i = 0; i < 3; i++) {
+      const off = (i - 1) * ry * 0.7;
+      poly(ctx, [x + rx * 0.7, y + off - u * 0.4, x + rx * 1.9 + u * rand() * 4, y + off * 1.3, x + rx * 0.7, y + off + u * 0.4]);
+    }
+    ctx.fillStyle = 'rgba(14,26,30,0.5)';
+    blob(ctx, x + u * 1.6, y + u * 2.2, rx * 1.02, ry);
     const pts = [];
-    for (let i = 0; i < 12; i++) {
-      const a = (i / 12) * TAU;
-      const k = 0.9 + rand() * 0.18;
+    for (let i = 0; i < 14; i++) {
+      const a = (i / 14) * TAU;
+      const k = 0.88 + rand() * 0.16;
       pts.push(x + Math.cos(a) * rx * k, y + Math.sin(a) * ry * k);
     }
-    ctx.fillStyle = '#625f55';
+    ctx.fillStyle = '#3b3a35';
     poly(ctx, pts);
-    ctx.fillStyle = '#827c6b';
-    blob(ctx, x - rx * 0.08, y - ry * 0.12, rx * 0.8, ry * 0.76);
-    ctx.fillStyle = '#a49c85';
-    blob(ctx, x - rx * 0.28, y - ry * 0.3, rx * 0.4, ry * 0.3);
-    for (let i = 0; i < 4; i++) {
-      ctx.fillStyle = MOSS[1 + Math.floor(rand() * 3)];
-      blob(ctx, x + (rand() - 0.75) * rx * 0.8, y + (rand() - 0.7) * ry * 0.7, rx * (0.16 + rand() * 0.18), ry * (0.14 + rand() * 0.14));
-    }
-    ctx.fillStyle = 'rgba(224,216,186,0.4)';
-    for (let i = 0; i < 4; i++) {
-      const l = u * (5 + rand() * 7);
-      ctx.fillRect(x + rx * 1.05 + u * rand() * 2, y + (i - 1.5) * ry * 0.45, l, Math.max(1, u * 0.28));
-    }
+    ctx.fillStyle = '#5c584c';
+    blob(ctx, x - rx * 0.06, y - ry * 0.1, rx * 0.84, ry * 0.8);
+    ctx.fillStyle = '#7b7562';
+    blob(ctx, x - rx * 0.22, y - ry * 0.26, rx * 0.5, ry * 0.42);
+    // moss cap on the upper side
+    ctx.fillStyle = MOSS[1];
+    blob(ctx, x - rx * 0.1, y - ry * 0.3, rx * 0.62, ry * 0.42);
+    ctx.fillStyle = MOSS[2];
+    blob(ctx, x - rx * 0.2, y - ry * 0.38, rx * 0.4, ry * 0.26);
+    ctx.fillStyle = MOSS[3];
+    blob(ctx, x - rx * 0.3, y - ry * 0.45, rx * 0.18, ry * 0.12);
   }
 
   function paintMaple(ctx, g, rand) {
@@ -267,10 +256,10 @@
   function paintFront(g, rand) {
     const c = layer(g.W, g.H);
     const ctx = c.getContext('2d');
-    const spots = [[0.3, 0.74], [0.4, 0.62], [0.5, 0.5], [0.6, 0.39], [0.69, 0.27]];
+    const spots = [[0.66, 0.78], [0.715, 0.6], [0.77, 0.42], [0.825, 0.25]];
     for (let i = 0; i < spots.length; i++) {
       const [fx, fy] = spots[i];
-      stone(ctx, g, rand, g.W * fx, g.H * fy, g.U * (6.5 + rand() * 2), g.U * (5 + rand() * 1.5));
+      stone(ctx, g, rand, g.W * fx, g.H * fy, g.U * (7.5 + rand() * 1.5), g.U * (6 + rand() * 1));
     }
     mossEdge(ctx, g, rand, bankTop, 1);
     mossEdge(ctx, g, rand, bankBot, -1);
@@ -335,17 +324,21 @@
 
   // ---- fish ----------------------------------------------------------------
 
+  const SEG = 9;
+  const XMIN = 0.06;
+  const XMAX = 0.54;
+
   function makeFish(g, rand) {
     const f = () => new Float32Array(MAX_FISH);
     const F = { x: f(), y: f(), sx: f(), sy: f(), tx: f(), ty: f(), ang: f(), ph: f(), mode: f(), timer: f(), dur: f(), size: f() };
-    const cx = g.W * (0.25 + rand() * 0.4);
     for (let i = 0; i < MAX_FISH; i++) {
-      F.x[i] = cx + (rand() - 0.5) * g.W * 0.4;
-      F.y[i] = lerp(g.lo, g.hi, rand());
-      F.ang[i] = Math.PI;
+      const lane = (i * 0.618) % 1;
+      F.x[i] = g.W * lerp(XMIN + 0.04, XMAX - 0.04, rand());
+      F.y[i] = lerp(g.lo + g.U * 4, g.hi - g.U * 4, lane);
+      F.ang[i] = Math.PI + (rand() - 0.5) * 0.3;
       F.ph[i] = rand() * TAU;
       F.timer[i] = 0.5 + rand() * 4;
-      F.size[i] = g.U * (27 + rand() * 6);
+      F.size[i] = g.U * (21 + rand() * 5);
     }
     return F;
   }
@@ -360,47 +353,64 @@
     const r = state.rand;
     F.sx[i] = F.x[i];
     F.sy[i] = F.y[i];
-    const back = F.x[i] > g.W * 0.85;
-    const dx = back ? -g.W * (0.15 + r() * 0.15) : (r() - 0.65) * g.W * 0.26;
-    F.tx[i] = Math.min(g.W * 0.96, Math.max(g.W * 0.04, F.x[i] + dx));
-    F.ty[i] = Math.min(g.hi, Math.max(g.lo, F.y[i] + (r() - 0.5) * g.H * 0.26));
+    const back = F.x[i] > g.W * (XMAX - 0.06);
+    const dx = back ? -g.W * (0.12 + r() * 0.12) : (r() - 0.6) * g.W * 0.22;
+    F.tx[i] = Math.min(g.W * XMAX, Math.max(g.W * XMIN, F.x[i] + dx));
+    F.ty[i] = Math.min(g.hi - g.U * 3, Math.max(g.lo + g.U * 3, F.y[i] + (r() - 0.5) * g.H * 0.22));
     F.mode[i] = 1;
-    F.dur[i] = 0.35 + r() * 0.3;
+    F.dur[i] = 0.45 + r() * 0.35;
     F.timer[i] = 0;
   }
 
   function stepFish(g, F, i, dt) {
-    let want = Math.PI;
+    let want = Math.PI + Math.sin(F.ph[i] * 0.05) * 0.12;
     if (F.mode[i] === 0) {
-      F.x[i] += g.U * 0.7 * dt;
-      F.y[i] += Math.sin(F.ph[i] * 0.3) * g.U * 0.25 * dt;
-      F.ph[i] += dt * 7;
+      F.x[i] += g.U * 0.6 * dt;
+      F.y[i] += Math.sin(F.ph[i] * 0.07) * g.U * 0.3 * dt;
+      F.ph[i] += dt * 6;
       F.timer[i] -= dt;
-      if (F.timer[i] <= 0 || F.x[i] > g.W * 0.97) startDart(g, F, i);
+      if (F.timer[i] <= 0 || F.x[i] > g.W * XMAX) startDart(g, F, i);
     } else {
       F.timer[i] += dt;
       const p = Math.min(1, F.timer[i] / F.dur[i]);
       const e = 1 - (1 - p) * (1 - p) * (1 - p);
       F.x[i] = lerp(F.sx[i], F.tx[i], e);
       F.y[i] = lerp(F.sy[i], F.ty[i], e);
-      F.ph[i] += dt * 26;
-      want = Math.atan2(F.ty[i] - F.sy[i], F.tx[i] - F.sx[i]);
+      F.ph[i] += dt * 18;
+      if (p < 0.7) want = Math.atan2(F.ty[i] - F.sy[i], F.tx[i] - F.sx[i]);
       if (p >= 1) {
         F.mode[i] = 0;
-        F.timer[i] = 1.5 + state.rand() * 4.5;
+        F.timer[i] = 2 + state.rand() * 5;
       }
     }
-    F.ang[i] += wrapAngle(want - F.ang[i]) * Math.min(1, dt * 7);
+    F.ang[i] += wrapAngle(want - F.ang[i]) * Math.min(1, dt * 5);
   }
 
-  function E(ctx, L, x, y, rx, ry) {
-    ell(ctx, x * L, y * L, rx * L, ry * L);
+  // Half width of the body along its length, t = 0 at the snout, 1 at the tail root.
+  function halfWidth(t) {
+    const nose = Math.sqrt(Math.min(1, t / 0.16));
+    const taper = 1 - 0.8 * Math.pow(Math.max(0, (t - 0.18) / 0.82), 1.25);
+    return 0.12 * nose * taper;
   }
 
-  function P(ctx, L, pts) {
+  function bend(t, ph, amp) {
+    return Math.sin(ph - t * 3.4) * 0.075 * amp * t * t;
+  }
+
+  // Body outline seen from above; k scales the width (rim, body, back stripe).
+  function bodyPath(ctx, L, ph, amp, k) {
     ctx.beginPath();
-    ctx.moveTo(pts[0] * L, pts[1] * L);
-    for (let i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i] * L, pts[i + 1] * L);
+    for (let j = 0; j <= SEG; j++) {
+      const t = j / SEG;
+      const x = (0.5 - t * 0.8) * L;
+      const y = (bend(t, ph, amp) - halfWidth(t) * k) * L;
+      if (j === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    for (let j = SEG; j >= 0; j--) {
+      const t = j / SEG;
+      ctx.lineTo((0.5 - t * 0.8) * L, (bend(t, ph, amp) + halfWidth(t) * k) * L);
+    }
     ctx.closePath();
     ctx.fill();
   }
@@ -409,38 +419,37 @@
     const L = F.size[i];
     const c = Math.cos(F.ang[i]);
     const s = Math.sin(F.ang[i]);
-    const amp = F.mode[i] === 1 ? 1.8 : 0.7;
-    ctx.globalAlpha = 0.28;
+    const amp = F.mode[i] === 1 ? 1.7 : 0.8;
+    const ph = F.ph[i];
+    // soft shadow on the gravel
+    ctx.globalAlpha = 0.22;
     ctx.fillStyle = '#10222a';
-    ctx.setTransform(c, s, -s, c, F.x[i] + g.U * 1.6, F.y[i] + g.U * 2.2);
-    E(ctx, L, 0, 0, 0.52, 0.12);
+    ctx.setTransform(c, s, -s, c, F.x[i] + g.U * 2.4, F.y[i] + g.U * 3);
+    ell(ctx, 0.08 * L, 0, 0.44 * L, 0.085 * L);
     ctx.globalAlpha = 1;
     ctx.setTransform(c, s, -s, c, F.x[i], F.y[i]);
-    const ph = F.ph[i];
-    const yTail = Math.sin(ph - 4.2) * 0.06 * amp;
-    ctx.fillStyle = '#6a6f45';
-    P(ctx, L, [-0.38, yTail, -0.58, yTail - 0.1 + Math.sin(ph - 5) * 0.04 * amp, -0.58, yTail + 0.1 + Math.sin(ph - 5) * 0.04 * amp]);
-    P(ctx, L, [0.04, -0.07, -0.12, -0.15, -0.14, -0.07]);
-    for (let k = 0; k < 6; k++) {
-      const x = 0.42 - k * 0.15;
-      const y = Math.sin(ph - k * 0.9) * 0.05 * amp * (k / 5);
-      const ry = 1.4 * (0.095 - k * 0.012 + (k === 0 ? -0.02 : 0));
-      ctx.fillStyle = '#1c2a24';
-      E(ctx, L, x, y, 0.165, ry * 1.2);
-    }
-    for (let k = 0; k < 6; k++) {
-      const x = 0.42 - k * 0.15;
-      const y = Math.sin(ph - k * 0.9) * 0.05 * amp * (k / 5);
-      const ry = 1.4 * (0.095 - k * 0.012 + (k === 0 ? -0.02 : 0));
-      ctx.fillStyle = '#b9b48f';
-      E(ctx, L, x, y + ry * 0.25, 0.145, ry * 0.85);
-      ctx.fillStyle = '#4f5f2e';
-      E(ctx, L, x, y - ry * 0.35, 0.145, ry * 0.6);
-    }
-    ctx.fillStyle = '#e0b94a';
-    E(ctx, L, 0.27, Math.sin(ph - 0.9) * 0.01, 0.04, 0.035);
-    ctx.fillStyle = '#1d2b2c';
-    E(ctx, L, 0.5, -0.02, 0.015, 0.015);
+    // forked tail
+    const tb = bend(1, ph, amp) + Math.sin(ph - 4) * 0.05 * amp;
+    ctx.fillStyle = '#4a5236';
+    poly(ctx, [-0.27 * L, bend(0.96, ph, amp) * L, -0.47 * L, (tb - 0.11) * L, -0.41 * L, tb * L, -0.47 * L, (tb + 0.11) * L]);
+    // pectoral fins
+    ctx.fillStyle = '#9c9a72';
+    poly(ctx, [0.26 * L, -0.07 * L, 0.12 * L, -0.15 * L, 0.17 * L, -0.06 * L]);
+    poly(ctx, [0.26 * L, 0.07 * L, 0.12 * L, 0.15 * L, 0.17 * L, 0.06 * L]);
+    // sunlit flank, olive body, dark back
+    ctx.fillStyle = '#cfc8a0';
+    bodyPath(ctx, L, ph, amp, 1.1);
+    ctx.fillStyle = '#7a7c50';
+    bodyPath(ctx, L, ph, amp, 0.84);
+    ctx.fillStyle = '#334028';
+    bodyPath(ctx, L, ph, amp, 0.42);
+    // gold gill spots and eyes
+    ctx.fillStyle = '#e0b04a';
+    ell(ctx, 0.25 * L, -0.07 * L, 0.028 * L, 0.02 * L);
+    ell(ctx, 0.25 * L, 0.07 * L, 0.028 * L, 0.02 * L);
+    ctx.fillStyle = '#15201c';
+    ell(ctx, 0.41 * L, -0.045 * L, 0.022 * L, 0.022 * L);
+    ell(ctx, 0.41 * L, 0.045 * L, 0.022 * L, 0.022 * L);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
 
@@ -550,7 +559,7 @@
     for (let i = 0; i < nf; i++) stepFish(g, state.fish, i, step);
     for (let i = 0; i < nl; i++) stepLeaf(g, state.leaves, i, t, step);
     ctx.drawImage(state.bed, 0, 0);
-    const amount = Math.min(1, 0.15 + light * 0.55);
+    const amount = Math.min(0.8, 0.1 + light * 0.4);
     if (light > 0) {
       ctx.globalAlpha = amount * 0.9;
       tileDraw(ctx, state.netA, t * g.U * 1.6, Math.sin(t * 0.25) * g.U * 2, g.W, g.H);
