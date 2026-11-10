@@ -1,0 +1,18 @@
+{
+  "id": "qingci",
+  "name": "Celadon",
+  "title": "青瓷",
+  "culture": "chinese",
+  "description": "A Longquan celadon bowl with lotus-petal carving and fine crackle glaze. Window light through an ice-crack lattice slowly travels over its curve.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "light", "label": "light", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "lattice", "label": "lattice", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "motes", "label": "motes", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
