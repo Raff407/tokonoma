@@ -11,8 +11,8 @@
   const { lerp, fbm, smoothstep } = K;
   const TAU = Math.PI * 2;
   const HORIZON = 0.5;
-  const SKY = ['#141a2a', '#1f2a40', '#34405a', '#56607a', '#7d8294'];
-  const STONE = { dark: '#4d514f', mid: '#6f726b', light: '#928f82', moss: '#4f6340', mossLight: '#6c7d4c' };
+  const SKY = ['#121726', '#1a2236', '#253048', '#323d56', '#3e4860'];
+  const STONE = { ink: '#181a1b', dark: '#3a3e3b', mane: '#4a4e46', mid: '#62655d', body: '#7a7b72', edge: '#949082', moss: '#4a5e3c', mossLight: '#647648' };
   const CEDAR = ['#2a4034', '#34503c', '#44644a'];
   const GOLD = '#e0b95a';
   const DROPS = 80;
@@ -87,15 +87,20 @@
 
   function paintCedars(ctx, g, rand) {
     const rows = [
-      { y: g.hy - g.U * 1, h: g.U * 30, step: g.U * 5.5, ink: ['#46585a', '#506862', '#5c7568'] },
-      { y: g.hy + g.U * 1, h: g.U * 42, step: g.U * 8, ink: CEDAR },
+      { y: g.hy - g.U * 1, h: g.U * 30, step: g.U * 5.5, ink: ['#2c3a3e', '#334440', '#3b4e48'], gap: 0 },
+      { y: g.hy + g.U * 1, h: g.U * 42, step: g.U * 8, ink: CEDAR, gap: g.u * 12 },
     ];
+    ctx.fillStyle = '#1f2b2a';
+    ctx.fillRect(0, g.hy - g.U * 8, g.W, g.U * 9);
     for (const row of rows) {
       for (let x = -row.step; x < g.W + row.step; x += row.step * (0.8 + rand() * 0.5)) {
-        if (Math.abs(x - g.cx) < g.u * 9) continue;
+        if (Math.abs(x - g.cx) < row.gap) continue;
         cedar(ctx, x, row.y, row.h * (0.8 + rand() * 0.45), row.ink);
       }
     }
+    // the far grove closes behind the torii, darker than the sky
+    cedar(ctx, g.cx - g.u * 3, g.hy, g.U * 36, rows[0].ink);
+    cedar(ctx, g.cx + g.u * 4, g.hy, g.U * 32, rows[0].ink);
   }
 
   // ---- far torii, path and lanterns -----------------------------------------
@@ -115,7 +120,7 @@
 
   function pathEdge(g, y, side) {
     const f = (y - g.hy) / (g.H - g.hy);
-    return g.cx + side * (g.u * 3 + f * g.u * 46);
+    return g.cx + side * (g.u * 7 + f * g.u * 24);
   }
 
   function paintPath(ctx, g, rand) {
@@ -149,7 +154,7 @@
     }
     // a wet sheen on the stones
     const sheen = ctx.createLinearGradient(0, g.hy, 0, g.H);
-    sheen.addColorStop(0, 'rgba(180,190,205,0.22)');
+    sheen.addColorStop(0, 'rgba(150,160,178,0.12)');
     sheen.addColorStop(1, 'rgba(120,135,160,0.05)');
     ctx.fillStyle = sheen;
     poly(ctx, [pathEdge(g, g.hy, -1), g.hy, pathEdge(g, g.hy, 1), g.hy, pathEdge(g, g.H, 1), g.H, pathEdge(g, g.H, -1), g.H]);
@@ -168,7 +173,7 @@
     ctx.fillRect(x - s * 0.7, base - s * 7.6, s * 1.4, s * 1.5);
     ctx.fillStyle = STONE.mid;
     poly(ctx, [x - s * 2.6, base - s * 8.2, x - s * 0.8, base - s * 9.9, x + s * 0.8, base - s * 9.9, x + s * 2.6, base - s * 8.2]);
-    ctx.fillStyle = STONE.light;
+    ctx.fillStyle = STONE.edge;
     blob(ctx, x, base - s * 10.3, s * 0.5, s * 0.5);
     ctx.fillStyle = STONE.moss;
     blob(ctx, x - s * 1.2, base - s * 8.3, s * 1.1, s * 0.3);
@@ -177,81 +182,92 @@
 
   // ---- the guardians --------------------------------------------------------
 
-  // One komainu seated on its plinth, facing the path. dir=-1 left one, +1 right one.
+  // A local frame where +x points forward (towards the path) and y=0 is the plinth top.
+  function local(ctx, x, top, s, dir) {
+    ctx.save();
+    ctx.translate(x, top);
+    ctx.scale(s * dir, s);
+  }
+
+  function curls(ctx, pts) {
+    for (let i = 0; i < pts.length; i += 3) blob(ctx, pts[i], pts[i + 1], pts[i + 2], pts[i + 2]);
+  }
+
+  // One komainu seated side-on on its plinth, facing the path. dir=+1 faces right.
   // open: mouth open (a) or shut (un).
   function guardian(ctx, x, base, s, dir, open, rand) {
-    const px = (v) => x + v * s * dir * -1;
-    // plinth
+    // plinth in two steps
     ctx.fillStyle = STONE.dark;
-    ctx.fillRect(x - s * 5.4, base - s * 2.4, s * 10.8, s * 2.4);
+    ctx.fillRect(x - s * 6, base - s * 1.6, s * 12, s * 1.6);
     ctx.fillStyle = STONE.mid;
-    ctx.fillRect(x - s * 4.6, base - s * 7.4, s * 9.2, s * 5);
-    ctx.fillStyle = STONE.light;
-    ctx.fillRect(x - s * 4.9, base - s * 7.9, s * 9.8, s * 0.7);
-    const top = base - s * 7.9;
-    // haunch and body
-    ctx.fillStyle = STONE.mid;
-    blob(ctx, px(-1.5), top - s * 4.2, s * 4.2, s * 4.6);
-    ctx.fillStyle = STONE.light;
-    blob(ctx, px(-2.6), top - s * 5.4, s * 2.3, s * 3);
-    // chest and forelegs
-    ctx.fillStyle = STONE.mid;
-    blob(ctx, px(1.6), top - s * 6.4, s * 3.2, s * 4);
+    ctx.fillRect(x - s * 5.2, base - s * 5.2, s * 10.4, s * 3.6);
+    ctx.fillStyle = STONE.edge;
+    ctx.fillRect(x - s * 5.5, base - s * 5.6, s * 11, s * 0.5);
+    const top = base - s * 5.6;
+    local(ctx, x, top, s, dir);
+    // tail: a rising flame of curls behind the haunch
+    ctx.fillStyle = STONE.mane;
+    curls(ctx, [-4.6, -5.2, 1.2, -5.4, -6.9, 1.3, -5.6, -8.7, 1.2, -4.9, -10.2, 1.0, -3.9, -11, 0.75]);
+    // haunch, back and chest as one crouched mass
+    ctx.fillStyle = STONE.body;
+    poly(ctx, [-5.4, 0, -5.6, -3, -4.6, -5.4, -2.6, -6.6, 0, -7.6, 1.8, -9.6, 3.6, -9.4, 3.8, -6.4, 3.3, -3.2, 3.2, 0]);
+    blob(ctx, -3, -2.8, 2.9, 2.9);
+    // far foreleg in shadow, near foreleg straight down to the paw
     ctx.fillStyle = STONE.dark;
-    ctx.fillRect(x + (dir < 0 ? 1 : -1) * s * 1.4 - s * 0.9, top - s * 4.6, s * 1.8, s * 4.6);
-    ctx.fillRect(x + (dir < 0 ? 1 : -1) * s * 3.4 - s * 0.9, top - s * 4.6, s * 1.8, s * 4.6);
-    ctx.fillStyle = STONE.mid;
-    ctx.fillRect(x + (dir < 0 ? 1 : -1) * s * 1.4 - s * 0.55, top - s * 4.6, s * 0.7, s * 4.6);
-    ctx.fillRect(x + (dir < 0 ? 1 : -1) * s * 3.4 - s * 0.55, top - s * 4.6, s * 0.7, s * 4.6);
-    // head, mane curls, ears
-    const hx = px(2.1);
-    const hy = top - s * 10.6;
+    ctx.fillRect(0.6, -5.4, 1.3, 5.4);
+    ctx.fillStyle = STONE.body;
+    ctx.fillRect(1.9, -6, 1.5, 6);
+    ctx.fillStyle = STONE.edge;
+    ctx.fillRect(3.0, -6, 0.4, 6);
+    blob(ctx, 3.0, -0.45, 1.3, 0.5);
+    blob(ctx, -1.6, -0.5, 1.8, 0.55);
+    // haunch line and rib shading
     ctx.fillStyle = STONE.dark;
-    for (let i = 0; i < 11; i++) {
-      const a = Math.PI * (0.55 + i * 0.19);
-      blob(ctx, hx + Math.cos(a) * s * 2.9 * dir * -1 * -1, hy + Math.sin(a) * s * 2.7, s * 1.05, s * 1.05);
-    }
-    ctx.fillStyle = STONE.mid;
-    for (let i = 0; i < 8; i++) {
-      const a = Math.PI * (0.62 + i * 0.22);
-      blob(ctx, hx + Math.cos(a) * s * 2.6, hy + Math.sin(a) * s * 2.5, s * 0.8, s * 0.8);
-    }
-    ctx.fillStyle = STONE.light;
-    blob(ctx, hx, hy + s * 0.2, s * 2.3, s * 2.1);
-    ctx.fillStyle = STONE.mid;
-    poly(ctx, [hx - s * 1.9, hy - s * 1.2, hx - s * 1.3, hy - s * 3.4, hx - s * 0.6, hy - s * 1.9]);
-    poly(ctx, [hx + s * 1.9, hy - s * 1.2, hx + s * 1.3, hy - s * 3.4, hx + s * 0.6, hy - s * 1.9]);
-    // brow, eyes, nose, mouth
+    ctx.fillRect(-3.4, -5.3, 2.6, 0.35);
+    blob(ctx, -0.6, -1.6, 0.5, 1.6);
+    // curly mane falling behind the head and down the chest
+    ctx.fillStyle = STONE.mane;
+    curls(ctx, [0.2, -9.6, 1.4, -0.4, -11.3, 1.3, 0.3, -12.9, 1.2, 1.5, -13.8, 1.0, 1.2, -8.2, 1.1,
+      2.6, -8.0, 0.9, 3.6, -7.6, 0.75, 3.7, -6.6, 0.6, -1.0, -8.6, 1.0]);
     ctx.fillStyle = STONE.dark;
-    ctx.fillRect(hx - s * 1.7, hy - s * 0.9, s * 1.3, s * 0.45);
-    ctx.fillRect(hx + s * 0.4, hy - s * 0.9, s * 1.3, s * 0.45);
-    ctx.fillStyle = '#1b1d1e';
-    blob(ctx, hx - s * 0.95, hy - s * 0.2, s * 0.38, s * 0.38);
-    blob(ctx, hx + s * 0.95, hy - s * 0.2, s * 0.38, s * 0.38);
-    ctx.fillStyle = STONE.dark;
-    blob(ctx, hx, hy + s * 0.55, s * 0.75, s * 0.5);
+    curls(ctx, [0.0, -10.3, 0.55, 0.6, -12.2, 0.5, 1.6, -8.6, 0.45, 3.0, -7.4, 0.4, -0.5, -8.4, 0.45]);
+    // head: skull, brow, square muzzle and a curled ear
+    ctx.fillStyle = STONE.body;
+    blob(ctx, 2.8, -11.5, 2.0, 1.9);
+    ctx.fillRect(3.4, -12.4, 2.6, 2.0);
+    ctx.fillStyle = STONE.edge;
+    ctx.fillRect(2.2, -13.3, 3.0, 0.45);
+    ctx.fillRect(5.6, -12.4, 0.4, 1.0);
+    ctx.fillStyle = STONE.mane;
+    blob(ctx, 1.6, -13.0, 0.7, 0.55);
+    ctx.fillStyle = STONE.ink;
+    blob(ctx, 3.6, -12.3, 0.42, 0.36);
+    blob(ctx, 6.0, -12.1, 0.42, 0.38);
     if (open) {
-      ctx.fillStyle = '#16191a';
-      blob(ctx, hx, hy + s * 1.35, s * 1.1, s * 0.75);
-      ctx.fillStyle = STONE.light;
-      ctx.fillRect(hx - s * 0.9, hy + s * 0.85, s * 1.8, s * 0.3);
+      poly(ctx, [3.8, -10.4, 6.1, -10.6, 6.1, -9.2, 4.4, -9.6]);
+      ctx.fillStyle = STONE.edge;
+      ctx.fillRect(5.2, -10.6, 0.5, 0.35);
+      ctx.fillStyle = STONE.body;
+      ctx.fillRect(3.9, -9.4, 2.2, 0.6);
     } else {
-      ctx.fillStyle = '#25282a';
-      ctx.fillRect(hx - s * 1.0, hy + s * 1.2, s * 2, s * 0.35);
+      ctx.fillRect(4.0, -10.5, 2.0, 0.28);
     }
-    // moss gathered on the head, back and plinth top, and a water stain below
+    ctx.fillStyle = STONE.dark;
+    ctx.fillRect(3.2, -9.9, 2.6, 0.3);
+    // moss on the back, head and plinth step
     ctx.fillStyle = STONE.moss;
-    for (let i = 0; i < 18; i++) {
-      const mx = x + (rand() - 0.5) * s * 9;
-      const my = top - rand() * s * 12;
-      if (rand() < 0.5) blob(ctx, mx, my, s * (0.4 + rand() * 0.7), s * 0.3);
-    }
+    blob(ctx, -2.6, -6.2, 1.8, 0.4);
+    blob(ctx, -4.4, -4.8, 0.8, 0.5);
+    blob(ctx, 2.6, -13.4, 1.0, 0.3);
     ctx.fillStyle = STONE.mossLight;
-    blob(ctx, px(-2.6), top - s * 8.8, s * 1.5, s * 0.45);
-    blob(ctx, hx, hy - s * 2.2, s * 1.2, s * 0.4);
+    blob(ctx, -2.0, -6.5, 1.0, 0.25);
+    ctx.restore();
     ctx.fillStyle = STONE.moss;
-    blob(ctx, x - s * 3, top, s * 1.8, s * 0.5);
-    blob(ctx, x + s * 3.4, base - s * 2.4, s * 1.6, s * 0.4);
+    for (let i = 0; i < 6; i++) {
+      blob(ctx, x + (rand() - 0.5) * s * 9, base - s * (1.8 + rand() * 3.2), s * (0.3 + rand() * 0.5), s * 0.22);
+    }
+    blob(ctx, x - s * 3, top, s * 1.8, s * 0.4);
+    blob(ctx, x + s * 3.6, base - s * 1.6, s * 1.6, s * 0.35);
   }
 
   function lightPool(ctx, x, y, r, a) {
@@ -269,21 +285,21 @@
     paintCedars(ctx, g, rand);
     paintTorii(ctx, g);
     paintPath(ctx, g, rand);
-    const s = g.u * 1.05;
-    const lx = g.u * 52;
-    const ly = g.hy + g.U * 24;
-    lantern(ctx, g.cx - lx, ly, g.u * 1.9, GOLD);
-    lantern(ctx, g.cx + lx, ly, g.u * 1.9, GOLD);
-    const gx = g.u * 30;
-    const gy = g.H - g.U * 5;
-    guardian(ctx, g.cx - gx, gy, s * 2.4, -1, true, rand);
-    guardian(ctx, g.cx + gx, gy, s * 2.4, 1, false, rand);
-    // a bright lantern beside each guardian's far side, with its light on the stones
-    return { canvas: c, lanterns: [[g.cx - lx, ly - g.u * 1.9 * 7], [g.cx + lx, ly - g.u * 1.9 * 7]] };
+    const s = g.u * 2.7;
+    const ls = g.u * 1.3;
+    const lx = g.u * 17;
+    const ly = g.hy + g.U * 9;
+    lantern(ctx, g.cx - lx, ly, ls, GOLD);
+    lantern(ctx, g.cx + lx, ly, ls, GOLD);
+    const gx = g.u * 42;
+    const gy = g.H - g.U * 4;
+    guardian(ctx, g.cx - gx, gy, s, 1, true, rand);
+    guardian(ctx, g.cx + gx, gy, s, -1, false, rand);
+    return { canvas: c, lanterns: [[g.cx - lx, ly - ls * 7], [g.cx + lx, ly - ls * 7]] };
   }
 
   function paintGlow(g) {
-    const r = Math.ceil(g.U * 14);
+    const r = Math.ceil(g.U * 10);
     const c = layer(r * 2, r * 2);
     const ctx = c.getContext('2d');
     lightPool(ctx, r, r, r, 0.5);
@@ -292,7 +308,7 @@
 
   function paintMist(g) {
     const w = Math.ceil(g.W * 1.5);
-    const h = Math.ceil(g.H * 0.18);
+    const h = Math.ceil(g.H * 0.1);
     const c = layer(w, h);
     const ctx = c.getContext('2d');
     const img = ctx.createImageData(w, h);
@@ -301,12 +317,12 @@
       const band = Math.sin((y / h) * Math.PI);
       for (let x = 0; x < w; x++) {
         const v = lerp(f(x, y), f(x - w, y), x / w);
-        const a = Math.round(smoothstep(0.38, 0.64, v) * band * 4) / 4;
+        const a = smoothstep(0.35, 0.75, v) * band * band;
         const i = (y * w + x) * 4;
-        img.data[i] = 190;
-        img.data[i + 1] = 198;
-        img.data[i + 2] = 208;
-        img.data[i + 3] = a * 70;
+        img.data[i] = 120;
+        img.data[i + 1] = 132;
+        img.data[i + 2] = 148;
+        img.data[i + 3] = a * 60;
       }
     }
     ctx.putImageData(img, 0, 0);
@@ -341,7 +357,7 @@
   function drawRain(ctx, g, t, dt, count) {
     const { R } = state.rain;
     const slant = 0.18;
-    ctx.strokeStyle = 'rgba(205,214,226,0.4)';
+    ctx.strokeStyle = 'rgba(205,214,226,0.5)';
     ctx.lineWidth = Math.max(1, g.U * 0.18);
     ctx.beginPath();
     for (let i = 0; i < count; i++) {
@@ -379,13 +395,13 @@
     const m = state.mist;
     const w = m.width;
     const a = (t * g.U * 0.9) % w;
-    ctx.globalAlpha = Math.min(1, mist * 0.8);
-    ctx.drawImage(m, -a, g.hy - g.H * 0.1);
-    ctx.drawImage(m, w - a, g.hy - g.H * 0.1);
+    ctx.globalAlpha = Math.min(1, mist * 0.5);
+    ctx.drawImage(m, -a, g.hy - g.H * 0.16);
+    ctx.drawImage(m, w - a, g.hy - g.H * 0.16);
     const b = (t * g.U * 0.5 + w * 0.4) % w;
-    ctx.globalAlpha = Math.min(1, mist * 0.4);
-    ctx.drawImage(m, b - w, g.hy + g.H * 0.08);
-    ctx.drawImage(m, b, g.hy + g.H * 0.08);
+    ctx.globalAlpha = Math.min(1, mist * 0.35);
+    ctx.drawImage(m, b - w, g.hy + g.H * 0.03);
+    ctx.drawImage(m, b, g.hy + g.H * 0.03);
     ctx.globalAlpha = 1;
   }
 
