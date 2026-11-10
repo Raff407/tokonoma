@@ -1,0 +1,17 @@
+{
+  "id": "enoshima",
+  "name": "Enoshima",
+  "title": "江ノ島",
+  "description": "A small pine island joined to the shore by a long bridge, Mount Fuji dark across the bay. Kites and gulls ride the wind, waves roll in, and the sunset follows your clock.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "time", "label": "time of day", "type": "choice", "options": ["auto", "dawn", "day", "dusk", "night"], "default": "dusk"},
+    {"key": "kites", "label": "kites", "type": "toggle", "default": true},
+    {"key": "waves", "label": "waves", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
