@@ -2,8 +2,9 @@
  * 雕漆 Diaoqi — carved red lacquer: ruyi cloud scrolls in relief inside a key-fret border.
  *
  * The relief is baked once: a base layer with groove, face and rim, and a pale layer
- * holding only the lit faces and rims. Each frame a slanted soft band is cut out of
- * the pale layer and laid over the base, so the light seems to slide over the carving.
+ * holding only the lit faces and rims. Each frame a slanted soft band of the pale layer
+ * (thin clipped strips, no full-screen scratch pass) is laid over the base, so the light
+ * seems to slide over the carving.
  */
 (function () {
   'use strict';
@@ -12,6 +13,7 @@
   const TAU = Math.PI * 2;
   const INK = { ground: '#3c120e', lattice: '#4e1812', groove: '#240908', face: '#bd3e2f', mid: '#8c2a20', rim: '#e07a5a', gold: '#b8923e', goldHi: '#dcc27a' };
   const SHEAR = -0.32;
+  const PERIOD = 16;
   const state = {};
 
   function layer(w, h) {
@@ -109,7 +111,7 @@
     fillShape(b, o, d * 1.3, d * 1.3, build, INK.groove);
     fillShape(b, o, 0, 0, build, INK.face);
     rim(b, o, build, d, INK.rim, false);
-    fillShape(p, o, 0, 0, build, 'rgba(244,160,120,0.5)');
+    fillShape(p, o, 0, 0, build, 'rgba(244,160,120,0.62)');
     rim(p, o, build, d * 1.2, '#f6bd92', true);
   }
 
@@ -284,17 +286,32 @@
     }
   }
 
-  function paintBand(g, sw) {
-    const w = Math.ceil(g.W * 0.3 * sw);
-    const c = layer(w, g.H);
-    const x = c.getContext('2d');
-    const gr = x.createLinearGradient(0, 0, w, 0);
-    gr.addColorStop(0, 'rgba(255,255,255,0)');
-    gr.addColorStop(0.5, 'rgba(255,255,255,1)');
-    gr.addColorStop(1, 'rgba(255,255,255,0)');
-    x.fillStyle = gr;
-    x.fillRect(0, 0, w, g.H);
-    return c;
+  // The band is cut into thin slanted strips of even alpha; each strip lays its slice
+  // of the pale layer straight onto the frame, so only the band's own pixels are touched.
+  const STRIPS = 14;
+  const stripAlpha = new Float32Array(STRIPS);
+  for (let i = 0; i < STRIPS; i++) {
+    const u = (i + 0.5) / STRIPS;
+    const s = Math.sin(Math.PI * u);
+    stripAlpha[i] = s * s;
+  }
+
+  function strip(ctx, pale, x0, x1, H, a) {
+    const sh = SHEAR * H;
+    const left = Math.max(0, Math.floor(Math.min(x0, x0 + sh)));
+    const right = Math.min(pale.width, Math.ceil(Math.max(x1, x1 + sh)));
+    if (right <= left) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x0, 0);
+    ctx.lineTo(x1, 0);
+    ctx.lineTo(x1 + sh, H);
+    ctx.lineTo(x0 + sh, H);
+    ctx.closePath();
+    ctx.clip();
+    ctx.globalAlpha = a;
+    ctx.drawImage(pale, left, 0, right - left, H, left, 0, right - left, H);
+    ctx.restore();
   }
 
   function bake(api) {
@@ -313,9 +330,6 @@
     state.g = g;
     state.base = base;
     state.pale = pale;
-    state.scratch = layer(W, H);
-    state.band = null;
-    state.bandSw = 0;
   }
 
   // ---- run ------------------------------------------------------------------------
@@ -330,25 +344,17 @@
     const sw = api.props.sweep || 1;
     ctx.drawImage(state.base, 0, 0);
     if (sheen <= 0) return;
-    if (!state.band || state.bandSw !== sw) {
-      state.band = paintBand(g, sw);
-      state.bandSw = sw;
+    const bw = g.W * 0.3 * sw;
+    const lean = g.H * Math.abs(SHEAR);
+    const span = g.W + bw + lean;
+    const ph = (t / PERIOD) % 1;
+    const x = -bw + ph * span;
+    const peak = Math.min(1, sheen * 0.95);
+    const step = bw / STRIPS;
+    for (let i = 0; i < STRIPS; i++) {
+      const x0 = x + i * step;
+      strip(ctx, state.pale, x0, x0 + step + 0.5, g.H, peak * stripAlpha[i]);
     }
-    const bw = state.band.width;
-    const span = g.W + bw + g.H * Math.abs(SHEAR);
-    const period = 20;
-    const ph = (t / period) % 1;
-    const x = -bw - g.H * Math.abs(SHEAR) + ph * span * 1.0;
-    const s = state.scratch.getContext('2d');
-    s.globalCompositeOperation = 'copy';
-    s.drawImage(state.pale, 0, 0);
-    s.globalCompositeOperation = 'destination-in';
-    s.setTransform(1, 0, SHEAR, 1, x - SHEAR * g.H * 0.5 + g.H * Math.abs(SHEAR) * 0.5, 0);
-    s.drawImage(state.band, 0, 0);
-    s.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.globalAlpha = Math.min(1, sheen * 0.9);
-    ctx.drawImage(state.scratch, 0, 0);
-    ctx.globalAlpha = 1;
   }
 
   Kasuri.run({
