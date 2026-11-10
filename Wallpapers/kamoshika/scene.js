@@ -314,43 +314,39 @@
 
   // ---- serow ---------------------------------------------------------------
 
-  const FUR = '#3a3733';
-  const FUR_HI = '#58504a';
-  const BELLY = '#6c645a';
+  const FUR = '#4b453e';
+  const FUR_HI = '#6d645a';
+  const BELLY = '#857b6c';
   const LEG = '#8e8576';
   const THROAT = '#dcd6c4';
 
+  function leg(ctx, x, top, w, fur, sock) {
+    ctx.fillStyle = fur;
+    poly(ctx, [x, top, x + w * 1.5, top, x + w * 1.15, -6, x + w * 1.05, 0, x + w * 0.05, 0, x, -6]);
+    ctx.fillStyle = sock;
+    poly(ctx, [x + w * 0.1, -6.5, x + w * 1.1, -6.5, x + w * 1.05, 0, x + w * 0.05, 0]);
+    ctx.fillStyle = '#26241f';
+    ctx.fillRect(x, -0.8, w * 1.1, 0.8);
+  }
+
   function paintBody(g) {
     const s = g.s;
-    const c = layer(40 * s, 22 * s);
+    const c = layer(40 * s, 30 * s);
     const ctx = c.getContext('2d');
-    ctx.translate(26 * s, 20 * s);
+    ctx.translate(26 * s, 28 * s);
     ctx.scale(s, s);
-    // far legs
-    ctx.fillStyle = '#2d2b28';
-    poly(ctx, [-5, -9, -3, -9, -3.4, -2.5, -3.2, 0, -5.2, 0, -5, -2.5]);
-    poly(ctx, [7, -10, 9.5, -10, 8.8, -2.5, 8.7, 0, 6.8, 0, 7, -3]);
-    // body
+    leg(ctx, -5.2, -14, 1.5, '#2d2b28', '#70685a');
+    leg(ctx, 7, -15, 1.5, '#2d2b28', '#70685a');
+    ctx.save();
+    ctx.translate(0, -5);
     ctx.fillStyle = FUR;
     poly(ctx, [-9.5, -14, -7, -16.6, -3, -17.6, 3, -17.8, 8, -17, 11.6, -14.6, 13.2, -11.2, 12.4, -8.8, 7, -7.8, -1, -8.2, -6, -8.4, -9.8, -9.6, -10.6, -12]);
     ctx.fillStyle = BELLY;
     poly(ctx, [-6, -8.8, -1, -8.6, 7, -8, 11.8, -8.7, 11, -10, 4, -10, -2, -10.5, -6, -10.5]);
     ctx.fillStyle = FUR_HI;
     poly(ctx, [-6, -16.5, 0, -17.4, 7, -17, 11, -15.4, 6, -15.8, -1, -16.4]);
-    // near legs
     ctx.fillStyle = FUR;
-    poly(ctx, [-8.4, -11, -5.2, -11, -5.4, -4, -5.5, -2, -5.4, 0, -7.8, 0, -7.9, -3, -8.4, -6]);
-    poly(ctx, [6, -12, 11, -12, 10.2, -5, 10, -2.5, 9.9, 0, 7.8, 0, 7.6, -3, 6.2, -6]);
-    ctx.fillStyle = LEG;
-    poly(ctx, [-7.9, -3.4, -5.5, -3.4, -5.4, 0, -7.8, 0]);
-    poly(ctx, [7.7, -3.6, 10, -3.6, 9.9, 0, 7.8, 0]);
-    ctx.fillStyle = '#26241f';
-    ctx.fillRect(-7.9, -0.7, 2.5, 0.7);
-    ctx.fillRect(7.7, -0.7, 2.3, 0.7);
-    // tail
-    ctx.fillStyle = FUR;
-    poly(ctx, [12.4, -15, 14, -14, 13.8, -11.4, 12.8, -12]);
-    // shaggy back
+    poly(ctx, [12.4, -15, 14.4, -13.4, 14, -10.6, 12.8, -12]);
     ctx.strokeStyle = FUR_HI;
     ctx.lineWidth = 0.4;
     for (let i = 0; i < 14; i++) {
@@ -360,9 +356,11 @@
       ctx.lineTo(x + 0.6, -14.2);
       ctx.stroke();
     }
-    // snow dust on the back
     ctx.fillStyle = '#e9e8de';
     poly(ctx, [-4, -17.1, 1, -17.9, 7, -17.3, 10.5, -15.8, 6, -16.6, 0, -17, -3, -16.6]);
+    ctx.restore();
+    leg(ctx, -8.4, -14, 1.7, FUR, LEG);
+    leg(ctx, 7.8, -15, 1.7, FUR, LEG);
     return c;
   }
 
@@ -378,8 +376,10 @@
     poly(ctx, [-3.4, 4.6, -3.2, 3.2, -5.2, 2, -7.6, 0.8, -6.2, 2.8, -4.8, 4.8]);
     ctx.fillStyle = FUR_HI;
     poly(ctx, [-2.8, -6.4, -5.4, -5.9, -8.6, -3.5, -6, -4.2, -3.4, -5.2]);
+    ctx.fillStyle = '#a79d8b';
+    poly(ctx, [-10.3, -0.2, -9.6, -2.6, -6.8, -3.2, -5.6, 0, -7.2, 2.2, -9.2, 1]);
     ctx.fillStyle = '#25231f';
-    blob(ctx, -9.6, -1.6, 0.9, 0.7);
+    blob(ctx, -9.9, -1.4, 0.9, 0.7);
     ctx.fillStyle = '#17150f';
     blob(ctx, -5.8, -2.8, 0.45, 0.4);
     ctx.strokeStyle = '#1b1915';
@@ -483,9 +483,9 @@
     const bx = g.sx;
     const by = g.gy + g.U * 0.4;
     const rise = Math.sin(t * 1.1) * 0.12 * breath;
-    ctx.drawImage(state.body, bx - 26 * s, by - 20 * s + rise * s * 0.3);
+    ctx.drawImage(state.body, bx - 26 * s, by - 28 * s + rise * s * 0.3);
     const pivx = bx - 9 * s;
-    const pivy = by - 15 * s + rise * s;
+    const pivy = by - 17.5 * s + rise * s;
     const sway = Math.sin(t * 0.35) * 0.05 + Math.sin(t * 0.9) * 0.02;
     ctx.save();
     ctx.translate(pivx, pivy);

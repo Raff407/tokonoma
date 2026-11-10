@@ -340,25 +340,25 @@
   }
 
   function henSprite(g) {
-    const s = g.U * 0.5;
+    const s = g.U * 0.56;
     const c = layer(44 * s, 28 * s);
     const ctx = c.getContext('2d');
     ctx.translate(22 * s, 22 * s);
     ctx.scale(s, s);
-    ctx.fillStyle = '#b0a691';
+    ctx.fillStyle = '#8a7660';
     ctx.beginPath();
     ctx.moveTo(-20, -5.5);
     ctx.quadraticCurveTo(-8, 1.5, 8, 1);
     ctx.quadraticCurveTo(16, -3, 14, -9);
     ctx.quadraticCurveTo(0, -11, -20, -5.5);
     ctx.fill();
-    ctx.fillStyle = '#d2c7ac';
+    ctx.fillStyle = '#efe6cf';
     ctx.beginPath();
     ctx.ellipse(8, -3.5, 5.5, 4, 0, 0, TAU);
     ctx.fill();
     ctx.fillStyle = '#5f5e58';
     for (let i = 0; i < 5; i++) ctx.fillRect(-8 + i * 3.5, -7.5 + (i % 2), 1.2, 1.2);
-    ctx.fillStyle = '#968e7c';
+    ctx.fillStyle = '#6f6556';
     ctx.beginPath();
     ctx.arc(13, -12, 4.9, 0, TAU);
     ctx.fill();
@@ -381,7 +381,7 @@
   function makeDucks(g) {
     return [
       { spr: drakeSprite(g), x: g.W * 0.5, y: g.wy + g.wh * 0.46, ax: g.W * 0.04, f: 0.17, p: 0.5 },
-      { spr: henSprite(g), x: g.W * 0.35, y: g.wy + g.wh * 0.58, ax: g.W * 0.035, f: 0.13, p: 2.2 },
+      { spr: henSprite(g), x: g.W * 0.38, y: g.wy + g.wh * 0.56, ax: g.W * 0.035, f: 0.13, p: 2.2 },
     ];
   }
 

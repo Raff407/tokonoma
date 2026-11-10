@@ -109,9 +109,9 @@
       blob(ctx, x - r * 0.3, y - r * 0.3, r * 0.45, r * 0.3);
     }
     const grad = ctx.createLinearGradient(0, 0, 0, g.H);
-    grad.addColorStop(0, 'rgba(47,79,85,0.12)');
-    grad.addColorStop(0.5, 'rgba(47,79,85,0.24)');
-    grad.addColorStop(1, 'rgba(47,79,85,0.12)');
+    grad.addColorStop(0, 'rgba(40,90,96,0.34)');
+    grad.addColorStop(0.5, 'rgba(36,86,94,0.52)');
+    grad.addColorStop(1, 'rgba(40,90,96,0.34)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, g.W, g.H);
     return c;
@@ -345,7 +345,7 @@
       F.ang[i] = Math.PI;
       F.ph[i] = rand() * TAU;
       F.timer[i] = 0.5 + rand() * 4;
-      F.size[i] = g.U * (21 + rand() * 5);
+      F.size[i] = g.U * (27 + rand() * 6);
     }
     return F;
   }
@@ -425,10 +425,17 @@
       const x = 0.42 - k * 0.15;
       const y = Math.sin(ph - k * 0.9) * 0.05 * amp * (k / 5);
       const ry = 1.4 * (0.095 - k * 0.012 + (k === 0 ? -0.02 : 0));
-      ctx.fillStyle = '#d8d2bb';
-      E(ctx, L, x, y + ry * 0.2, 0.14, ry);
-      ctx.fillStyle = '#3a4a2e';
-      E(ctx, L, x, y - ry * 0.3, 0.14, ry * 0.65);
+      ctx.fillStyle = '#1c2a24';
+      E(ctx, L, x, y, 0.165, ry * 1.2);
+    }
+    for (let k = 0; k < 6; k++) {
+      const x = 0.42 - k * 0.15;
+      const y = Math.sin(ph - k * 0.9) * 0.05 * amp * (k / 5);
+      const ry = 1.4 * (0.095 - k * 0.012 + (k === 0 ? -0.02 : 0));
+      ctx.fillStyle = '#b9b48f';
+      E(ctx, L, x, y + ry * 0.25, 0.145, ry * 0.85);
+      ctx.fillStyle = '#4f5f2e';
+      E(ctx, L, x, y - ry * 0.35, 0.145, ry * 0.6);
     }
     ctx.fillStyle = '#e0b94a';
     E(ctx, L, 0.27, Math.sin(ph - 0.9) * 0.01, 0.04, 0.035);

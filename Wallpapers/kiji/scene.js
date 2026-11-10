@@ -273,37 +273,38 @@
 
   function drawBird(ctx, x, y, s, ph) {
     const bob = Math.abs(Math.sin(ph)) * s * 0.35;
-    const peck = Math.max(0, Math.sin(ph * 0.5 + 1)) ** 6 * s * 1.5;
+    const peck = Math.max(0, Math.sin(ph * 0.5 + 1)) ** 6 * s * 2.2;
     ctx.save();
     ctx.translate(x, y - bob);
     legs(ctx, s, ph);
     tail(ctx, s, Math.sin(ph) * s * 0.4);
-    ctx.fillStyle = '#4b6b3b';
-    blob(ctx, 0, -9.5 * s, 7 * s, 4.4 * s, -0.12);
-    ctx.fillStyle = '#a95a2d';
-    blob(ctx, 2.6 * s, -9 * s, 4.2 * s, 3.6 * s, -0.1);
+    ctx.fillStyle = '#9a5128';
+    blob(ctx, 0, -9.5 * s, 7.4 * s, 4.6 * s, -0.12);
+    ctx.fillStyle = '#b8683a';
+    blob(ctx, 1.5 * s, -10.2 * s, 4.6 * s, 3 * s, -0.1);
     ctx.fillStyle = '#2f3b2a';
-    for (let i = -2; i <= 1; i++) blob(ctx, i * 1.8 * s - 1.5 * s, -11 * s, 0.7 * s, 0.7 * s);
-    ctx.fillStyle = '#b6945a';
-    blob(ctx, -3.5 * s, -12.5 * s, 3 * s, 0.9 * s, -0.1);
-    ctx.fillStyle = '#4b6b3b';
+    for (let i = -2; i <= 1; i++) blob(ctx, i * 1.9 * s - 1.2 * s, -11.6 * s, 0.7 * s, 0.7 * s);
+    ctx.fillStyle = '#3f6a4a';
+    blob(ctx, 5.4 * s, -10.6 * s, 2.8 * s, 3 * s);
     ctx.beginPath();
-    ctx.moveTo(4 * s, -11 * s);
-    ctx.lineTo(7 * s, -16 * s + peck);
-    ctx.lineTo(9 * s, -15 * s + peck);
-    ctx.lineTo(7.5 * s, -9.5 * s);
+    ctx.moveTo(4 * s, -11.5 * s);
+    ctx.lineTo(5.8 * s, -16.5 * s + peck);
+    ctx.lineTo(9 * s, -16 * s + peck);
+    ctx.lineTo(8 * s, -10 * s);
     ctx.fill();
     ctx.fillStyle = '#ebe6d6';
-    ctx.fillRect(6.2 * s, -14.3 * s + peck, 2.6 * s, 0.6 * s);
-    ctx.fillStyle = '#2d4a58';
-    blob(ctx, 8.4 * s, -16.8 * s + peck, 1.9 * s, 1.8 * s);
+    ctx.fillRect(5.6 * s, -15.2 * s + peck, 3.6 * s, 0.7 * s);
+    ctx.fillStyle = '#1f4a52';
+    blob(ctx, 7.6 * s, -17.6 * s + peck, 2.6 * s, 2.4 * s);
     ctx.fillStyle = '#b43a28';
-    blob(ctx, 8.9 * s, -16.4 * s + peck, 1.2 * s, 1.1 * s);
+    blob(ctx, 8.4 * s, -17.1 * s + peck, 1.8 * s, 1.6 * s);
+    ctx.fillStyle = '#e4d6a8';
+    blob(ctx, 8 * s, -18 * s + peck, 0.6 * s, 0.6 * s);
     ctx.fillStyle = '#c9a85a';
     ctx.beginPath();
-    ctx.moveTo(10 * s, -17 * s + peck);
-    ctx.lineTo(11.8 * s, -16.2 * s + peck);
-    ctx.lineTo(10 * s, -15.6 * s + peck);
+    ctx.moveTo(9.8 * s, -18 * s + peck);
+    ctx.lineTo(12 * s, -17 * s + peck);
+    ctx.lineTo(9.8 * s, -16.4 * s + peck);
     ctx.fill();
     ctx.restore();
   }
@@ -337,7 +338,7 @@
     const span = g.W + g.U * 60;
     const pos = ((t * g.U * 1.8 * walk + span * 0.3) % span) - g.U * 30;
     const phase = t * 2.6 * Math.max(0.2, walk);
-    drawBird(ctx, pos, g.H * 0.86, g.U * 1.9, walk > 0 ? phase : 0);
+    drawBird(ctx, pos, g.H * 0.88, g.U * 2.7, walk > 0 ? phase : 0);
     drawMist(ctx, g, t + 40, mist, g.H * 0.6, 0.3);
     drawSway(ctx, g, state.near, t, sway, g.H * 0.6, g.H, 1.7);
   }
