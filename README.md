@@ -251,6 +251,19 @@ whenever nobody can see them.
 | **Snow Corridor** 雪の大谷 | A mountain road cut between towering walls of snow in spring. Sunbeams slant across the cut, small snow drifts down and a few clouds pass over the Tateyama ridge. |
 | **Hanamizuki** 花水木 | A white dogwood in full bloom above a tiled wooden roof, on a clear spring morning. Branches sway in the breeze, petals drift down and dappled light slides over the tiles. |
 | **Kohan** 湖畔 | A lakeshore at first light. A small wooden rowboat is moored beside a red torii standing in the water, Mount Fuji and pine hills fade into the mist, and susuki reeds sway as the light follows your clock. |
+| **Kasumi** 霞 | Spring haze over layered hills. Cherry trees bloom and slip into the mist, a pine ridge fades behind them, and a single pagoda roof rises out of the haze. |
+| **Chinden** 路面電車 | A small old streetcar rattles along a quiet tree-lined track at dusk, past low tiled houses and a stone wall, under overhead wires. The lamps come on as the light follows your clock, and ginkgo leaves drift down. |
+| **Kakigori** かき氷 | A glass of shaved ice with red syrup on a wooden veranda table. Syrup runs down the glass in slow drips, a glass wind chime sways under the eave and the maples ripple in warm late summer light. |
+| **Enoshima** 江ノ島 | A small pine island joined to the shore by a long bridge, Mount Fuji dark across the bay. Kites and gulls ride the wind, waves roll in, and the sunset follows your clock. |
+| **Tsuwano** 津和野 | A castle-town canal under white namako walls and red-tiled roofs. Big koi glide through the water, maple leaves drift by, and the light follows your clock. |
+| **Kushiro** 釧路 | A vast reed wetland at sunrise. Mist drifts over a winding river, red-crowned cranes stand in the shallows and a pair crosses the golden sky, and the light follows your clock. |
+| **Blue pond** 青い池 | A milky turquoise pond in northern Hokkaido, bare larch trunks standing in the water and a snow-capped peak behind. Mist drifts over the surface and the reflections slowly shiver. |
+| **Noh stage** 能舞台 | An empty noh stage on a night garden. Firelight flickers in the iron baskets, embers rise, and a painted pine glows on the back wall above the polished boards and the bridge walkway. |
+| **Komainu** 狛犬 | A pair of mossy stone guardian lion-dogs flanking a shrine path in soft rain. Drops ring the puddles, lantern light wavers and mist drifts between the cedars. |
+| **Emaki** 絵巻 | A handscroll slowly unrolling across washi. Pines, a village with a pagoda and a stream pass by under drifting bands of brush gold mist. |
+| **Senko hanabi** 線香花火 | A paper-twist sparkler burning in a pot of sand on a dark summer night. Orange sparks branch like pine needles, fade slowly and fall, beside a stone lantern and a pail of water. |
+| **Contrails** 飛行機雲 | Contrails drawing slowly across an evening sky over a distant skyline, a red lattice tower and Mount Fuji, with tiled rooftops and a utility pole in front. Colours follow your clock from blue to orange. |
+| **Taue** 田植え | Flooded rice paddies in early summer. Rows of young seedlings stand in still water that holds the drifting clouds, a farm hut sits under cedars at the foot of the hills, a white heron fishes, and the light follows your clock. |
 | **Yours** | Drop any video, gif or picture (png, jpg, webp, heic, avif, tiff…) into the library and it gets woven the same way. Gifs play as looping clips. |
 
 Every scene has its own settings (season, wind, fish, inks…) plus the weave:
