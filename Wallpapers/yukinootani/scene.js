@@ -1,19 +1,21 @@
 /*
  * 雪の大谷 Yuki no Otani — a mountain road cut between walls of spring snow.
  *
- * The sky with the far ridge, and the corridor of snow and road, are baked once.
- * Clouds slide on a tiling strip, sunbeams are one layer faded very slowly,
- * and snow is a short pool of small flakes.
+ * Sky with the far ridge and the whole corridor (two sheer snow walls with
+ * strata, grey asphalt with lines) are baked once. Per frame: clouds slide in
+ * the strip of sky, a soft band of sun breathes on the lit wall, a bus drives
+ * slowly away up the road, and a short pool of flakes drifts down.
  */
 (function () {
   'use strict';
 
   const K = KasuriCore;
-  const { fbm, smoothstep } = K;
+  const { fbm } = K;
   const TAU = Math.PI * 2;
   const MAX_FLAKES = 110;
-  const FLAKES = 55;
-  const SKY = ['#5f93c0', '#7ba7cc', '#a0c1d8', '#c6d9e2', '#e2e8e5'];
+  const FLAKES = 50;
+  const BUS_TRIP = 46; // seconds for one bus to drive away
+  const SKY = ['#7d9fc6', '#95b3d2', '#b0c8dc', '#ccdae3', '#e2e7e6'];
   const state = {};
 
   function layer(w, h) {
@@ -23,146 +25,131 @@
     return c;
   }
 
-  function poly(ctx, pts) {
-    ctx.beginPath();
-    ctx.moveTo(pts[0], pts[1]);
-    for (let i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i], pts[i + 1]);
-    ctx.closePath();
-    ctx.fill();
+  function mix(a, b, t) {
+    const k = t < 0 ? 0 : t > 1 ? 1 : t;
+    return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k];
   }
 
   function geometry(api) {
     const W = api.cols;
     const H = api.rows;
-    const vy = H * 0.5;
-    return { W, H, U: H / 100, vy, rw: W * 0.17, wallH: H * 0.62 };
-  }
-
-  // road centre bends a little as it recedes
-  function centre(g, s) {
-    return g.W * 0.5 + Math.sin(s * 2.4 + 0.4) * (1 - s) * g.W * 0.07;
+    const vy = H * 0.56;
+    // rw: road half-width on the bottom row, hw: wall height per unit depth
+    return { W, H, U: H / 100, cx: W * 0.5, vy, rw: W * 0.2, hw: H * 0.62 };
   }
 
   // ---- sky and ridge -------------------------------------------------------
 
-  function paintSky(g, rand) {
-    const c = layer(g.W, g.H);
+  function paintSky(g) {
+    const c = layer(g.W, g.vy + 2);
     const ctx = c.getContext('2d');
-    const inks = SKY.map(K.parseColor);
-    const img = ctx.createImageData(g.W, g.H);
-    const d = img.data;
-    for (let y = 0; y < g.H; y++) {
-      const f = Math.min(1, y / g.vy) * (inks.length - 1);
-      const k = Math.min(inks.length - 2, Math.floor(f));
-      for (let x = 0; x < g.W; x++) {
-        const ink = inks[k + (rand() < f - k ? 1 : 0)];
-        const i = (y * g.W + x) * 4;
-        d[i] = ink[0]; d[i + 1] = ink[1]; d[i + 2] = ink[2]; d[i + 3] = 255;
-      }
-    }
-    ctx.putImageData(img, 0, 0);
+    const grad = ctx.createLinearGradient(0, 0, 0, g.vy);
+    SKY.forEach((ink, i) => grad.addColorStop(i / (SKY.length - 1), ink));
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, c.width, c.height);
     paintRidge(ctx, g);
     return c;
   }
 
   function ridgeY(g, x) {
-    const peak = Math.exp(-(((x - g.W * 0.46) / (g.W * 0.12)) ** 2)) * g.H * 0.17;
-    const peak2 = Math.exp(-(((x - g.W * 0.62) / (g.W * 0.08)) ** 2)) * g.H * 0.1;
-    return g.vy - g.H * 0.05 - peak - peak2 + fbm(x / (g.U * 12), 2.2, 4, 7) * g.H * 0.05;
+    const peak = Math.exp(-(((x - g.W * 0.46) / (g.W * 0.1)) ** 2)) * g.H * 0.2;
+    const peak2 = Math.exp(-(((x - g.W * 0.57) / (g.W * 0.07)) ** 2)) * g.H * 0.13;
+    return g.vy - g.H * 0.03 - peak - peak2 + (fbm(x / (g.U * 6), 2.2, 4, 7) - 0.5) * g.H * 0.04;
   }
 
   function paintRidge(ctx, g) {
-    ctx.fillStyle = '#6b7f9c';
+    ctx.fillStyle = '#7b8ea9';
     ctx.beginPath();
-    ctx.moveTo(0, g.vy + 4);
-    for (let x = 0; x <= g.W + 2; x += 2) ctx.lineTo(x, ridgeY(g, x));
-    ctx.lineTo(g.W, g.vy + 4);
+    ctx.moveTo(0, g.vy + 2);
+    for (let x = 0; x <= g.W + 2; x += 1) ctx.lineTo(x, ridgeY(g, x));
+    ctx.lineTo(g.W, g.vy + 2);
     ctx.fill();
-    // snow cap and gullies
-    ctx.fillStyle = '#e6eaea';
-    for (let x = 0; x < g.W; x += 2) {
+    // snowfields with rock gullies
+    ctx.fillStyle = '#e9ebe6';
+    for (let x = 0; x < g.W; x++) {
       const y = ridgeY(g, x);
-      if (y < g.vy - g.H * 0.07) {
-        const depth = (g.vy - g.H * 0.07 - y) * 0.9 + g.U * 1.5;
-        const gully = fbm(x / (g.U * 3), 0.5, 2, 5);
-        ctx.fillRect(x, y, 2, depth * (0.55 + gully * 0.7));
-      }
+      const gully = fbm(x / (g.U * 1.6), 0.5, 2, 5);
+      ctx.fillRect(x, y, 1, (g.vy - y) * (0.55 + gully * 0.5));
     }
-    ctx.fillStyle = '#566a8c';
-    for (let x = 0; x < g.W; x += 6) {
-      const y = ridgeY(g, x);
-      if (y < g.vy - g.H * 0.09) ctx.fillRect(x + 2, y + g.U * 3, 1, g.U * 4);
-    }
-    // haze at the foot
-    const grad = ctx.createLinearGradient(0, g.vy - g.H * 0.12, 0, g.vy + 2);
-    grad.addColorStop(0, 'rgba(219,227,226,0)');
-    grad.addColorStop(1, 'rgba(219,227,226,0.85)');
+    const grad = ctx.createLinearGradient(0, g.vy - g.H * 0.14, 0, g.vy + 2);
+    grad.addColorStop(0, 'rgba(214,222,226,0)');
+    grad.addColorStop(0.7, 'rgba(214,222,226,0.9)');
+    grad.addColorStop(1, 'rgba(214,222,226,1)');
     ctx.fillStyle = grad;
-    ctx.fillRect(0, g.vy - g.H * 0.12, g.W, g.H * 0.12 + 2);
+    ctx.fillRect(0, g.vy - g.H * 0.14, g.W, g.H * 0.14 + 2);
   }
 
   // ---- corridor ------------------------------------------------------------
 
-  function wallTop(g, x, s) {
-    return g.vy + s * (g.H - g.vy - g.wallH) + (fbm(x / (g.U * 7), 3.3, 3, 17) - 0.5) * g.U * 7 * s;
+  const INK = {
+    lit: '#f2ede1', litBand: '#c9bea8', litLow: '#ded5c3',
+    shade: '#c3cedb', shadeBand: '#93a2b8', shadeLow: '#aebccd',
+    lip: '#fbf9f2', haze: '#d6dee3',
+    road: '#7a7d83', roadDark: '#5f636b', line: '#efece4', slush: '#dcdcd6',
+  };
+
+  function wallTopJitter(g, z, side) {
+    return (fbm(z * 1.3, side * 4.1, 3, 17) - 0.5);
   }
 
-  function mix(a, b, t) {
-    return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+  function wallColor(g, P, x, y, side, s) {
+    const z = 1 / s;
+    const ybot = g.vy + s * (g.H - g.vy);
+    const ytop = g.vy - s * g.hw * (1 + wallTopJitter(g, z, side) * 0.08);
+    if (y < ytop) return null;
+    const h = (ybot - y) / (ybot - ytop);
+    const lit = side < 0;
+    const warp = fbm(z * 0.8, h * 2, 2, side > 0 ? 9 : 4);
+    // soft horizontal strata, converging to the far end like real layers
+    const band = Math.sin(h * 46 + warp * 6);
+    const fine = Math.sin(h * 130 + warp * 9);
+    let col = mix(lit ? P.litLow : P.shadeLow, lit ? P.lit : P.shade, 0.35 + h * 0.9);
+    if (band > 0.9) col = mix(col, lit ? P.litBand : P.shadeBand, 0.45);
+    else if (fine > 0.94) col = mix(col, lit ? P.litBand : P.shadeBand, 0.2);
+    // faint vertical scoops left by the rotary plough
+    const scoop = Math.sin(z * 9 + h * 1.5);
+    col = mix(col, lit ? P.litLow : P.shadeBand, Math.max(0, scoop - 0.6) * 0.25);
+    // overhanging lip: bright rim with a thin shadow under it
+    if (h > 0.965) col = mix(col, P.lip, 0.85);
+    else if (h > 0.92) col = mix(col, lit ? P.litBand : P.shadeBand, 0.35 * (h - 0.92) / 0.045);
+    // dirty snow bank at the foot
+    if (h < 0.04) col = mix(col, lit ? P.litBand : P.shadeBand, 0.3);
+    return mix(col, P.haze, Math.max(0, 0.8 - s * 1.6));
   }
 
-  function paintCorridor(g, rand) {
+  function roadColor(g, P, x, y) {
+    const sr = (y - g.vy) / (g.H - g.vy);
+    const u = (x - g.cx) / (sr * g.rw);
+    const au = Math.abs(u);
+    const z = 1 / sr;
+    const n = fbm(x / (g.U * 2), y / (g.U * 1.2), 3, 31);
+    let col = mix(P.roadDark, P.road, 0.55 + (n - 0.5) * 0.6);
+    // darker wheel tracks in each lane
+    const lane = Math.abs(au - 0.5);
+    if (lane < 0.12) col = mix(col, P.roadDark, 0.35 * (1 - lane / 0.12));
+    // white edge lines and a dashed centre line
+    if (au > 0.8 && au < 0.85) col = mix(col, P.line, 0.85);
+    if (au < 0.025 && (z * 0.9) % 1 < 0.5) col = mix(col, P.line, 0.85);
+    // a few small slush patches and the snowy shoulder
+    if (n > 0.76 && au < 0.8) col = mix(col, P.slush, 0.55);
+    if (au > 0.88) col = mix(col, P.slush, Math.min(1, (au - 0.88) * 9));
+    return mix(col, P.haze, Math.max(0, 0.75 - sr * 2));
+  }
+
+  function paintCorridor(g) {
     const c = layer(g.W, g.H);
     const ctx = c.getContext('2d');
     const img = ctx.createImageData(g.W, g.H);
     const d = img.data;
-    const lit = K.parseColor('#f1efe6');
-    const litShade = K.parseColor('#cbd8e2');
-    const dark = K.parseColor('#a7b8cf');
-    const darkShade = K.parseColor('#6c82a6');
-    const haze = K.parseColor('#d3dde3');
-    const road = K.parseColor('#4b5260');
-    const wet = K.parseColor('#7b8794');
-    const slush = K.parseColor('#d8dedf');
+    const P = {};
+    for (const k in INK) P[k] = K.parseColor(INK[k]);
     for (let y = 0; y < g.H; y++) {
-      const sRow = (y - g.vy) / (g.H - g.vy);
       for (let x = 0; x < g.W; x++) {
-        let col = null;
-        if (sRow > 0) {
-          const cx = centre(g, sRow);
-          const half = sRow * g.rw;
-          const dx = x - cx;
-          if (Math.abs(dx) < half) {
-            const n = fbm(x / (g.U * 3), y / (g.U * 2), 3, 31);
-            col = mix(road, wet, Math.min(1, n * 0.9 + sRow * 0.15));
-            if (n > 0.64) col = mix(col, slush, 0.7);
-            const edge = Math.abs(dx) / half;
-            if (edge > 0.86) col = mix(col, slush, (edge - 0.86) * 6);
-            col = mix(col, haze, Math.max(0, 0.55 - sRow));
-          }
-        }
-        if (!col) {
-          const left = x < centre(g, Math.max(0, sRow));
-          let s = Math.abs(x - centre(g, Math.max(0, sRow))) / g.rw;
-          for (let k = 0; k < 2; k++) s = Math.abs(x - centre(g, Math.min(1, s))) / g.rw;
-          if (s > 0.02) {
-            const sc = Math.min(s, 3);
-            const top = wallTop(g, x, sc);
-            const base = g.vy + Math.min(sc, 1) * (g.H - g.vy);
-            if (y >= top && y <= base + 1 + (sc > 1 ? 40 : 0)) {
-              const v = (base - y) / Math.max(1, base - top);
-              const strata = fbm(x / (g.U * 20), v * 11, 2, 9);
-              const band = Math.sin(v * 38 + strata * 5) > 0.82 ? 0.55 : 0;
-              const cut = fbm(x / (g.U * 2.2), v * 5, 3, 3);
-              let t = band * 0.7 + (cut > 0.62 ? 0.45 : 0) + (1 - v) * 0.25;
-              const a = left ? lit : dark;
-              const b = left ? litShade : darkShade;
-              col = mix(a, b, Math.min(1, t));
-              col = mix(col, haze, Math.max(0, 0.7 - s * 1.2));
-              if (v > 0.93) col = mix(col, left ? lit : dark, 0.8);
-            }
-          }
-        }
+        const dx = x - g.cx;
+        const side = dx < 0 ? -1 : 1;
+        const s = Math.max(0.004, Math.abs(dx) / g.rw);
+        const ybot = g.vy + s * (g.H - g.vy);
+        const col = y > ybot ? roadColor(g, P, x, y) : wallColor(g, P, x, y, side, s);
         if (col) {
           const i = (y * g.W + x) * 4;
           d[i] = col[0]; d[i + 1] = col[1]; d[i + 2] = col[2]; d[i + 3] = 255;
@@ -170,74 +157,90 @@
       }
     }
     ctx.putImageData(img, 0, 0);
-    paintDetails(ctx, g, rand);
+    paintPoles(ctx, g);
     return c;
   }
 
-  function paintDetails(ctx, g, rand) {
-    // red and white snow poles along both road edges
-    for (let i = 0; i < 6; i++) {
+  // red and white snow poles standing in the shoulder
+  function paintPoles(ctx, g) {
+    for (let i = 0; i < 7; i++) {
       for (let side = -1; side <= 1; side += 2) {
-        const s = 0.1 + i * 0.15 + (side > 0 ? 0.05 : 0);
-        const x = centre(g, s) + side * s * g.rw * 0.97;
+        const s = 0.14 + i * 0.13 + (side > 0 ? 0.06 : 0);
+        if (s > 1) continue;
+        const x = g.cx + side * s * g.rw * 0.93;
         const y = g.vy + s * (g.H - g.vy);
-        const h = s * g.H * 0.2 + 2;
-        const w = Math.max(1, s * g.U * 1.2);
+        const h = s * g.H * 0.16 + 1;
+        const w = Math.max(1, s * g.U * 1.1);
         ctx.fillStyle = '#ece8dc';
         ctx.fillRect(x - w / 2, y - h, w, h);
         ctx.fillStyle = '#c4452f';
-        ctx.fillRect(x - w / 2, y - h, w, h * 0.35);
-        ctx.fillRect(x - w / 2, y - h * 0.6, w, h * 0.2);
+        ctx.fillRect(x - w / 2, y - h, w, h * 0.22);
+        ctx.fillRect(x - w / 2, y - h * 0.56, w, h * 0.18);
       }
-    }
-    // cedar tips above the far wall edges
-    ctx.fillStyle = '#35503f';
-    for (let i = 0; i < 16; i++) {
-      const side = i % 2 ? 1 : -1;
-      const s = 0.06 + rand() * 0.28;
-      const x = centre(g, s) + side * (s * g.rw + g.U * (1 + rand() * 3));
-      const y = wallTop(g, x, s + 0.05);
-      const h = g.U * (3 + rand() * 4);
-      poly(ctx, [x - h * 0.22, y + 1, x, y - h, x + h * 0.22, y + 1]);
     }
   }
 
-  // ---- sunbeams, clouds, flakes -------------------------------------------
+  // ---- sun, clouds, bus, flakes -------------------------------------------
 
-  function paintBeams(g) {
+  // a soft warm wash of sun across the upper lit wall
+  function paintSun(g) {
     const c = layer(g.W, g.H);
     const ctx = c.getContext('2d');
-    const ox = g.W * 0.82;
-    const oy = -g.H * 0.15;
-    const beams = [[0.0, 0.2], [0.12, 0.3], [0.3, 0.16], [0.42, 0.26], [0.56, 0.14]];
-    for (const [off, wd] of beams) {
-      const x0 = ox - g.W * (0.2 + off);
-      const grad = ctx.createLinearGradient(ox, oy, x0, g.H);
-      grad.addColorStop(0, 'rgba(247,231,170,0.34)');
-      grad.addColorStop(0.7, 'rgba(247,231,170,0.12)');
-      grad.addColorStop(1, 'rgba(247,231,170,0)');
-      ctx.fillStyle = grad;
-      poly(ctx, [ox, oy, ox + g.W * wd * 0.25, oy, x0 + g.W * wd * 0.35, g.H, x0 - g.W * wd * 0.2, g.H]);
-    }
+    const grad = ctx.createLinearGradient(0, 0, g.cx, g.H * 0.7);
+    grad.addColorStop(0, 'rgba(240,214,150,0.32)');
+    grad.addColorStop(0.6, 'rgba(240,214,150,0.12)');
+    grad.addColorStop(1, 'rgba(240,214,150,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(g.cx - g.W * 0.03, g.vy - g.H * 0.02);
+    ctx.lineTo(0, g.H * 0.95);
+    ctx.closePath();
+    ctx.fill();
     return c;
   }
 
   function paintClouds(g, rand) {
-    const w = Math.round(g.W * 1.4);
+    const w = Math.round(g.W * 1.2);
     const c = layer(w, g.vy);
     const ctx = c.getContext('2d');
-    ctx.fillStyle = '#eef0ec';
-    for (let i = 0; i < 6; i++) {
-      const x = (i / 6) * w + rand() * g.W * 0.05;
-      const y = g.vy * (0.15 + rand() * 0.55);
-      const rx = g.W * (0.04 + rand() * 0.06);
+    for (let i = 0; i < 7; i++) {
+      const x = (i / 7) * w + rand() * g.W * 0.04;
+      const y = g.vy * (0.08 + rand() * 0.5);
+      const rx = g.W * (0.035 + rand() * 0.04);
+      ctx.fillStyle = i % 2 ? '#eef0ec' : '#e1e7ea';
       for (let j = -2; j <= 2; j++) {
         ctx.beginPath();
-        ctx.ellipse(x + j * rx * 0.6, y + Math.abs(j) * g.U * 0.2, rx * (1 - Math.abs(j) * 0.15), g.U * (1.2 + rand()), 0, 0, TAU);
+        ctx.ellipse(x + j * rx * 0.55, y - (2 - Math.abs(j)) * g.U * 0.7, rx * (1 - Math.abs(j) * 0.18), g.U * (1.6 + rand() * 1.2), 0, 0, TAU);
         ctx.fill();
       }
     }
     return c;
+  }
+
+  // a sightseeing bus seen from behind, driving away in the left lane
+  function drawBus(ctx, g, t) {
+    const p = (t / BUS_TRIP) % 1;
+    const sr = 0.95 * Math.pow(1 - p, 1.6) + 0.04;
+    const fade = Math.min(1, (1 - p) * 8, p * 12);
+    const x = g.cx - 0.45 * sr * g.rw;
+    const y = g.vy + sr * (g.H - g.vy);
+    const w = sr * g.rw * 0.62;
+    const h = w * 1.05;
+    ctx.globalAlpha = fade;
+    ctx.fillStyle = '#2b3140';
+    ctx.fillRect(x - w * 0.42, y - h * 0.08, w * 0.2, h * 0.1);
+    ctx.fillRect(x + w * 0.22, y - h * 0.08, w * 0.2, h * 0.1);
+    ctx.fillStyle = '#ebe6d8';
+    ctx.fillRect(x - w / 2, y - h, w, h * 0.94);
+    ctx.fillStyle = '#3c4a63';
+    ctx.fillRect(x - w * 0.42, y - h * 0.9, w * 0.84, h * 0.34);
+    ctx.fillStyle = '#c4452f';
+    ctx.fillRect(x - w / 2, y - h * 0.48, w, h * 0.1);
+    ctx.fillStyle = '#d9a441';
+    ctx.fillRect(x - w * 0.44, y - h * 0.28, w * 0.1, h * 0.06);
+    ctx.fillRect(x + w * 0.34, y - h * 0.28, w * 0.1, h * 0.06);
+    ctx.globalAlpha = 1;
   }
 
   function makeFlakes(g, rand) {
@@ -258,10 +261,10 @@
     const g = geometry(api);
     const rand = K.rng(api.seed);
     state.g = g;
-    state.sky = paintSky(g, rand);
+    state.sky = paintSky(g);
     state.clouds = paintClouds(g, rand);
-    state.corridor = paintCorridor(g, rand);
-    state.beams = paintBeams(g);
+    state.corridor = paintCorridor(g);
+    state.sun = paintSun(g);
     state.flakes = makeFlakes(g, rand);
   }
 
@@ -271,20 +274,21 @@
     const step = Math.min(dt, 0.1);
     ctx.drawImage(state.sky, 0, 0);
     const cw = state.clouds.width;
-    const off = (t * g.W * 0.006) % cw;
-    ctx.globalAlpha = 0.85;
+    const off = (t * g.W * 0.014) % cw;
+    ctx.globalAlpha = 0.9;
     ctx.drawImage(state.clouds, -off, 0);
     ctx.drawImage(state.clouds, cw - off, 0);
     ctx.globalAlpha = 1;
     ctx.drawImage(state.corridor, 0, 0);
-    ctx.globalAlpha = Math.min(1, Math.max(0, beams * (0.78 + 0.22 * Math.sin(t * 0.25))));
-    ctx.drawImage(state.beams, 0, 0);
+    drawBus(ctx, g, t);
+    ctx.globalAlpha = Math.min(1, Math.max(0, beams * (0.6 + 0.4 * Math.sin(t * 0.21))));
+    ctx.drawImage(state.sun, 0, 0);
     ctx.globalAlpha = 1;
     const F = state.flakes;
     const count = Math.min(MAX_FLAKES, Math.round(FLAKES * snow));
-    ctx.fillStyle = '#f4f2ea';
+    ctx.fillStyle = '#f7f5ee';
     for (let i = 0; i < count; i++) {
-      F.y[i] += F.v[i] * g.U * 2.2 * step;
+      F.y[i] += F.v[i] * g.U * 2.4 * step;
       F.x[i] += (Math.sin(t * 0.7 + F.p[i]) * 0.6 - 0.35) * g.U * step * 2;
       if (F.y[i] > g.H) { F.y[i] = -2; F.x[i] = (F.x[i] + g.W * 0.37) % g.W; }
       if (F.x[i] < 0) F.x[i] += g.W;
@@ -293,7 +297,7 @@
   }
 
   Kasuri.run({
-    defaults: { beams: 1, snow: 1, ramp: 'lines', cell: 7, boost: 0.2, gain: 1.15, dither: 0.3 },
+    defaults: { beams: 1, snow: 1, ramp: 'lines', cell: 7, boost: 0.2, gain: 1.1, dither: 0.3 },
     maxFps: 24,
     setup,
     draw,
