@@ -8,6 +8,8 @@ enum LibraryFilter: String, CaseIterable {
 struct WallpaperGrid: View {
     @EnvironmentObject private var model: AppModel
     @Binding var selection: String?
+    /// The Chinese tab: only tagged scenes, no filter bar. The Library tab leaves them out.
+    var onlyChinese = false
     // A per-window convenience, so it lives in defaults rather than settings.json.
     @AppStorage("libraryFilter") private var filter = LibraryFilter.all.rawValue
 
@@ -15,9 +17,27 @@ struct WallpaperGrid: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Space.xl) {
-            ChoiceBar(options: LibraryFilter.allCases.map(\.rawValue), selection: $filter)
-                .fixedSize()
-            if filter == LibraryFilter.favourites.rawValue { favouritesOnly } else { everything }
+            if onlyChinese {
+                chinese
+            } else {
+                ChoiceBar(options: LibraryFilter.allCases.map(\.rawValue), selection: $filter)
+                    .fixedSize()
+                if filter == LibraryFilter.favourites.rawValue { favouritesOnly } else { everything }
+            }
+        }
+    }
+
+    @ViewBuilder private var chinese: some View {
+        let items = WallpaperShelf.chinese(model.wallpapers)
+        if items.isEmpty {
+            VStack(alignment: .leading, spacing: Space.s) {
+                SectionTitle("Chinese")
+                Text("Nothing here yet. Scenes drawn from Chinese places and seasons will gather in this tab")
+                    .font(Face.body)
+                    .foregroundStyle(Ink.muted)
+            }
+        } else {
+            section("Chinese", items)
         }
     }
 
@@ -36,11 +56,12 @@ struct WallpaperGrid: View {
     }
 
     private var everything: some View {
-        VStack(alignment: .leading, spacing: Space.xxl) {
-            section("Scenes", model.wallpapers.filter(\.isBuiltIn))
-            let community = model.wallpapers.filter(\.isCommunity)
+        let rest = WallpaperShelf.withoutChinese(model.wallpapers)
+        return VStack(alignment: .leading, spacing: Space.xxl) {
+            section("Scenes", rest.filter(\.isBuiltIn))
+            let community = rest.filter(\.isCommunity)
             if !community.isEmpty { section("Community", community) }
-            let yours = model.wallpapers.filter { !$0.isBuiltIn && !$0.isCommunity }
+            let yours = rest.filter { !$0.isBuiltIn && !$0.isCommunity }
             if yours.isEmpty {
                 VStack(alignment: .leading, spacing: Space.s) {
                     SectionTitle("Yours")

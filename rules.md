@@ -71,6 +71,8 @@ python3 -m http.server 8765 --directory Wallpapers   # preview scenes; ?mode=raw
 - Default weave glyph/block/dot. Raw is not offered: the "mode" choice lists only glyph/block/dot
   (the validator refuses raw; old manifests and saved settings that ask for it get glyph).
   kasuri still draws `?mode=raw` for debug previews. Declare `mode` and `cell` properties.
+- Chinese scenes carry `"culture": "chinese"` in wallpaper.json (the validator accepts nothing else). They show
+  in the Chinese tab only, not the Library tab; favourites, rotation and the menu bar still see them.
 - Interactive scenes set `"interactive": true` and use `api.pointer` / `onClick`.
 - Adding a built-in: folder + manifest + index.html, then add the id to
   `AppModel.builtInOrder`, `ShippedWallpaperTests`, `market/src/server.js` EXAMPLES,

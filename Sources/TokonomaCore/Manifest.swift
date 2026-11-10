@@ -110,15 +110,19 @@ public struct Manifest: Codable, Equatable, Hashable, Sendable {
     public let version: Int
     public let interactive: Bool
     public let media: String?
+    /// Optional theme tag ("chinese"); the library files tagged scenes under their own tab.
+    public let culture: String?
     public let properties: [PropertySpec]
 
     enum CodingKeys: String, CodingKey {
-        case id, name, title, description, entry, version, interactive, media, properties
+        case id, name, title, description, entry, version, interactive, media, culture, properties
     }
+
+    public static let chinese = "chinese"
 
     public init(id: String, name: String, title: String? = nil, description: String? = nil,
                 entry: String = "index.html", version: Int = 1, interactive: Bool = false,
-                media: String? = nil, properties: [PropertySpec] = []) {
+                media: String? = nil, culture: String? = nil, properties: [PropertySpec] = []) {
         self.id = id
         self.name = name
         self.title = title
@@ -127,6 +131,7 @@ public struct Manifest: Codable, Equatable, Hashable, Sendable {
         self.version = version
         self.interactive = interactive
         self.media = media
+        self.culture = culture
         self.properties = properties
     }
 
@@ -140,6 +145,7 @@ public struct Manifest: Codable, Equatable, Hashable, Sendable {
         version = try c.decodeIfPresent(Int.self, forKey: .version) ?? 1
         interactive = try c.decodeIfPresent(Bool.self, forKey: .interactive) ?? false
         media = try c.decodeIfPresent(String.self, forKey: .media)
+        culture = try c.decodeIfPresent(String.self, forKey: .culture)
         properties = try c.decodeIfPresent([PropertySpec].self, forKey: .properties) ?? []
     }
 

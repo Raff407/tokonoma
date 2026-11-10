@@ -3,7 +3,7 @@ import TokonomaCore
 import UniformTypeIdentifiers
 
 enum Tab: String, CaseIterable {
-    case library, market, agents, settings
+    case library, chinese, market, agents, settings
 }
 
 /// The one window: a grid of scenes on the left, the chosen one alive on the right.
@@ -19,7 +19,8 @@ struct LibraryView: View {
             if let notice = model.notice { NoticeBar(text: notice) { model.notice = nil } }
             Divider().overlay(Ink.hairline)
             switch tab {
-            case .library: library
+            case .library: browser(onlyChinese: false)
+            case .chinese: browser(onlyChinese: true)
             case .market: MarketView()
             case .agents: AgentsView(agents: model.agents)
             case .settings: SettingsView()
@@ -75,10 +76,10 @@ struct LibraryView: View {
         .frame(height: 52)
     }
 
-    private var library: some View {
+    private func browser(onlyChinese: Bool) -> some View {
         HStack(spacing: 0) {
             ScrollView {
-                WallpaperGrid(selection: $selection)
+                WallpaperGrid(selection: $selection, onlyChinese: onlyChinese)
                     .padding(Space.xl)
             }
             .background(Ink.page)

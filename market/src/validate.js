@@ -117,6 +117,7 @@
     // The version names files in the registry, so it is a plain whole number and nothing else.
     if (m.version !== undefined && !(Number.isInteger(m.version) && m.version >= 1 && m.version <= 1e6)) bad('version must be a whole number from 1 to 1000000');
     if (m.description !== undefined && (typeof m.description !== 'string' || m.description.length > 240)) bad('description must be at most 240 characters');
+    if (m.culture !== undefined && m.culture !== 'chinese') bad('culture must be "chinese" or left out');
     if (m.kind !== undefined && m.kind !== 'media') bad('kind must be "media" or left out for a scene');
     if (m.kind !== 'media' && m.media !== undefined) bad('a scene can\'t carry a media file; share it as kind "media"');
     if (m.kind === 'media' && (typeof m.media !== 'string' || !MEDIA.test(m.media))) bad('media must be media.mp4, media.jpg, media.png or media.webp');

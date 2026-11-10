@@ -138,3 +138,35 @@ private let toriiJSON = """
         #expect(fish.defaultValue == .text("raw"))
     }
 }
+
+@Suite struct CultureTests {
+    private func wallpaper(_ id: String, culture: String?) -> Wallpaper {
+        Wallpaper(manifest: Manifest(id: id, name: id, culture: culture),
+                  folder: URL(fileURLWithPath: "/tmp/\(id)"), isBuiltIn: true)
+    }
+
+    @Test func cultureDecodesAndIsOptional() throws {
+        let tagged = try Manifest.decode(Data(#"{"id":"lantern","name":"Lantern","entry":"index.html","culture":"chinese"}"#.utf8))
+        #expect(tagged.culture == "chinese")
+        let plain = try Manifest.decode(Data(toriiJSON.utf8))
+        #expect(plain.culture == nil)
+    }
+
+    @Test func cultureRoundTripsAndIsOmittedWhenAbsent() throws {
+        let tagged = Manifest(id: "lantern", name: "Lantern", culture: "chinese")
+        #expect(try Manifest.decode(tagged.encoded()).culture == "chinese")
+        let json = String(decoding: try Manifest(id: "x1", name: "X").encoded(), as: UTF8.self)
+        #expect(!json.contains("culture"))
+    }
+
+    @Test func shelvesSplitChineseFromTheRest() {
+        let all = [wallpaper("koi", culture: nil), wallpaper("lantern", culture: "chinese"), wallpaper("loud", culture: "Chinese")]
+        #expect(WallpaperShelf.chinese(all).map(\.id) == ["lantern", "loud"])
+        #expect(WallpaperShelf.withoutChinese(all).map(\.id) == ["koi"])
+    }
+
+    @Test func emptyListGivesEmptyShelves() {
+        #expect(WallpaperShelf.chinese([]).isEmpty)
+        #expect(WallpaperShelf.withoutChinese([]).isEmpty)
+    }
+}

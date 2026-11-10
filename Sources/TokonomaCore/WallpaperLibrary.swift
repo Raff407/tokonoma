@@ -13,6 +13,7 @@ public struct Wallpaper: Identifiable, Equatable, Hashable, Sendable {
     public var entryURL: URL { folder.appendingPathComponent(manifest.entry) }
     public var isMedia: Bool { manifest.media != nil }
     public var isCommunity: Bool { origin?.source == .community }
+    public var isChinese: Bool { manifest.culture?.lowercased() == Manifest.chinese }
 
     public init(manifest: Manifest, folder: URL, isBuiltIn: Bool, origin: Origin? = nil) {
         self.manifest = manifest
