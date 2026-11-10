@@ -345,6 +345,86 @@ whenever nobody can see them.
 | **Satoyama** 里山 | Terraced hills above a village: flooded paddies, cedar and bamboo, a thatched farmhouse with a thread of smoke, and light that follows your clock. |
 | **Hamabe** 浜辺 | A pine-backed shore at evening. Glass fishing floats rest on the sand beside a net hung to dry, gentle surf slides up the beach, and the long light follows your clock. |
 | **Yours** | Drop any video, gif or picture (png, jpg, webp, heic, avif, tiff…) into the library and it gets woven the same way. Gifs play as looping clips. |
+| **Great Wall** 长城 | The Great Wall climbing a mountain ridge in autumn, grey battlements and tiled watchtowers among red and gold maples, with mist drifting through the valleys and the light following your clock. |
+| **Gugong** 故宫 | A corner tower of the Forbidden City in falling snow: yellow glazed roofs, crimson walls, white marble and the moat below. Snow drifts down, lanterns sway, and the light follows your clock. |
+| **West Lake** 西湖 | West Lake in morning mist. A willow causeway runs out across the water to a stone arch bridge, a slim pagoda stands on a far hill, a covered boat drifts by, and the light follows your clock. |
+| **Guilin** 桂林 | Karst peaks standing along the Li river in light rain. Green hills fade into haze, mist drifts between them, a bamboo raft with two cormorants slides downstream, and the light follows your clock. |
+| **Huangshan** 黄山 | Twisted pines cling to granite peaks above a sea of cloud on the Yellow Mountains. Mist drifts between the spires and the light follows your clock. |
+| **Zhangjiajie** 张家界 | Tall sandstone pillars rising out of a sea of cloud, pines clinging to their tops and a small pavilion on one crest. Mist drifts between the ranks and a few cranes cross the haze. |
+| **Lijiang** 丽江 | An old Naxi town at dusk: grey tiled roofs with upswept eaves, a stone arch bridge over the canal, a slow water wheel, willows and red lanterns. The light follows your clock. |
+| **Three Gorges** 三峡 | A Yangtze gorge with steep cliffs, layered ridges and drifting mist. A lone covered boat slips down the river, a small pagoda stands on a far ridge, and the light follows your clock. |
+| **Jiuzhaigou** 九寨沟 | Terraced jade lakes stepping down through an autumn forest beneath ink-wash peaks, a small pavilion on the bank. Ripples spread, mist drifts and maple leaves fall. |
+| **Suzhou** 苏州 | A scholar garden at first light. Koi shadows drift under a zigzag stone bridge, a tiled pavilion with upturned eaves and a Taihu rockery stand beside a whitewashed cloud wall with a moon gate, and willow strands sway over the pond. |
+| **Longji** 龙脊 | The Dragon's Backbone rice terraces: flooded steps mirror the sky, green and golden fields climb the ridge, a few wooden stilt houses with grey tile roofs sit among them, and mist drifts across. The light follows your clock. |
+| **Yuanyang** 元阳 | Flooded rice terraces of Yuanyang in Yunnan, each curved band holding the colour of the sunrise. Mist drifts across the slopes, a Hani village sits among the paddies, and the light follows your clock. |
+| **Dunhuang** 敦煌 | A crescent spring among the sand dunes with a small upturned-eave pavilion on its shore. Wind ripples the sand, a few reeds sway, the water glints, and the light follows your clock. |
+| **Silk Road Desert** 沙漠 | Rammed-earth beacon tower in ruin above rolling Silk Road dunes, with wind lines of sand drifting low across the ripples and the light following your clock. |
+| **Pingyao** 平遥 | The old walled town of Pingyao on a snowy night: a crenellated brick wall with horse-face bastions, a two-eaved gate tower, grey tiled roofs behind, and red lanterns glowing along the wall while a little snow falls. |
+| **Hongcun** 宏村 | Whitewashed Huizhou houses with stepped horsehead gables and dark tile roofs ring a half-moon pond. Their walls lie upside down in the water, ripples spread, mist drifts off the hills, and the light follows your clock. |
+| **Wuzhen** 乌镇 | A Jiangnan water town canal: a single-arch stone bridge over green water, white walls with dark tiled roofs and stepped gables, red lanterns, a black-canopied boat and swaying willow. |
+| **Tulou** 土楼 | A round earthen fortress house of Fujian sits in green terraced hills. Smoke curls from its courtyard hearths, mist drifts across the ridges, and the light follows your clock. |
+| **Shanghai** 上海 | A wide river at dusk. Beyond it a far skyline of slim towers, a tiered pagoda and old tile-roofed waterfront houses, their windows lighting one by one as the clock moves into evening, a lantern sampan gliding across the reflections. |
+| **Hukou** 壶口 | The Yellow River squeezes between loess cliffs and pours over a stone shelf into a cauldron of foam. Spray rises, slow mist drifts, a pavilion and a gnarled pine look on, and a few birds cross the pale sun. |
+| **Taishan** 泰山 | A long stone stairway switchbacks up the sacred peak to a red-walled temple above a sea of cloud. Cranes cross the sky and the light follows your clock. |
+| **Mount Emei** 峨眉山 | A forested summit on Mount Emei with a gold double-eaved temple roof above a sea of cloud. A soft ring of light glows in the mist and the cloud drifts slowly past. |
+| **Shilin** 石林 | The Stone Forest of Yunnan: blades of grey limestone rising from grass, a small pavilion on a far rock, pale shafts of light and haze drifting between the stones. |
+| **City Wall** 城墙 | An old brick city wall at dusk with its double-roofed gate tower. Rows of red lanterns sway and glow as the light follows your clock, clouds drift and a few swallows cross the sky. |
+| **Summer Palace** 颐和园 | A palace lake under Longevity Hill. A tiered tower of gold glazed roofs crowns the hill, a painted corridor runs the shore, a marble arch bridge strides to an island hall, a pleasure boat glides by, and the light follows your clock. |
+| **Temple of Heaven** 天坛 | The round blue-roofed Hall of Prayer for Good Harvests on its white marble terraces under a night sky of stars. Clouds drift past the moon, stars twinkle, low mist moves along the marble, and the light follows your clock. |
+| **Lugou Bridge** 卢沟 | An old stone bridge of many arches, its balustrade crowded with carved lions, over a river in dawn mist. Mist drifts along the water, willow strands sway, a few egrets cross, and the light follows your clock. |
+| **Wuyi** 武夷 | Red sandstone cliffs of the Wuyi hills crowned with pine and tea bushes, a bamboo raft drifting down the nine-bend river through morning mist. The light follows your clock. |
+| **Shuimo** 水墨 | Ink wash mountains in layered grey and indigo, mist sliding between the ridges, a tiny pavilion on a rock above a still pool, in the manner of a shanshui scroll. |
+| **Gongbi** 工笔 | Fine-line painted peonies beside a pitted garden rock on aged silk. The blooms and leaves sway slowly and a few petals drift down. |
+| **Qinghua** 青花 | Blue-and-white porcelain. Lotus scrolls climb a cobalt stem between ruyi borders, while soft bands of glaze light drift slowly over the white like a vase turned in the hand. |
+| **Celadon** 青瓷 | A Longquan celadon bowl with lotus-petal carving and fine crackle glaze. Window light through an ice-crack lattice slowly travels over its curve. |
+| **Cloisonne** 景泰蓝 | Cloisonne enamel. A lotus and its scrolling vine set in gold wire on deep blue, with a slow band of light gliding over the gold. |
+| **Carved Lacquer** 雕漆 | A panel of carved red lacquer: ruyi cloud scrolls rising from a dark ground inside a key-fret border, with a soft highlight sliding slowly across the relief. |
+| **Paper-cut Window** 剪纸 | Red paper-cut flowers pasted on a lattice window, peony, plum and chrysanthemum. The light behind the paper breathes slowly warmer and cooler. |
+| **Shadow Puppets** 皮影 | A backlit shadow-puppet screen. Cut leather silhouettes of a double-eaved pavilion, an arched bridge, a far pagoda and old pines stand against a warm lamp glow, with carved waves below and slow auspicious clouds drifting past. |
+| **Kites** 风筝 | Paper kites with long ribbon tails drift in a pale spring sky: a swallow, a butterfly, a diamond and a centipede chain of discs, above layered green hills and a far pagoda. |
+| **Red Lanterns** 灯笼 | Rows of red silk lanterns sway under the eaves of a tiled courtyard at dusk. A whitewashed wall with a moon gate stands behind them, warm light pools on the grey bricks and plum petals drift down. |
+| **Silk** 丝绸 | Indigo silk woven with gold cloud scrolls. The cloth ripples slowly as if in a breeze, with soft light sliding along its folds. |
+| **Yunjin** 云锦 | Cloud brocade. Rows of scrolling ruyi clouds and curling waves in gold thread on deep indigo, with a soft glint of thread light passing slowly over the weave. |
+| **Suxiu** 苏绣 | Suzhou embroidery on a round silk fan. Peonies and plum blossoms are worked in satin stitch with moss leaves along an indigo branch, while a slow glint of light glides across the threads. |
+| **Zhuanke** 篆刻 | A square vermilion seal impression with abstract carved lines on washi, the carved stone and a lacquer ink paste box beside it, while slow window light drifts across the paper. |
+| **Round Fan** 团扇 | A round silk fan painted with a plum branch leans on a window sill. Through the moon window, plum blossom drifts on a soft breeze below a far pagoda hill. |
+| **Lattice Window** 窗花 | A carved wooden lattice window of diamond bars and a coin medallion, with a sunlit garden of bamboo, a pitted rock and plum blossom glowing beyond. Warm light drifts slowly across the garden and petals fall. |
+| **Moon Gate** 月门 | A round moon gate cut in a whitewashed garden wall under a grey-tiled coping. Through it a stone path runs between green bamboo, the stalks sway, leaf shadows slide over the plaster, and the light follows your clock. |
+| **Wajian** 瓦当 | A row of round eave tile ends with carved lotus and cloud patterns on a grey roof in steady rain. Drips fall from the drip tiles and rings open on the wet courtyard. |
+| **Qingtong** 青铜 | A bronze ritual ding on a dark table, its belly cast with a taotie mask over square-spiral ground. Green patina clings to the metal while a slow band of lamplight and a few glints pass across it. |
+| **Yubi** 玉 | A jade bi disc and a carved pendant hang from a vermilion cord. Slow bands of green light travel through the translucent stone and the tassel sways a little. |
+| **Inkstone** 砚台 | A dark inkstone on washi with a pool of ink, a gilded ink stick grinding at the slope and slow swirls turning in the water. A celadon water dropper, a brush on its rest and a sprig of bamboo sit beside it. |
+| **Bimo** 笔墨 | A brush dips into an ink stone and paints bamboo on washi paper, stalk by stalk, then branches and leaves, until a small red seal is pressed and the paper slowly clears. |
+| **Gongfu Tea** 功夫茶 | A dark wood tea tray under a paper lantern: a clay teapot, a kettle on a charcoal stove, small porcelain cups and a pitcher pouring. Steam curls up beside a moonlit lattice window. |
+| **Zisha** 紫砂 | A purple clay Yixing teapot on a wooden table beside two small cups. Steam curls from the spout while window light slides slowly across the wall and the wood. |
+| **Spring Festival** 春节 | A snowy alley on new year's eve. Red lanterns sway under tiled eaves, paper-cut flowers glow in lattice windows, a gate with gold studs stands shut, and soft snow and a few warm embers drift down. |
+| **Lantern Night** 元宵 | Lotus-shaped paper lanterns drift down a river at night beneath a stone arch bridge. Soft rings of gold glow spread around each one, a tiled pavilion and white-walled houses sleep on the banks, and a pale moon hangs behind thin cloud. |
+| **Qingming** 清明 | Spring drizzle over a Jiangnan canal. A single-arch stone bridge crosses grey-green water, willow strands sway beside it, whitewashed houses with stepped gables sit on the far bank and a double-eaved pavilion stands on the misty hills. |
+| **Dragon Boats** 龙舟 | Three long dragon boats with carved prows glide in a row across a green river. Oars dip, wakes spread, ripples ring out from the drums, and the light follows your clock. |
+| **Mid-Autumn** 中秋 | A great full moon hangs over the double eaves of a garden pavilion. Osmanthus branches bend into the light, a red lantern sways under the roof, thin cloud crosses the moon, and golden petals drift down. |
+| **Chongyang** 重阳 | A hilltop pavilion on the Double Ninth in autumn: upswept grey eaves and red pillars above maples, chrysanthemums on the slope and layered hills in mist. Red leaves blow past, wild geese cross, and the light follows your clock. |
+| **Winter Solstice** 冬至 | A snowy courtyard at the winter solstice. A pot steams on a brick stove beside the lit doorway of a tiled hall, lanterns glow under the eaves, a plum tree stands in the snow and flakes fall slowly, with the light following your clock. |
+| **Qixi** 七夕 | The milky way arches over a dark summer sky, and below it a bridge of magpies glows as a pale arc between two bright stars. Stars twinkle slowly, the river of light shimmers, and a pavilion roof waits on the hill. |
+| **Lotus Pond in Rain** 荷莲 | A lotus pond in light rain. Broad leaves float on dark water, pink buds and a half-open flower stand on tall stems, a tiled pavilion and a willow wait in the mist, and drops make slow rings. |
+| **Plum Blossom** 梅花 | Plum blossoms on black branches in a winter night. Snow lies on the ground and on the limbs, petals and flakes drift down past a pale gold moon, and the branch sways a little. |
+| **Peony Bed** 牡丹 | A bed of full peonies in a moonlit garden, opening and closing slowly in front of a pierced scholar's rock while petals drop to the moss. |
+| **Bamboo Grove** 竹林 | A misty bamboo grove in ink and moss. Pale shafts of light fall between the stalks, the canes sway in the wind and mist drifts past a small pavilion. |
+| **Pine and Rock** 松石 | An old pine grows out of a cliff face above a valley of cloud. Wind moves the needle pads and the mist drifts past in ink wash. |
+| **Panda** 熊猫 | A giant panda rests among tall green bamboo in morning mist. The stalks sway, mist drifts through the grove and leaves fall slowly. |
+| **Yunlong** 云龙 | A serpentine gold dragon winds slowly through banks of indigo auspicious clouds, a flaming pearl hovering before its head. |
+| **Fenghuang** 凤凰 | Long curling phoenix tail feathers in vermilion and gold on a dark ground, each ending in a gilded eye and flowing slowly like smoke over faint auspicious clouds. |
+| **Xiangyun** 祥云 | Auspicious clouds. Layers of scrolled ruyi clouds in gold and indigo drift slowly past each other, the far ones small and dim, the near ones large and bright. |
+| **Jiangnan** 江南 | A misty southern river village. Whitewashed houses with stepped gables line a canal, a stone arch bridge and pagoda fade into haze, a black-awning boat rides at its mooring and willow strands sway. Light follows your clock. |
+| **Tea Garden** 茶园 | Rows of tea bushes curving over green hills in the morning mist, with a small white-walled hut under grey tiles and a thread of kitchen smoke. The light follows your clock. |
+| **Brick Pagoda** 宝塔 | A tall seven-storey brick pagoda on a pine-covered hill, golden bells swaying from its upturned eaves. Banks of cloud drift around the tower, swallows circle its spire, and the light follows your clock. |
+| **Fishing Lamps** 渔火 | Bamboo rafts with hanging lamps drift on a dark river below karst peaks. The lamps flicker softly, their light runs down the water, and mist slides between the hills. |
+| **Maple Bridge** 枫桥 | A black-awning boat moored under a humped stone bridge at night. Frosted maples, a low moon on the water, mist drifting, and a far pagoda whose bell rings out across the canal. |
+| **Snow in the Bamboo** 雪中 | Snow falling through a bamboo grove at night. A small two-tier pavilion with red pillars keeps one window lit, and the snow-laden leaves sway. |
+| **Hanshan** 寒山 | A mountain temple at dusk. Mist climbs through the pines past a tiled hall with upturned eaves, a small pagoda and a bronze bell hanging still, and the light follows your clock. |
+| **Taiji** 太极 | A slowly turning yin and yang disc of ink and washi inside a ring of trigram bars, with mist swirling around it over deep indigo. |
+| **Sky Lanterns** 孔明灯 | Paper sky lanterns drift slowly up into a deep night over a quiet river village. Whitewashed houses with dark tiled roofs, a stone arch bridge and a far pagoda glow faintly, and the lanterns lie again on the water. |
+| **Moon on Water** 水月 | A full moon doubled in dark water beside a humpback stone bridge and a small pavilion, framed by weeping willow. Slow ripples spread, a peach petal drifts by, and the light follows your clock. |
+| **Teahouse** 茶馆 | An old teahouse on a rainy evening. Paper lanterns glow over dark timber and lacquered columns, an ice-ray lattice window and a round moon window look onto bamboo and banana leaves, and clay teapots steam on the tables. |
 
 Every scene has its own settings (season, wind, fish, inks…) plus the weave:
 `glyph`, `block` or `dot`, the glyph set, and the cell size.
