@@ -15,13 +15,15 @@
   const WATER = 0.7;
   const GLOW = ['#e6e4c6', '#d3dcae', '#b7cd94', '#8fb070'];
   const LEAF = [['#4f7a3a', '#6b9446', '#93b95a'], ['#3f6a35', '#5a8640', '#7fa850'], ['#6b9446', '#8db356', '#b4cd72']];
-  const BARK = { lit: '#e0e0cc', mid: '#b8bea8', shade: '#7f8a74', dark: '#5f6b5a', moss: '#6a8a44', mossDark: '#476a39' };
+  const BARK = { lit: '#e0e0cc', mid: '#b8bea8', shade: '#7f8a74', dark: '#5f6b5a', moss: '#6a8a44', mossDark: '#476a39', lichen: '#c9ccb6' };
   const SASA = ['#3f6a35', '#567f3f', '#78a04c'];
-  const POND = '#2f4a4a';
-  const VEIL = 0.3;
+  const POND = '#1f3436';
+  const POND_DEEP = '#16262a';
+  const VEIL = 0.48;
+  const CLEAR = [0.6, 0.8];
   const TORII = { post: '#b4472f', dark: '#7e2f22', cap: '#2a2d2a' };
   const MOTES = 26;
-  const STREAKS = 44;
+  const STREAKS = 14;
   const state = {};
 
   function layer(w, h) {
@@ -128,19 +130,20 @@
     for (let i = 0; i < mid.length; i += 2) shade.push(mid[i], mid[i + 1]);
     for (let i = right.length - 2; i >= 0; i -= 2) shade.push(right[i], right[i + 1]);
     poly(ctx, shade);
-    // grey lichen patches and rings along the bark
-    ctx.fillStyle = BARK.dark;
-    for (let i = 0; i < 9; i++) {
+    // soft grey lichen patches and faint horizontal bark eyes, low contrast like real beech
+    ctx.fillStyle = tone ? BARK.mid : BARK.lichen;
+    for (let i = 0; i < 5; i++) {
       const f = 0.1 + rand() * 0.8;
       const idx = Math.round(f * n) * 2;
-      const px = lerp(left[idx], right[idx], 0.2 + rand() * 0.6);
-      blob(ctx, px, lerp(top, bot, f), w * (0.05 + rand() * 0.1), w * (0.14 + rand() * 0.2));
+      const px = lerp(left[idx], right[idx], 0.25 + rand() * 0.4);
+      blob(ctx, px, lerp(top, bot, f), w * (0.12 + rand() * 0.12), w * (0.2 + rand() * 0.25));
     }
-    ctx.fillStyle = BARK.shade;
-    for (let i = 0; i < 6; i++) {
+    ctx.fillStyle = tone ? BARK.shade : BARK.shade;
+    for (let i = 0; i < 4; i++) {
       const f = 0.15 + rand() * 0.75;
       const idx = Math.round(f * n) * 2;
-      ctx.fillRect(left[idx], lerp(top, bot, f), right[idx] - left[idx], Math.max(1, g.U * 0.15));
+      const span = right[idx] - left[idx];
+      blob(ctx, left[idx] + span * (0.3 + rand() * 0.3), lerp(top, bot, f), span * 0.18, Math.max(0.5, g.U * 0.2));
     }
     // moss climbing the foot
     const fx = (left[n * 2] + right[n * 2]) / 2;
@@ -165,6 +168,7 @@
     for (let i = 0; i < count; i++) {
       const x = lerp(x0, x1, (i + 0.5 + (rand() - 0.5) * 0.7) / count);
       const w = lerp(w0, w1, rand());
+      if (x > g.W * CLEAR[0] - w && x < g.W * CLEAR[1] + w) continue;
       trunk(ctx, g, rand, x, top, bot, w, tone);
       if (rand() < 0.6) branch(ctx, g, rand, x, top + (bot - top) * (0.18 + rand() * 0.2), g.U * (7 + rand() * 7), w * 0.3, rand() < 0.5 ? -1 : 1);
     }
@@ -172,9 +176,12 @@
 
   // ---- undergrowth -----------------------------------------------------------
 
-  function sasa(ctx, g, rand, x0, x1, y, h) {
+  function sasa(ctx, g, rand, x0, x1, y, h, gaps) {
     for (let x = x0; x < x1; x += g.U * (0.5 + rand() * 1)) {
-      const hh = h * (0.5 + rand() * 0.7);
+      const n = fbm(x / (g.U * 18), y / (g.U * 9), 3, 41);
+      const clump = smoothstep(0.32 + gaps * 0.2, 0.62, n);
+      if (clump <= 0.05) continue;
+      const hh = h * clump * (0.5 + rand() * 0.7);
       ctx.strokeStyle = SASA[Math.floor(rand() * SASA.length)];
       ctx.lineWidth = Math.max(1, g.U * 0.5);
       ctx.beginPath();
@@ -233,11 +240,11 @@
     // far shore, torii small beside a pale bank
     ctx.fillStyle = '#7d9a5c';
     ctx.fillRect(0, g.wy - u * 3, g.W, u * 3);
-    sasa(ctx, g, rand, 0, g.W, g.wy - u * 1.5, u * 5);
-    torii(ctx, g, g.W * 0.7, g.wy - u * 1.4, u * 20);
-    // mid trunks, larger and clearer
+    sasa(ctx, g, rand, 0, g.W, g.wy - u * 2.2, u * 3, 0.5);
+    // mid trunks, larger and clearer, leaving a clearing for the torii
     trunkRow(ctx, g, rand, Math.round(g.W / (u * 24)), g.wy * 0.1, g.wy - u * 1, u * 4, u * 7, 0, 0, g.W);
     canopy(ctx, g, rand, 0, g.wy * 0.34, u * 6.5, [LEAF[0], LEAF[1], LEAF[2]], 0.7);
+    torii(ctx, g, g.W * 0.7, g.wy - u * 2.4, u * 13);
     return c;
   }
 
@@ -245,10 +252,13 @@
     const c = layer(g.W, g.wy + 1);
     const ctx = c.getContext('2d');
     const u = g.U;
-    ctx.fillStyle = '#3f6a35';
-    ctx.fillRect(0, g.wy - u * 1.3, g.W, u * 1.3 + 1);
-    sasa(ctx, g, rand, 0, g.W, g.wy - u * 0.8, u * 4.5);
-    for (let x = u * 4; x < g.W; x += u * (14 + rand() * 12)) fern(ctx, g, rand, x, g.wy - u * 0.9, u * (3 + rand() * 2));
+    ctx.fillStyle = '#556b45';
+    ctx.fillRect(0, g.wy - u * 0.9, g.W, u * 0.9 + 1);
+    sasa(ctx, g, rand, 0, g.W, g.wy - u * 0.6, u * 6, 0.6);
+    for (let x = u * 4; x < g.W; x += u * (22 + rand() * 20)) {
+      if (x > g.W * CLEAR[0] && x < g.W * CLEAR[1]) continue;
+      fern(ctx, g, rand, x, g.wy - u * 0.9, u * (3 + rand() * 2));
+    }
     for (let x = 0; x < g.W; x += u * (2 + rand() * 4)) {
       ctx.fillStyle = rand() < 0.5 ? '#7d8a76' : '#a3a998';
       blob(ctx, x, g.wy - u * 0.3, u * (0.6 + rand() * 0.8), u * 0.4);
@@ -297,7 +307,6 @@
     const wctx = world.getContext('2d');
     wctx.drawImage(state.back, 0, 0);
     wctx.drawImage(state.shore, 0, 0);
-    wctx.drawImage(state.front, 0, 0, g.W, g.wy + 1, 0, 0, g.W, g.wy + 1);
     const c = layer(g.W, h);
     const ctx = c.getContext('2d');
     ctx.setTransform(1, 0, 0, -1, 0, g.wy);
@@ -306,13 +315,23 @@
     ctx.fillStyle = POND;
     ctx.globalAlpha = VEIL;
     ctx.fillRect(0, 0, g.W, h);
+    const deep = ctx.createLinearGradient(0, 0, 0, h);
+    deep.addColorStop(0, 'rgba(22,38,42,0)');
+    deep.addColorStop(0.5, 'rgba(22,38,42,0.35)');
+    deep.addColorStop(1, 'rgba(22,38,42,0.8)');
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = deep;
+    ctx.fillRect(0, 0, g.W, h);
+    ctx.fillStyle = POND_DEEP;
+    ctx.globalAlpha = 0.85;
+    ctx.fillRect(0, 0, g.W, Math.max(1, g.U * 0.4));
     ctx.globalAlpha = 1;
     return c;
   }
 
   function waveAt(g, y, t, ripple) {
     const d = (y - g.wy) / (g.H - g.wy);
-    const amp = g.U * (0.05 + 1.1 * d) * ripple;
+    const amp = g.U * (0.05 + 0.6 * d) * ripple;
     const k = y / g.U;
     return amp * (Math.sin(k * 0.7 + t * 0.6) + 0.5 * Math.sin(k * 1.9 - t * 1.0));
   }
@@ -347,11 +366,11 @@
     const thick = Math.max(1, g.U * 0.35);
     const slide = t * g.U * (0.2 + ripple * 0.3);
     const amount = Math.min(1, ripple + 0.2);
-    ctx.fillStyle = '#e4e6cc';
+    ctx.fillStyle = '#c9d0b4';
     for (let i = 0; i < STREAKS; i++) {
       const a = Math.sin(t * 0.45 + s.p[i]);
       if (a <= 0) continue;
-      ctx.globalAlpha = a * amount * 0.38;
+      ctx.globalAlpha = a * amount * 0.3;
       const x = ((s.x[i] + slide) % (g.W + s.l[i] * 2)) - s.l[i];
       ctx.fillRect(x, s.y[i], s.l[i], thick);
     }
