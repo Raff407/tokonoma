@@ -13,18 +13,65 @@ struct WallpaperGrid: View {
     // A per-window convenience, so it lives in defaults rather than settings.json.
     @AppStorage("libraryFilter") private var filter = LibraryFilter.all.rawValue
 
-    private let columns = [GridItem(.adaptive(minimum: 200, maximum: 280), spacing: Space.xl, alignment: .top)]
+    @FocusState private var focused: Bool
+    @State private var width: CGFloat = 0
+
+    private static let minimumCell: CGFloat = 200
+    private let columns = [GridItem(.adaptive(minimum: minimumCell, maximum: 280), spacing: Space.xl, alignment: .top)]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Space.xl) {
-            if onlyChinese {
-                chinese
-            } else {
-                ChoiceBar(options: LibraryFilter.allCases.map(\.rawValue), selection: $filter)
-                    .fixedSize()
-                if filter == LibraryFilter.favourites.rawValue { favouritesOnly } else { everything }
+        ScrollViewReader { proxy in
+            VStack(alignment: .leading, spacing: Space.xl) {
+                if onlyChinese {
+                    chinese
+                } else {
+                    ChoiceBar(options: LibraryFilter.allCases.map(\.rawValue), selection: $filter)
+                        .fixedSize()
+                    if filter == LibraryFilter.favourites.rawValue { favouritesOnly } else { everything }
+                }
+            }
+            .background(GeometryReader { geo in
+                Color.clear
+                    .onAppear { width = geo.size.width }
+                    .onChange(of: geo.size.width) { _, new in width = new }
+            })
+            // Arrow keys only move the highlight. Hanging stays a double click or the button.
+            .focusable()
+            .focusEffectDisabled()
+            .focused($focused)
+            .onAppear { focused = true }
+            .onKeyPress(phases: [.down, .repeat]) { press in
+                // Arrow keys arrive flagged as numeric pad; only a real modifier should stop the move.
+                guard press.modifiers.isDisjoint(with: [.command, .option, .control, .shift]), let direction = Self.direction(press.key),
+                      let id = GridNavigation.move(direction, from: selection, in: navigable.map { $0.map(\.id) }, columns: columnCount)
+                else { return .ignored }
+                selection = id
+                proxy.scrollTo(id)
+                return .handled
             }
         }
+    }
+
+    private static func direction(_ key: KeyEquivalent) -> GridNavigation.Direction? {
+        switch key {
+        case .leftArrow: return .left
+        case .rightArrow: return .right
+        case .upArrow: return .up
+        case .downArrow: return .down
+        default: return nil
+        }
+    }
+
+    private var columnCount: Int {
+        max(1, Int((width + Space.xl) / (Self.minimumCell + Space.xl)))
+    }
+
+    /// What is on screen, section by section, in reading order.
+    private var navigable: [[Wallpaper]] {
+        if onlyChinese { return [WallpaperShelf.chinese(model.wallpapers)] }
+        if filter == LibraryFilter.favourites.rawValue { return [model.favourites] }
+        let rest = WallpaperShelf.withoutChinese(model.wallpapers)
+        return [rest.filter(\.isBuiltIn), rest.filter(\.isCommunity), rest.filter { !$0.isBuiltIn && !$0.isCommunity }]
     }
 
     @ViewBuilder private var chinese: some View {
@@ -91,8 +138,10 @@ struct WallpaperGrid: View {
                         favourite: model.settings.isFavourite(wallpaper.id),
                         toggleFavourite: { model.toggleFavourite(wallpaper.id) }
                     )
+                    .id(wallpaper.id)
                     .onTapGesture {
                         selection = wallpaper.id
+                        focused = true
                         // AppKit's count follows the system double-click speed. SwiftUI's
                         // count: 2 gives up after about 300 ms and misses ordinary double clicks.
                         if (NSApp.currentEvent?.clickCount ?? 1) >= 2 { model.show(wallpaper.id) }
