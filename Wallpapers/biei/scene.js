@@ -1,7 +1,7 @@
 /*
  * 美瑛 Biei — patchwork hills of crops in pale stripes under a huge sky.
  *
- * Sky and far peaks, then the fields, a lone tree and a farmhouse, are baked
+ * Sky and far peaks, then the fields, a lone tree and a red barn, are baked
  * into two layers and repainted once a minute from the clock. Between repaints
  * only the clouds and the shadows they throw on the fields move.
  */
@@ -14,10 +14,19 @@
 
   const RETINT_SECONDS = 60;
   const SHADOW_COUNT = 5;
-  const TREE_X = 0.3;
-  const HOUSE_X = 0.72;
-  // Crop colours, pale and quiet: wheat, washi, young moss, deep moss, soil, lavender.
-  const CROPS = ['#cdb674', '#e2dabd', '#8fa266', '#5f7a48', '#8d6e4e', '#8a8cae', '#d6c38a', '#a9b480'];
+  const TREE_X = 0.27;
+  const BARN_X = 0.68;
+  // Stripe pairs for the fields: wheat, lavender over moss, young and deep moss,
+  // turned soil, washi-pale stubble, gold. Kept low so nothing glares.
+  const PAIRS = [
+    ['#c8aa5e', '#8a9a58'],
+    ['#7a6f9a', '#5d6e44'],
+    ['#7f9156', '#58703f'],
+    ['#7d5e40', '#b39a5e'],
+    ['#cdbf98', '#8a9a5e'],
+    ['#b8904a', '#6c8248'],
+    ['#6a8048', '#9aa66a'],
+  ];
   const state = {};
 
   function layer(w, h) {
@@ -32,18 +41,20 @@
 
   // ---- ridges ------------------------------------------------------------
 
+  // Back to front. stripe/band/patch grow toward the viewer for a little perspective.
   const HILLS = [
-    { base: 0.535, a1: 0.022, f1: 5, p1: 1, a2: 0.012, f2: 11, haze: 0.4, stripe: 1.6, band: 3, patch: 0.05 },
-    { base: 0.625, a1: 0.04, f1: 3.1, p1: 0.5, a2: 0.015, f2: 8, haze: 0.14, stripe: 2.6, band: 5, patch: 0.08, bump: TREE_X },
-    { base: 0.77, a1: 0.04, f1: 2.2, p1: 2, a2: 0.012, f2: 7, haze: 0, stripe: 4.2, band: 8, patch: 0.12 },
+    { base: 0.505, a1: 0.012, f1: 6, p1: 1, a2: 0.006, f2: 13, haze: 0.5, stripe: 1.7, band: 0.5, patch: 0.11, lean: 0.4 },
+    { base: 0.56, a1: 0.022, f1: 4.2, p1: 2.2, a2: 0.008, f2: 9, haze: 0.3, stripe: 2.2, band: 0.5, patch: 0.15, lean: -0.5 },
+    { base: 0.665, a1: 0.035, f1: 2.8, p1: 0.4, a2: 0.01, f2: 7, haze: 0.12, stripe: 3, band: 0.55, patch: 0.22, lean: 0.6, bump: TREE_X },
+    { base: 0.84, a1: 0.045, f1: 2.1, p1: 3.6, a2: 0.012, f2: 5, haze: 0, stripe: 4.4, band: 0.6, patch: 0.34, lean: -0.7 },
   ];
 
   function ridge(g, hill, px) {
     const xn = px / g.W;
     let f = hill.base + hill.a1 * Math.sin(xn * hill.f1 + hill.p1) + hill.a2 * Math.sin(xn * hill.f2 + 1);
     if (hill.bump !== undefined) {
-      const d = (xn - hill.bump) / 0.13;
-      f -= 0.05 * Math.exp(-d * d);
+      const d = (xn - hill.bump) / 0.16;
+      f -= 0.075 * Math.exp(-d * d);
     }
     return g.H * f;
   }
@@ -51,20 +62,26 @@
   // ---- sky ---------------------------------------------------------------
 
   function peak(xn) {
-    const tri = (c, w) => Math.pow(Math.max(0, 1 - Math.abs(xn - c) / w), 1.3);
-    return 0.1 * tri(0.7, 0.28) + 0.07 * tri(0.25, 0.22) + 0.045 * tri(0.5, 0.3) + 0.03 * tri(0.95, 0.2);
+    const tri = (c, w) => Math.pow(Math.max(0, 1 - Math.abs(xn - c) / w), 1.25);
+    return 0.17 * tri(0.64, 0.2) + 0.11 * tri(0.44, 0.15) + 0.09 * tri(0.84, 0.14) + 0.06 * tri(0.12, 0.18) + 0.012;
   }
 
   function paintRange(ctx, g, sky) {
-    const base = g.H * 0.545;
-    const rock = mixColor(mixColor(rgb('#6a7ea0'), sky.haze, 0.55), rgb('#242c48'), sky.night * 0.6);
-    const snow = mixColor(mixColor(rgb('#eceee8'), sky.amb, 0.4), sky.top, 0.12 + sky.night * 0.35);
+    const base = g.H * 0.53;
+    const rock = mixColor(mixColor(rgb('#55648a'), sky.haze, 0.35), rgb('#1a2038'), sky.night * 0.6);
+    const shade = mixColor(rock, rgb('#1e2640'), 0.35);
+    const snow = mixColor(mixColor(rgb('#e4dfd0'), sky.amb, 0.25), rgb('#4a5272'), sky.night * 0.55);
+    const snowShade = mixColor(snow, rgb('#8792ae'), 0.3);
+    const d = 3 / g.W;
     for (let x = 0; x < g.W; x++) {
-      const top = base - g.H * peak(x / g.W) - (fbm(x * 0.08, 3, 3, 7) - 0.5) * g.U * 1.6;
-      const snowLine = top + (base - top) * 0.42 + (fbm(x * 0.2, 9, 2, 3) - 0.5) * g.U * 1.5;
-      ctx.fillStyle = hex(rock);
+      const xn = x / g.W;
+      const top = base - g.H * peak(xn) - (fbm(x * 0.05, 3, 2, 7) - 0.5) * g.U * 1.2;
+      const snowLine = top + (base - top) * 0.62 + (fbm(x * 0.12, 9, 2, 3) - 0.5) * g.U * 2;
+      // Faces climbing to the right catch the light from the left.
+      const lit = peak(xn + d) >= peak(xn - d);
+      ctx.fillStyle = hex(lit ? rock : shade);
       ctx.fillRect(x, top, 1, base - top);
-      ctx.fillStyle = hex(snow);
+      ctx.fillStyle = hex(lit ? snow : snowShade);
       ctx.fillRect(x, top, 1, Math.max(0, snowLine - top));
     }
   }
@@ -74,14 +91,14 @@
     const ctx = c.getContext('2d');
     const grad = ctx.createLinearGradient(0, 0, 0, g.H * 0.56);
     grad.addColorStop(0, hex(sky.top));
-    grad.addColorStop(1, hex(sky.low));
+    grad.addColorStop(1, hex(mixColor(sky.low, rgb('#d8ccaa'), 0.3 * (1 - sky.night))));
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, g.W, g.H);
     if (sky.night > 0.1) {
       ctx.fillStyle = '#e6e4da';
       for (let i = 0; i < g.W * 0.8; i++) {
         ctx.globalAlpha = sky.night * (0.15 + rand() * 0.5);
-        ctx.fillRect(rand() * g.W, rand() * g.H * 0.5, 1, 1);
+        ctx.fillRect(rand() * g.W, rand() * g.H * 0.45, 1, 1);
       }
       ctx.globalAlpha = 1;
     }
@@ -97,12 +114,13 @@
     const density = (x, y) => fbm(x * 0.012, y * 0.045, 4, 41);
     for (let y = 0; y < h; y++) {
       const band = Math.sin((y / h) * Math.PI);
-      const shade = 252 - (y / h) * 22;
+      const shade = 244 - (y / h) * 30;
       for (let x = 0; x < w; x++) {
         const v = lerp(density(x, y), density(x - w, y), x / w);
         const i = (y * w + x) * 4;
-        img.data[i] = img.data[i + 1] = shade;
-        img.data[i + 2] = shade + 3;
+        img.data[i] = shade;
+        img.data[i + 1] = shade - 4;
+        img.data[i + 2] = shade - 12;
         img.data[i + 3] = smoothstep(0.5, 0.66, v) * band * 225;
       }
     }
@@ -128,42 +146,69 @@
 
   // ---- fields ------------------------------------------------------------
 
-  function tintedCrops(sky, haze) {
-    const out = [];
-    for (let i = 0; i < CROPS.length; i++) {
-      let c = mixColor(rgb(CROPS[i]), sky.amb, 0.22 * (1 - sky.night));
-      c = mixColor(c, sky.haze, haze);
-      c = mixColor(c, rgb('#121a2a'), sky.night * 0.78);
-      out.push(c);
-    }
-    return out;
+  function tint(c, sky, haze) {
+    let o = mixColor(c, sky.amb, 0.15 * (1 - sky.night));
+    o = mixColor(o, sky.haze, haze);
+    return mixColor(o, rgb('#121a2a'), sky.night * 0.78);
   }
 
-  function paintHill(img, g, hill, crops, seed) {
+  function tintedPairs(sky, haze) {
+    return PAIRS.map((p) => [tint(rgb(p[0]), sky, haze), tint(rgb(p[1]), sky, haze)]);
+  }
+
+  // One field: which stripe pair, how the rows run, and whether it is plain.
+  function field(pi, bi, seed, idx) {
+    const r = hash2(pi, bi, seed);
+    return {
+      pair: Math.floor(hash2(pi, bi, seed + 5) * PAIRS.length),
+      across: idx >= 2 && r > 0.8, // rows running down the slope; near hills only
+      plain: r < 0.14,
+      slope: (hash2(pi, bi, seed + 9) - 0.5) * 0.5,
+    };
+  }
+
+  // Fields follow the ridge: depth below the crest drives bands and the rows,
+  // so stripes curve over the hill. Light falls from the upper left.
+  function paintHill(img, g, idx, pairs, seed) {
+    const hill = HILLS[idx];
+    const next = HILLS[idx + 1];
     const w = img.width;
     const pw = g.W * hill.patch;
-    const bh = g.U * hill.band;
-    const sw = g.U * hill.stripe;
+    const sw = Math.max(2, g.U * hill.stripe);
     for (let x = 0; x < w; x++) {
       const top = Math.max(0, Math.floor(ridge(g, hill, x)));
-      for (let y = top; y < img.height; y++) {
-        const yy = y - top;
-        const warp = (fbm(x * 0.02, y * 0.03, 2, seed) - 0.5) * 1.2;
-        const pi = Math.floor(x / pw + warp);
-        const bi = Math.floor(yy / bh + warp * 0.7);
-        const id = hash2(pi, bi, seed);
-        const id2 = hash2(pi, bi, seed + 9);
-        const a = id < 0.68 ? (id2 - 0.5) * 0.6 : 1.57 + (id2 - 0.5) * 0.6;
-        const u = (-(x - pi * pw) * Math.sin(a) + yy * Math.cos(a)) / sw;
-        const sid = Math.floor(u);
-        const crop = crops[Math.floor(hash2(pi, bi, seed + 5) * crops.length)];
-        const tone = (sid & 1 ? 0.9 : 1.07) * (0.97 + hash2(sid, pi, seed + 2) * 0.06);
-        const lift = (1.16 - Math.min(1, yy / (g.H * 0.22)) * 0.24) * (yy < g.U * 0.9 ? 1.1 : 1);
-        const k = tone * lift;
+      const bottom = next ? Math.min(img.height, Math.ceil(ridge(g, next, x)) + 1) : img.height;
+      const thick = (next ? next.base - hill.base : 1 - hill.base) * g.H + g.U * 6;
+      const slope = (ridge(g, hill, x + 1) - ridge(g, hill, x - 1)) * 0.5;
+      const light = 1 + Math.max(-0.14, Math.min(0.14, -slope * 0.5));
+      for (let y = top; y < bottom; y++) {
+        const depth = y - top;
+        const dn = depth / thick;
+        const wob = (fbm(x * 0.01, depth * 0.02, 2, seed) - 0.5);
+        const sx = x + wob * pw * 1.1 + depth * hill.lean;
+        const pi = Math.floor(sx / pw);
+        const bi = Math.floor(dn / hill.band + wob * 0.8);
+        const f = field(pi, bi, seed, idx);
+        const p = pairs[f.pair];
+        let k;
+        let col;
+        if (f.plain) {
+          col = p[1];
+          k = 1;
+        } else {
+          const u = f.across ? (sx - pi * pw + depth * 0.4) / sw : (depth + (sx - pi * pw) * f.slope) / sw;
+          col = Math.floor(u) & 1 ? p[1] : p[0];
+          k = 1;
+        }
+        const edge = sx - pi * pw < 1 ? 0.88 : 1;
+        const crest = depth < g.U * 0.8 ? 1.1 : 1;
+        // Round the hill: lit near the crest, settling darker toward its foot.
+        const round = 1.1 - smoothstep(0, 1, dn) * 0.2;
+        k *= edge * crest * round * light;
         const i = (y * w + x) * 4;
-        img.data[i] = crop[0] * k;
-        img.data[i + 1] = crop[1] * k;
-        img.data[i + 2] = crop[2] * k;
+        img.data[i] = col[0] * k;
+        img.data[i + 1] = col[1] * k;
+        img.data[i + 2] = col[2] * k;
         img.data[i + 3] = 255;
       }
     }
@@ -171,65 +216,95 @@
 
   function paintFields(ctx, g, sky) {
     const img = ctx.createImageData(g.W, g.H);
-    for (let i = 0; i < HILLS.length; i++) paintHill(img, g, HILLS[i], tintedCrops(sky, HILLS[i].haze), 13 + i * 31);
+    for (let i = 0; i < HILLS.length; i++) paintHill(img, g, i, tintedPairs(sky, HILLS[i].haze), 13 + i * 31);
     ctx.putImageData(img, 0, 0);
   }
 
-  // The lone tree: a slim larch on the crest of the middle hill.
-  function paintTree(ctx, g, sky, rand) {
-    const tx = g.W * TREE_X;
-    const ty = ridge(g, HILLS[1], tx) + g.U * 0.5;
-    const h = g.U * 17;
-    const leaf = mixColor(rgb('#3f5a3a'), rgb('#101620'), sky.night * 0.8);
-    const light = mixColor(leaf, mixColor(rgb('#9aa86a'), sky.amb, 0.3), 0.35 * (1 - sky.night));
-    ctx.fillStyle = hex(mixColor(rgb('#4a3a30'), rgb('#101218'), sky.night * 0.8));
-    ctx.fillRect(tx - g.U * 0.35, ty - h * 0.4, Math.max(1, g.U * 0.7), h * 0.4);
-    for (let i = 0; i < 26; i++) {
-      const f = i / 25;
-      const r = g.U * (0.7 + Math.sin(f * 3.0 + 0.2) * 1.3 + rand() * 0.4);
-      const cx = tx + (rand() - 0.5) * g.U * 1.4;
-      const cy = ty - h * (0.28 + f * 0.72);
-      ctx.fillStyle = hex(leaf);
+  // A row of windbreak poplars along the far hill.
+  function paintWindbreak(ctx, g, sky, rand) {
+    ctx.fillStyle = hex(tint(rgb('#2e4228'), sky, 0.15));
+    for (let i = 0; i < 9; i++) {
+      const cx = g.W * (0.79 + i * 0.016);
+      const cy = ridge(g, HILLS[1], cx) + g.U * 0.4;
+      const r = g.U * (1.4 + rand() * 0.5);
       ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, 6.3);
-      ctx.fill();
-      ctx.fillStyle = hex(light);
-      ctx.beginPath();
-      ctx.arc(cx - r * 0.25, cy - r * 0.3, r * 0.55, 0, 6.3);
+      ctx.ellipse(cx, cy - r * 1.5, r * 1.05, r * 1.7, 0, 0, 6.3);
       ctx.fill();
     }
   }
 
-  // A farmhouse with a red roof and a short row of windbreak trees.
-  function paintFarm(ctx, g, sky, rand) {
-    const hx = g.W * HOUSE_X;
-    const hy = ridge(g, HILLS[1], hx) + g.U * 0.8;
-    const n = sky.night * 0.75;
-    ctx.fillStyle = hex(mixColor(rgb('#e2dcc8'), rgb('#161c2c'), n));
-    ctx.fillRect(hx, hy - g.U * 3, g.U * 7, g.U * 3);
-    ctx.fillStyle = hex(mixColor(rgb('#a8402e'), rgb('#1c1620'), n));
+  // The lone tree: a broad, rounded tree on the crest of the middle hill.
+  function paintTree(ctx, g, sky, rand) {
+    const tx = g.W * TREE_X;
+    const ty = ridge(g, HILLS[2], tx) + g.U * 0.6;
+    const h = g.U * 24;
+    const leaf = mixColor(rgb('#34492e'), rgb('#0e141c'), sky.night * 0.8);
+    const light = mixColor(leaf, mixColor(rgb('#8c9a5a'), sky.amb, 0.2), 0.4 * (1 - sky.night));
+    ctx.fillStyle = hex(mixColor(rgb('#3e3028'), rgb('#101218'), sky.night * 0.8));
+    ctx.fillRect(tx - g.U * 0.6, ty - h * 0.45, Math.max(1, g.U * 1.2), h * 0.45);
+    // Shadow pooled on the grass to the right.
+    ctx.fillStyle = 'rgba(20,28,40,0.35)';
     ctx.beginPath();
-    ctx.moveTo(hx - g.U * 0.8, hy - g.U * 3);
-    ctx.lineTo(hx + g.U * 3.5, hy - g.U * 6.2);
-    ctx.lineTo(hx + g.U * 7.8, hy - g.U * 3);
-    ctx.closePath();
+    ctx.ellipse(tx + g.U * 4, ty, g.U * 6, g.U * 0.9, 0, 0, 6.3);
     ctx.fill();
-    ctx.fillStyle = hex(mixColor(rgb('#3a5236'), rgb('#101620'), n));
-    for (let i = 0; i < 7; i++) {
-      const cx = hx + g.U * (9 + i * 1.7);
-      const cy = ridge(g, HILLS[1], cx) + g.U * 0.6;
-      const r = g.U * (1.1 + rand() * 0.5);
+    const blobs = [];
+    for (let i = 0; i < 30; i++) {
+      const a = rand() * 6.28;
+      const d = Math.sqrt(rand());
+      blobs.push({
+        x: tx + Math.cos(a) * d * g.U * 7.5,
+        y: ty - h * 0.68 + Math.sin(a) * d * g.U * 5.5,
+        r: g.U * (2 + rand() * 1.6),
+      });
+    }
+    ctx.fillStyle = hex(leaf);
+    for (const b of blobs) {
       ctx.beginPath();
-      ctx.ellipse(cx, cy - r * 1.4, r * 0.7, r * 1.7, 0, 0, 6.3);
+      ctx.arc(b.x, b.y, b.r, 0, 6.3);
       ctx.fill();
     }
+    ctx.fillStyle = hex(light);
+    for (const b of blobs) {
+      if (b.y > ty - h * 0.68 + g.U) continue;
+      ctx.beginPath();
+      ctx.arc(b.x - b.r * 0.35, b.y - b.r * 0.35, b.r * 0.55, 0, 6.3);
+      ctx.fill();
+    }
+  }
+
+  // A red-roofed barn with a pale wall, set into the far side of the middle hill.
+  function paintBarn(ctx, g, sky) {
+    const hx = g.W * BARN_X;
+    const hy = ridge(g, HILLS[2], hx) + g.U * 1.2;
+    const n = sky.night * 0.75;
+    const bw = g.U * 11;
+    ctx.fillStyle = hex(mixColor(rgb('#d4c9aa'), rgb('#161c2c'), n));
+    ctx.fillRect(hx, hy - g.U * 4.5, bw, g.U * 4.5);
+    ctx.fillStyle = hex(mixColor(rgb('#9c8a6e'), rgb('#121624'), n));
+    ctx.fillRect(hx + bw * 0.4, hy - g.U * 3, bw * 0.2, g.U * 3);
+    ctx.fillStyle = hex(mixColor(rgb('#b0402a'), rgb('#1c1620'), n));
+    ctx.beginPath();
+    ctx.moveTo(hx - g.U * 1, hy - g.U * 4.5);
+    ctx.lineTo(hx + bw * 0.2, hy - g.U * 8.5);
+    ctx.lineTo(hx + bw * 0.8, hy - g.U * 8.5);
+    ctx.lineTo(hx + bw + g.U * 1, hy - g.U * 4.5);
+    ctx.closePath();
+    ctx.fill();
+    // silo
+    ctx.fillStyle = hex(mixColor(rgb('#bfb59a'), rgb('#141a28'), n));
+    ctx.fillRect(hx + bw + g.U * 1.5, hy - g.U * 9, g.U * 2.6, g.U * 9);
+    ctx.fillStyle = hex(mixColor(rgb('#8e3a2a'), rgb('#1c1620'), n));
+    ctx.beginPath();
+    ctx.arc(hx + bw + g.U * 2.8, hy - g.U * 9, g.U * 1.3, Math.PI, 0);
+    ctx.fill();
   }
 
   function paintFront(g, sky, rand) {
     const c = layer(g.W, g.H);
     const ctx = c.getContext('2d');
     paintFields(ctx, g, sky);
-    paintFarm(ctx, g, sky, rand);
+    paintWindbreak(ctx, g, sky, rand);
+    paintBarn(ctx, g, sky);
     paintTree(ctx, g, sky, rand);
     return c;
   }
