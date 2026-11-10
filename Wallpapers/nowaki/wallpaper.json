@@ -1,0 +1,16 @@
+{
+  "id": "nowaki",
+  "name": "Nowaki",
+  "title": "野分",
+  "description": "An autumn typhoon wind crossing a field. Pampas grass and bamboo lean and spring back under fast grey clouds while leaves stream past.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "gale", "label": "wind", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "leaves", "label": "leaves", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
