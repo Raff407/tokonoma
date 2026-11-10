@@ -230,82 +230,134 @@
 
   // ---- the pheasant ------------------------------------------------------------
 
-  function tail(ctx, s, sway) {
-    ctx.lineCap = 'round';
-    const ink = ['#8f6a3a', '#5a4630'];
-    for (let k = 0; k < 2; k++) {
-      ctx.strokeStyle = ink[k];
-      ctx.lineWidth = s * (k ? 0.5 : 2.2);
+  // The bird is drawn in its own units (ctx scaled by s), facing right, feet at y = 0.
+  const PLUM = {
+    body: '#3c6a5a', breast: '#2a4a42', wing: '#6f6243', bar: '#4a4130', pale: '#c9b98e',
+    neck: '#2c3a58', head: '#26334d', wattle: '#b8402c', bill: '#c9b07a', leg: '#8a7556',
+    tail: '#7d6a45', tailDark: '#4f4330',
+  };
+
+  // One long feather: a tapering curve from the rump to a tip, filled.
+  function feather(ctx, x0, y0, x1, y1, bend, w, color) {
+    const mx = (x0 + x1) / 2;
+    const my = (y0 + y1) / 2 - bend;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x0, y0 - w);
+    ctx.quadraticCurveTo(mx, my - w * 0.6, x1, y1);
+    ctx.quadraticCurveTo(mx, my + w * 0.6, x0, y0 + w);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function tail(ctx, sway) {
+    const tx = -27;
+    const ty = -16 + sway;
+    feather(ctx, -6.5, -10, tx + 6, ty + 3.2, 1.2, 0.9, PLUM.tailDark);
+    feather(ctx, -6.5, -10.2, tx + 3, ty + 1.2, 1.6, 0.85, PLUM.tailDark);
+    feather(ctx, -6.5, -10.4, tx, ty, 2, 1.0, PLUM.tail);
+    // dark bars across the central feather, thinning toward the tip
+    ctx.strokeStyle = PLUM.tailDark;
+    ctx.lineWidth = 0.45;
+    for (let i = 1; i < 7; i++) {
+      const f = i / 7.5;
+      const x = lerp(-6.5, tx, f);
+      const y = lerp(-10.4, ty, f) - 2 * 4 * f * (1 - f) * 0.5;
+      const half = 1.0 * (1 - f) + 0.15;
       ctx.beginPath();
-      ctx.moveTo(-5 * s, -10 * s);
-      ctx.quadraticCurveTo(-14 * s, -10.5 * s + sway, -27 * s, -6.5 * s + sway * 1.6);
-      ctx.stroke();
-    }
-    ctx.strokeStyle = '#4a3a28';
-    ctx.lineWidth = s * 0.55;
-    for (let i = 1; i < 6; i++) {
-      const f = i / 6;
-      const x = -5 * s - f * 22 * s;
-      const y = -10 * s + f * 3.5 * s + sway * f * f * 1.6;
-      ctx.beginPath();
-      ctx.moveTo(x, y - s * 1.0);
-      ctx.lineTo(x - s * 0.4, y + s * 1.0);
+      ctx.moveTo(x - half * 0.3, y - half);
+      ctx.lineTo(x + half * 0.3, y + half);
       ctx.stroke();
     }
   }
 
-  function legs(ctx, s, ph) {
-    ctx.strokeStyle = '#8a7556';
-    ctx.lineWidth = Math.max(1, s * 0.5);
+  function legs(ctx, ph) {
+    ctx.strokeStyle = PLUM.leg;
+    ctx.lineWidth = 0.55;
     for (let i = 0; i < 2; i++) {
       const a = Math.sin(ph + i * Math.PI);
-      const lift = Math.max(0, Math.cos(ph + i * Math.PI)) * s * 1.2;
+      const lift = Math.max(0, Math.cos(ph + i * Math.PI)) * 0.9;
+      const fx = 0.5 + a * 1.8;
       ctx.beginPath();
-      ctx.moveTo(-0.5 * s, -6 * s);
-      ctx.lineTo(a * 2.4 * s, -lift);
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(a * 2.4 * s, -lift);
-      ctx.lineTo(a * 2.4 * s + 1.5 * s, -lift);
+      ctx.moveTo(0.3 + i * 0.6, -6.2);
+      ctx.lineTo(fx - 0.4, -3 - lift * 0.5);
+      ctx.lineTo(fx, -lift);
+      ctx.lineTo(fx + 1.3, -lift);
       ctx.stroke();
     }
+  }
+
+  function body(ctx) {
+    ctx.fillStyle = PLUM.body;
+    ctx.beginPath();
+    ctx.moveTo(6.2, -10.2);
+    ctx.bezierCurveTo(6.2, -6.6, 1.5, -5.6, -1.8, -6.1);
+    ctx.bezierCurveTo(-5, -6.8, -7.4, -8.4, -8, -10.1);
+    ctx.bezierCurveTo(-5, -12.4, 0.5, -13, 3.6, -12.2);
+    ctx.bezierCurveTo(5.4, -11.8, 6.2, -11.2, 6.2, -10.2);
+    ctx.fill();
+    ctx.fillStyle = PLUM.breast;
+    blob(ctx, 3.6, -8.4, 2.6, 2.2, 0.3);
+    // folded wing with pale scalloped edges
+    ctx.fillStyle = PLUM.wing;
+    blob(ctx, -1.6, -10.3, 4.8, 1.9, -0.12);
+    ctx.strokeStyle = PLUM.pale;
+    ctx.lineWidth = 0.3;
+    for (let i = 0; i < 3; i++) {
+      ctx.beginPath();
+      ctx.arc(-4.2 + i * 2.2, -10.9 + i * 0.25, 1.1, 0.2, Math.PI - 0.2);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = PLUM.bar;
+    ctx.lineWidth = 0.35;
+    ctx.beginPath();
+    ctx.moveTo(-6.2, -9.6);
+    ctx.quadraticCurveTo(-2, -8.4, 2.4, -9.6);
+    ctx.stroke();
+  }
+
+  function head(ctx) {
+    ctx.fillStyle = PLUM.neck;
+    ctx.beginPath();
+    ctx.moveTo(3.2, -12);
+    ctx.quadraticCurveTo(5.2, -14.5, 6.2, -17.2);
+    ctx.lineTo(8, -17);
+    ctx.quadraticCurveTo(7.6, -13.6, 6.4, -10.4);
+    ctx.closePath();
+    ctx.fill();
+    // the Japanese bird has no white collar: indigo neck straight into the head
+    ctx.fillStyle = PLUM.head;
+    blob(ctx, 7.2, -17.6, 1.75, 1.45, -0.2);
+    ctx.fillStyle = PLUM.head;
+    blob(ctx, 6.1, -18.4, 0.9, 0.4, -0.5);
+    ctx.fillStyle = PLUM.wattle;
+    blob(ctx, 7.8, -17.6, 0.95, 1.0, 0);
+    ctx.fillStyle = PLUM.pale;
+    ctx.fillRect(7.6, -18.1, 0.35, 0.35);
+    ctx.fillStyle = PLUM.bill;
+    ctx.beginPath();
+    ctx.moveTo(8.5, -18.1);
+    ctx.lineTo(9.8, -17.5);
+    ctx.lineTo(8.5, -17.1);
+    ctx.fill();
   }
 
   function drawBird(ctx, x, y, s, ph) {
-    const bob = Math.abs(Math.sin(ph)) * s * 0.35;
-    const peck = Math.max(0, Math.sin(ph * 0.5 + 1)) ** 6 * s * 2.2;
+    const bob = Math.abs(Math.sin(ph)) * 0.25;
+    const peck = Math.max(0, Math.sin(ph * 0.31 + 1)) ** 8;
     ctx.save();
-    ctx.translate(x, y - bob);
-    legs(ctx, s, ph);
-    tail(ctx, s, Math.sin(ph) * s * 0.4);
-    ctx.fillStyle = '#9a5128';
-    blob(ctx, 0, -9.5 * s, 7.4 * s, 4.6 * s, -0.12);
-    ctx.fillStyle = '#b8683a';
-    blob(ctx, 1.5 * s, -10.2 * s, 4.6 * s, 3 * s, -0.1);
-    ctx.fillStyle = '#2f3b2a';
-    for (let i = -2; i <= 1; i++) blob(ctx, i * 1.9 * s - 1.2 * s, -11.6 * s, 0.7 * s, 0.7 * s);
-    ctx.fillStyle = '#3f6a4a';
-    blob(ctx, 5.4 * s, -10.6 * s, 2.8 * s, 3 * s);
-    ctx.beginPath();
-    ctx.moveTo(4 * s, -11.5 * s);
-    ctx.lineTo(5.8 * s, -16.5 * s + peck);
-    ctx.lineTo(9 * s, -16 * s + peck);
-    ctx.lineTo(8 * s, -10 * s);
-    ctx.fill();
-    ctx.fillStyle = '#ebe6d6';
-    ctx.fillRect(5.6 * s, -15.2 * s + peck, 3.6 * s, 0.7 * s);
-    ctx.fillStyle = '#1f4a52';
-    blob(ctx, 7.6 * s, -17.6 * s + peck, 2.6 * s, 2.4 * s);
-    ctx.fillStyle = '#b43a28';
-    blob(ctx, 8.4 * s, -17.1 * s + peck, 1.8 * s, 1.6 * s);
-    ctx.fillStyle = '#e4d6a8';
-    blob(ctx, 8 * s, -18 * s + peck, 0.6 * s, 0.6 * s);
-    ctx.fillStyle = '#c9a85a';
-    ctx.beginPath();
-    ctx.moveTo(9.8 * s, -18 * s + peck);
-    ctx.lineTo(12 * s, -17 * s + peck);
-    ctx.lineTo(9.8 * s, -16.4 * s + peck);
-    ctx.fill();
+    ctx.translate(x, y);
+    ctx.scale(s, s);
+    ctx.translate(0, -bob);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    legs(ctx, ph);
+    tail(ctx, Math.sin(ph * 0.5) * 0.6);
+    body(ctx);
+    ctx.translate(4.5, -11.5);
+    ctx.rotate(peck * 0.9);
+    ctx.translate(-4.5, 11.5);
+    head(ctx);
     ctx.restore();
   }
 
@@ -335,10 +387,10 @@
     drawMist(ctx, g, t, mist, g.hz - g.U * 16, 0.55);
     ctx.drawImage(state.meadow, 0, g.hz);
     drawSway(ctx, g, state.far, t, sway, g.H * 0.5, g.H * 0.82, 0);
-    const span = g.W + g.U * 60;
-    const pos = ((t * g.U * 1.8 * walk + span * 0.3) % span) - g.U * 30;
+    const span = g.W + g.U * 80;
+    const pos = ((t * g.U * 1.8 * walk + span * 0.3) % span) - g.U * 20;
     const phase = t * 2.6 * Math.max(0.2, walk);
-    drawBird(ctx, pos, g.H * 0.88, g.U * 2.7, walk > 0 ? phase : 0);
+    drawBird(ctx, pos, g.H * 0.83, g.U * 1.7, walk > 0 ? phase : 0);
     drawMist(ctx, g, t + 40, mist, g.H * 0.6, 0.3);
     drawSway(ctx, g, state.near, t, sway, g.H * 0.6, g.H, 1.7);
   }
