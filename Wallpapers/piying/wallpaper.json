@@ -1,0 +1,18 @@
+{
+  "id": "piying",
+  "name": "Shadow Puppets",
+  "title": "皮影",
+  "culture": "chinese",
+  "description": "A backlit shadow-puppet screen. Cut leather silhouettes of a double-eaved pavilion, an arched bridge, a far pagoda and old pines stand against a warm lamp glow, with carved waves below and slow auspicious clouds drifting past.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "flicker", "label": "lamp flicker", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "clouds", "label": "clouds", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "lanterns", "label": "lanterns", "type": "toggle", "default": true},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
