@@ -1,0 +1,18 @@
+{
+  "id": "jiuzhaigou",
+  "name": "Jiuzhaigou",
+  "title": "九寨沟",
+  "description": "Terraced jade lakes stepping down through an autumn forest beneath ink-wash peaks, a small pavilion on the bank. Ripples spread, mist drifts and maple leaves fall.",
+  "entry": "index.html",
+  "version": 1,
+  "culture": "chinese",
+  "properties": [
+    {"key": "ripple", "label": "ripples", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "leaves", "label": "leaves", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mist", "label": "mist", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
