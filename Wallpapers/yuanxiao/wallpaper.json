@@ -1,0 +1,18 @@
+{
+  "id": "yuanxiao",
+  "name": "Lantern Night",
+  "title": "元宵",
+  "culture": "chinese",
+  "description": "Lotus-shaped paper lanterns drift down a river at night beneath a stone arch bridge. Soft rings of gold glow spread around each one, a tiled pavilion and white-walled houses sleep on the banks, and a pale moon hangs behind thin cloud.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "lanterns", "label": "lanterns", "type": "range", "min": 0.3, "max": 2, "step": 0.1, "default": 1},
+    {"key": "ripples", "label": "glow rings", "type": "toggle", "default": true},
+    {"key": "mist", "label": "mist", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
