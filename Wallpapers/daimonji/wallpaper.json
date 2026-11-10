@@ -1,0 +1,17 @@
+{
+  "id": "daimonji",
+  "name": "Daimonji",
+  "title": "大文字",
+  "description": "The great bonfire character burning on a dark mountainside above a sleeping city. The fires breathe, smoke leans away on the night wind and a few sparks climb out of the flames.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "fire", "label": "bonfires", "type": "range", "min": 0.3, "max": 2, "step": 0.1, "default": 1},
+    {"key": "smoke", "label": "smoke", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "sparks", "label": "sparks", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
