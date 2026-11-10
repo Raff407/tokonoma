@@ -1,7 +1,7 @@
 /*
  * Washi, a sea eagle over snowy peaks and a bay of drift ice at dawn.
  *
- * Sky, sun, peaks, ice and the pine branch are baked once. Cloud is one tiling strip
+ * Sky, sun, peaks, ice and the torii are baked once. Cloud is one tiling strip
  * that slides sideways, the ice sheet sways a little, a few glints shimmer on the
  * sun path, and the eagle is drawn each frame from a handful of polygons.
  */
@@ -70,46 +70,128 @@
 
   // ---- peaks ---------------------------------------------------------------
 
-  const PEAKS = [
-    [0.1, 0.4, 0.5], [0.3, 0.3, 0.7], [0.5, 0.45, 0.45], [1.0, 0.62, 0.55],
+  // [centre x (of W), summit y (of H), half width (of W), spine lean]
+  const NEAR = [
+    [0.26, 0.25, 0.24, 0.2], [0.04, 0.33, 0.17, -0.12], [0.5, 0.36, 0.15, 0.12],
+    [0.93, 0.28, 0.22, -0.18], [0.79, 0.42, 0.12, 0.15],
+  ];
+  const FAR = [
+    [0.16, 0.36, 0.12, 0.1], [0.4, 0.38, 0.11, -0.1], [0.62, 0.42, 0.08, 0.1],
+    [0.76, 0.34, 0.1, -0.1], [1.0, 0.36, 0.1, 0.1],
   ];
 
-  function ridge(g, x, far) {
-    let y = g.H;
-    for (let i = 0; i < PEAKS.length; i++) {
-      const p = PEAKS[i];
-      const px = (far ? p[0] * 0.8 + 0.08 : p[0]) * g.W;
-      const top = g.H * (far ? p[1] - 0.02 : p[1] - 0.26 + (i % 2) * 0.08);
-      const slope = 1.0 + p[2] * 0.5;
-      y = Math.min(y, top + Math.abs(x - px) * slope);
+  function slopePts(g, x0, y0, x1, y1, seed, rough) {
+    const pts = [];
+    const n = 9;
+    for (let i = 1; i < n; i++) {
+      const f = i / n;
+      const j = (fbm(f * 3.1, seed, 2, 5) - 0.5) * rough;
+      // a shoulder part way down keeps the slope from being a ruler line
+      const sh = Math.sin(f * Math.PI) * rough * 0.35;
+      pts.push(lerp(x0, x1, f) + j * 0.4, lerp(y0, y1, Math.pow(f, 0.85)) + j - sh);
     }
-    return y + (fbm(x / (g.U * 9), far ? 3.3 : 7.7, 4, 19) - 0.5) * g.U * 18 + fbm(x / (g.U * 2.5), 2.2, 2, 8) * g.U * 2.5;
+    return pts;
+  }
+
+  function face(ctx, a) {
+    ctx.beginPath();
+    ctx.moveTo(a[0], a[1]);
+    for (let i = 2; i < a.length; i += 2) ctx.lineTo(a[i], a[i + 1]);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function paintPeak(ctx, g, p, far, seed) {
+    const U = g.U;
+    const cx = p[0] * g.W;
+    const top = p[1] * g.H;
+    const hw = p[2] * g.W;
+    const base = g.wy + 1;
+    const sunLeft = g.sx < cx; // the face toward the sun is warm
+    const lit = far ? '#dcc2b6' : '#f3dcc6';
+    const shade = far ? '#a4a6c0' : '#a8aecb';
+    const spineX = cx + hw * p[3];
+    const rough = U * (far ? 1.6 : 2.6);
+    const left = slopePts(g, cx, top, cx - hw, base, seed, rough);
+    const right = slopePts(g, cx, top, cx + hw, base, seed + 3.7, rough);
+    ctx.fillStyle = sunLeft ? lit : shade;
+    face(ctx, [cx, top, ...left, cx - hw, base, spineX, base]);
+    ctx.fillStyle = sunLeft ? shade : lit;
+    ctx.beginPath();
+    ctx.moveTo(cx, top);
+    ctx.lineTo(spineX, base);
+    ctx.lineTo(cx + hw, base);
+    for (let i = right.length - 2; i >= 0; i -= 2) ctx.lineTo(right[i], right[i + 1]);
+    ctx.closePath();
+    ctx.fill();
+    // bare rock below a ragged snow line, clipped to the peak
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(cx, top);
+    for (let i = 0; i < left.length; i += 2) ctx.lineTo(left[i], left[i + 1]);
+    ctx.lineTo(cx - hw, base);
+    ctx.lineTo(cx + hw, base);
+    for (let i = right.length - 2; i >= 0; i -= 2) ctx.lineTo(right[i], right[i + 1]);
+    ctx.closePath();
+    ctx.clip();
+    const snowY = lerp(top, base, far ? 0.62 : 0.55);
+    ctx.fillStyle = far ? '#5e6488' : '#3c4266';
+    ctx.beginPath();
+    ctx.moveTo(cx - hw, base);
+    const stepX = Math.max(1, U * 1.2);
+    for (let x = cx - hw; x <= cx + hw; x += stepX) {
+      const v = fbm(x / (U * 3), seed + 9, 3, 7);
+      const tooth = (Math.floor(x / stepX) % 2) * U * 1.6;
+      ctx.lineTo(x, snowY + (v - 0.5) * U * 10 + tooth);
+    }
+    ctx.lineTo(cx + hw, base);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    // couloirs: short dark strokes following the fall line on both faces
+    ctx.strokeStyle = far ? 'rgba(98,104,140,0.55)' : 'rgba(84,92,130,0.6)';
+    ctx.lineWidth = Math.max(1, U * 0.45);
+    ctx.lineCap = 'round';
+    const n = far ? 3 : 6;
+    for (let k = 0; k < n; k++) {
+      const side = k % 2 ? 1 : -1;
+      const f = 0.25 + (k / n) * 0.55;
+      const sx = cx + side * hw * f * 0.55;
+      const sy = top + (base - top) * f * 0.6 + U * 2;
+      const len = (base - top) * (0.18 + 0.1 * fbm(k, seed, 1, 3));
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.quadraticCurveTo(sx + side * len * 0.35, sy + len * 0.5, sx + side * len * 0.55, sy + len);
+      ctx.stroke();
+    }
+    // the spine catches the light
+    ctx.strokeStyle = far ? 'rgba(236,220,210,0.7)' : 'rgba(250,240,226,0.85)';
+    ctx.lineWidth = Math.max(1, U * 0.4);
+    ctx.beginPath();
+    ctx.moveTo(cx, top);
+    ctx.lineTo(lerp(cx, spineX, 0.5), lerp(top, base, 0.5));
+    ctx.stroke();
+  }
+
+  function paintForest(ctx, g, far) {
+    const U = g.U;
+    ctx.fillStyle = far ? '#6a7396' : '#3e4868';
+    ctx.beginPath();
+    ctx.moveTo(0, g.wy + 1);
+    for (let x = 0; x <= g.W; x += Math.max(1, U * 0.8)) {
+      const h = U * (far ? 3 : 6) * (0.6 + fbm(x / (U * 5), far ? 1.7 : 4.4, 3, 5));
+      const tooth = (Math.floor(x / Math.max(1, U * 0.8)) % 2) * U * 0.8;
+      ctx.lineTo(x, g.wy - h - tooth);
+    }
+    ctx.lineTo(g.W, g.wy + 1);
+    ctx.closePath();
+    ctx.fill();
   }
 
   function paintRange(ctx, g, far) {
-    const snow = far ? '#cfc7cb' : '#eee8dc';
-    const lit = far ? '#e0c0b0' : '#f4dcc4';
-    const shade = far ? '#8e92b0' : '#7e86ab';
-    const foot = far ? '#6a7396' : '#4a5478';
-    const step = 1;
-    for (let x = 0; x < g.W; x += step) {
-      const y = ridge(g, x, far);
-      const slope = (ridge(g, x + 6, far) - ridge(g, x - 6, far)) / 3;
-      const top = Math.min(y, g.wy);
-      const face = slope > 0.5 ? shade : slope < -0.5 ? lit : snow;
-      ctx.fillStyle = face;
-      ctx.fillRect(x, top, step, g.wy - top + 1);
-      const tree = g.wy - g.U * (far ? 3 : 5) + fbm(x / (g.U * 4), 1.7, 2, 5) * g.U * 3;
-      if (tree < g.wy) {
-        ctx.fillStyle = foot;
-        ctx.fillRect(x, tree, step, g.wy - tree + 1);
-      }
-      const gully = fbm(x / (g.U * 1.4), 6.1, 2, 13);
-      if (gully > 0.56 && top + g.U * 3 < tree) {
-        ctx.fillStyle = face === lit ? '#d6a890' : face === shade ? '#5c6590' : '#b8b0c0';
-        ctx.fillRect(x, top + g.U * 3, step, Math.min(tree - top, g.U * 4 + (gully - 0.5) * g.U * 90));
-      }
-    }
+    const list = far ? FAR : NEAR;
+    for (let i = 0; i < list.length; i++) paintPeak(ctx, g, list[i], far, (far ? 11 : 31) + i * 5.3);
+    paintForest(ctx, g, far);
   }
 
   function paintBack(g) {
@@ -121,11 +203,11 @@
     ctx.fillStyle = 'rgba(226,190,160,0.28)';
     ctx.fillRect(0, g.wy - g.U * 6, g.W, g.U * 6 + 1);
     paintRange(ctx, g, false);
-    const haze = ctx.createLinearGradient(0, g.wy - g.U * 34, 0, g.wy);
+    const haze = ctx.createLinearGradient(0, g.wy - g.U * 14, 0, g.wy);
     haze.addColorStop(0, 'rgba(120,126,160,0)');
-    haze.addColorStop(1, 'rgba(120,126,160,0.85)');
+    haze.addColorStop(1, 'rgba(120,126,160,0.4)');
     ctx.fillStyle = haze;
-    ctx.fillRect(0, g.wy - g.U * 34, g.W, g.U * 34 + 1);
+    ctx.fillRect(0, g.wy - g.U * 14, g.W, g.U * 14 + 1);
     return c;
   }
 
@@ -134,9 +216,9 @@
   function paintCloud(g, rand) {
     const c = layer(g.W, g.H * 0.4);
     const ctx = c.getContext('2d');
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 7; i++) {
       const x = rand() * g.W;
-      const y = g.H * (0.05 + rand() * 0.25);
+      const y = g.H * (0.04 + rand() * 0.11);
       const rx = g.U * (10 + rand() * 16);
       const ry = g.U * (0.9 + rand() * 0.8);
       for (let k = -1; k <= 1; k++) {
@@ -204,41 +286,7 @@
     return c;
   }
 
-  // ---- foreground pine branch and torii ------------------------------------
-
-  function needles(ctx, x, y, len, dir, up) {
-    for (let i = 0; i < 9; i++) {
-      const a = (i / 8 - 0.5) * 1.4 + up;
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x + Math.cos(a) * len * dir, y + Math.sin(a) * len);
-      ctx.stroke();
-    }
-  }
-
-  function paintBranch(ctx, g, rand) {
-    const U = g.U;
-    ctx.strokeStyle = '#2a2a2c';
-    ctx.lineWidth = Math.max(1, U * 0.9);
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(-U, U * 6);
-    ctx.quadraticCurveTo(U * 12, U * 9, U * 26, U * 20);
-    ctx.stroke();
-    ctx.lineWidth = Math.max(1, U * 0.28);
-    ctx.strokeStyle = '#2f4a38';
-    for (let i = 0; i < 7; i++) {
-      const f = 0.12 + i * 0.13;
-      const x = lerp(0, U * 26, f);
-      const y = lerp(U * 6.5, U * 20, f) + U * 0.6;
-      needles(ctx, x, y, U * (3.6 - f * 1.5), 1, 0.6);
-    }
-    ctx.fillStyle = '#eee8dc';
-    for (let i = 0; i < 6; i++) {
-      const f = 0.1 + i * 0.15;
-      blob(ctx, lerp(0, U * 26, f) + U * 0.4, lerp(U * 6.5, U * 20, f) - U * 0.5, U * (1.6 - f * 0.6), U * 0.5);
-    }
-  }
+  // ---- torii on the shore ice ---------------------------------------------
 
   function paintTorii(ctx, g) {
     const U = g.U;
@@ -257,71 +305,110 @@
     blob(ctx, x, y - s * 9.3, s * 5.5, s * 0.45);
   }
 
-  function paintFront(g, rand) {
+  function paintFront(g) {
     const c = layer(g.W, g.H);
-    const ctx = c.getContext('2d');
-    paintTorii(ctx, g);
-    ctx.save();
-    ctx.translate(g.W - g.U * 2, 0);
-    ctx.scale(-1.5, 1.5);
-    paintBranch(ctx, g, rand);
-    ctx.restore();
+    paintTorii(c.getContext('2d'), g);
     return c;
   }
 
   // ---- the eagle -----------------------------------------------------------
+  // Steller's sea eagle seen from below: a broad dark plank of a wing with a bent
+  // wrist and five fingered primaries, white shoulders, a white wedge tail and a
+  // heavy orange bill. Points are written into one reused array, never allocated.
 
-  function wing(ctx, bx, by, s, span, lift, U) {
-    const a1 = 0.3 + lift * 0.5;
-    const a2 = a1 * 0.4 - 0.45 - lift * 0.3;
-    const sx = bx + s * U * 1.2;
-    const ex = sx + s * Math.cos(a1) * span * 0.5;
-    const ey = by - Math.sin(a1) * span * 0.5;
-    const tx = ex + s * Math.cos(a2) * span * 0.55;
-    const ty = ey - Math.sin(a2) * span * 0.55;
-    ctx.fillStyle = INK;
-    ctx.beginPath();
-    ctx.moveTo(sx, by - U * 0.9);
-    ctx.lineTo(ex, ey - U * 1.1);
-    ctx.lineTo(tx, ty);
+  const WP = new Float32Array(40);
+  let wn = 0;
+  let ws = 1;
+
+  function put(x, y) {
+    WP[wn++] = ws * x;
+    WP[wn++] = y;
+  }
+
+  function wingShape(s, L, U, lift) {
+    const wy = -lift * L * 0.22; // wrist rises with the beat
+    const ty = -lift * L * 0.42; // tip rises further, a little behind
+    wn = 0;
+    ws = s;
+    put(U * 1.6, -U * 2.2); // root, leading edge
+    put(L * 0.3, wy * 0.6 - U * 3.2);
+    put(L * 0.5, wy - U * 3.4); // wrist, the bend in the leading edge
+    put(L * 0.74, ty * 0.8 - U * 2.0);
+    // five primaries spread like fingers, notched between
     for (let k = 0; k < 4; k++) {
-      const f = 0.95 - k * 0.2;
-      const px = lerp(ex, tx, f);
-      const py = lerp(ey, ty, f);
-      const ch = U * (1.6 + k * 1.1);
-      ctx.lineTo(px - s * U * 0.5, py + ch);
-      ctx.lineTo(px - s * U * 1.5, py + ch * 0.45);
+      const fx = L * (1.0 - k * 0.07);
+      const fy = ty - U * 1.6 + k * U * 2.2;
+      put(fx, fy);
+      put(fx - U * 3.6, fy + U * 1.3);
     }
-    ctx.lineTo(ex, ey + U * 5);
-    ctx.lineTo(sx, by + U * 4.6);
+    put(L * 0.62, wy * 0.9 + U * 4.4); // trailing edge, slight S
+    put(L * 0.38, wy * 0.55 + U * 5.6);
+    put(U * 1.6, U * 5.0);
+    return wn;
+  }
+
+  function fillPts(ctx, n) {
+    ctx.beginPath();
+    ctx.moveTo(WP[0], WP[1]);
+    for (let i = 2; i < n; i += 2) ctx.lineTo(WP[i], WP[i + 1]);
     ctx.closePath();
     ctx.fill();
+  }
+
+  function wing(ctx, s, L, U, lift) {
+    ctx.fillStyle = INK;
+    fillPts(ctx, wingShape(s, L, U, lift));
+    // white shoulder band along the inner leading edge
+    const wy = -lift * L * 0.22;
     ctx.fillStyle = '#f0ead8';
-    blob(ctx, lerp(sx, ex, 0.45), lerp(by, ey, 0.45) + U * 0.8, U * 2.4, U * 1.0);
+    ctx.beginPath();
+    ctx.moveTo(s * U * 1.8, -U * 1.6);
+    ctx.lineTo(s * L * 0.3, wy * 0.6 - U * 2.6);
+    ctx.lineTo(s * L * 0.46, wy - U * 2.6);
+    ctx.lineTo(s * L * 0.42, wy - U * 0.6);
+    ctx.lineTo(s * L * 0.22, wy * 0.45 + U * 0.6);
+    ctx.lineTo(s * U * 1.8, U * 1.2);
+    ctx.closePath();
+    ctx.fill();
+    // a paler grey on the flight feathers so the wing is not one flat slab
+    ctx.fillStyle = '#3a3e52';
+    ctx.beginPath();
+    ctx.moveTo(s * L * 0.3, wy * 0.6 + U * 2.4);
+    ctx.lineTo(s * L * 0.6, wy * 0.9 + U * 1.6);
+    ctx.lineTo(s * L * 0.62, wy * 0.9 + U * 4.0);
+    ctx.lineTo(s * L * 0.38, wy * 0.55 + U * 5.0);
+    ctx.closePath();
+    ctx.fill();
   }
 
   function drawEagle(ctx, g, t, flap) {
-    const U = g.U * 1.15;
-    const bx = g.W * (0.4 + 0.12 * Math.sin(t * 0.05));
-    const by = g.H * (0.3 + 0.025 * Math.sin(t * 0.11));
+    const U = g.U * 1.25;
+    const bx = g.W * (0.42 + 0.1 * Math.sin(t * 0.05));
+    const by = g.H * (0.3 + 0.03 * Math.sin(t * 0.11));
     const beat = Math.sin(t * 0.9 * (0.4 + flap * 0.6));
     const gate = Math.min(1, Math.max(0, Math.sin(t * 0.25) * 1.5 + 0.8));
-    const lift = beat * gate * Math.min(1, flap) + (1 - gate) * 0.15;
-    const bank = Math.cos(t * 0.05) * 0.06;
+    const lift = 0.12 + beat * gate * Math.min(1, flap) * 0.55; // glide holds a shallow V
+    const bank = Math.cos(t * 0.05) * 0.08;
     ctx.setTransform(Math.cos(bank), Math.sin(bank), -Math.sin(bank), Math.cos(bank), bx, by);
-    const span = U * 22;
-    wing(ctx, 0, 0, -1, span, lift, U);
-    wing(ctx, 0, 0, 1, span, lift, U);
+    const L = U * 22;
+    wing(ctx, -1, L, U, lift);
+    wing(ctx, 1, L, U, lift);
+    // white wedge tail
     ctx.fillStyle = '#f0ead8';
-    poly(ctx, [-U * 1.1, U * 3, U * 1.1, U * 3, U * 2, U * 8, 0, U * 7, -U * 2, U * 8]);
+    poly(ctx, [-U * 1.6, U * 4, U * 1.6, U * 4, U * 3.4, U * 11, 0, U * 12.2, -U * 3.4, U * 11]);
+    // body, white thighs, yellow feet tucked under
     ctx.fillStyle = INK;
-    blob(ctx, 0, U * 1.5, U * 2.2, U * 4);
-    ctx.fillStyle = '#3a3030';
-    blob(ctx, U * 0.3, -U * 2.2, U * 1.7, U * 1.5);
+    blob(ctx, 0, U * 1.4, U * 2.6, U * 5.2);
+    ctx.fillStyle = '#e6ddc8';
+    blob(ctx, -U * 1.3, U * 4.2, U * 1.0, U * 1.3);
+    blob(ctx, U * 1.3, U * 4.2, U * 1.0, U * 1.3);
     ctx.fillStyle = '#e0a63a';
-    poly(ctx, [U * 0.9, -U * 2.7, U * 3.2, -U * 1.7, U * 1.2, -U * 0.8]);
-    ctx.fillStyle = '#f0ead8';
-    blob(ctx, 0, -U * 1.0, U * 1.1, U * 0.5);
+    blob(ctx, 0, U * 6.2, U * 1.3, U * 0.7);
+    // head and the great bill
+    ctx.fillStyle = '#2e2a30';
+    blob(ctx, 0, -U * 4.6, U * 1.9, U * 2.0);
+    ctx.fillStyle = '#e2902e';
+    poly(ctx, [-U * 1.2, -U * 5.6, U * 1.2, -U * 5.6, U * 0.6, -U * 8.4, 0, -U * 8.9, -U * 0.6, -U * 8.4]);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
 
@@ -358,7 +445,7 @@
     state.cloud = paintCloud(g, rand);
     state.sea = paintSea(g);
     state.ice = paintIce(g, rand);
-    state.front = paintFront(g, rand);
+    state.front = paintFront(g);
     state.glints = makeGlints(g, rand);
   }
 
