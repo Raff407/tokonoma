@@ -1,9 +1,9 @@
 /*
  * 羚羊 Kamoshika — a Japanese serow on a rock ledge among beeches in the first snow.
  *
- * Sky, ridges, pagoda and trees are baked once into layers. Mist is a few tiling strips
- * sliding at different speeds between them. The serow body is baked; only its head
- * sways a little, an ear flicks and breath rises. Flakes are a short reused pool.
+ * Sky, ridges, pagoda, trees and the crag are baked once into layers. Mist is a few tiling
+ * strips sliding at different speeds between them. The stocky serow body is baked; its head,
+ * turned to look out, sways a little, an ear flicks and breath rises. Flakes are a reused pool.
  */
 (function () {
   'use strict';
@@ -45,7 +45,7 @@
     const W = api.cols;
     const H = api.rows;
     const U = H / 100;
-    const s = Math.min(U * 1.35, W / 62);
+    const s = Math.min(U * 1.12, W / 72);
     return { W, H, U, s, gy: Math.round(H * 0.74), sx: W * 0.56 };
   }
 
@@ -234,55 +234,124 @@
 
   // ---- ledge ---------------------------------------------------------------
 
+  // The crag top: flat where the serow stands, broken and stepping down either side.
+  function crestPoints(g, rand) {
+    const xL = g.W * 0.27;
+    const xR = g.W * 0.88;
+    const foot0 = g.sx - g.s * 12;
+    const foot1 = g.sx + g.s * 15;
+    const pts = [];
+    for (let x = xL; x <= xR; x += g.U * (1.6 + rand() * 1.8)) {
+      let y = g.gy + (fbm(x / (g.U * 6), 4, 3, 41) - 0.5) * g.U * 1.6 + (rand() - 0.5) * g.U * 0.8;
+      if (x < foot0) y += ((foot0 - x) / (foot0 - xL)) ** 1.3 * g.U * 13 + (rand() < 0.3 ? g.U * 1.2 : 0);
+      else if (x > foot1) y += ((x - foot1) / (xR - foot1)) ** 1.2 * g.U * 15 + (rand() < 0.3 ? g.U * 1.2 : 0);
+      else y = g.gy + g.U * 0.6 + (rand() - 0.5) * g.U * 0.5;
+      pts.push(x, y);
+    }
+    return pts;
+  }
+
+  function crag(ctx, g, rand, top) {
+    const n = top.length;
+    ctx.beginPath();
+    const yb = g.H * 0.95;
+    ctx.moveTo(top[0] + g.U * 1.5, yb);
+    ctx.lineTo(top[0] - g.U * 1.5, top[1] + g.U * 6);
+    ctx.lineTo(top[0] - g.U * 0.4, top[1] + g.U * 2.5);
+    for (let i = 0; i < n; i += 2) ctx.lineTo(top[i], top[i + 1]);
+    ctx.lineTo(top[n - 2] + g.U * 1.5, top[n - 1] + g.U * 5);
+    ctx.lineTo(top[n - 2] + g.U * 0.6, top[n - 1] + g.U * 10);
+    ctx.lineTo(top[n - 2] - g.U * 1.5, yb);
+    ctx.closePath();
+  }
+
+  function facets(ctx, g, rand, top) {
+    // lit planes hang off the crest, shadowed planes under them, then cracks
+    for (let i = 0; i < top.length - 2; i += 2) {
+      const x = top[i];
+      const y = top[i + 1];
+      const x2 = top[i + 2];
+      const y2 = top[i + 3];
+      const d = g.U * (2.5 + rand() * 4);
+      ctx.fillStyle = rand() < 0.55 ? '#7a7b72' : '#66675f';
+      poly(ctx, [x, y, x2, y2, x2 - g.U * (0.5 + rand()), y2 + d, x + g.U * rand(), y + d * (0.6 + rand() * 0.4)]);
+      ctx.fillStyle = '#34352f';
+      const yb = y + d * 0.9;
+      poly(ctx, [x + g.U * 0.3, yb, x2 - g.U * 0.4, yb + g.U * 0.4, x2 - g.U * 0.2, yb + g.U * (3 + rand() * 4), x + g.U * rand() * 1.5, yb + g.U * (2 + rand() * 3)]);
+    }
+    ctx.strokeStyle = '#262722';
+    ctx.lineWidth = Math.max(0.7, g.U * 0.3);
+    for (let i = 0; i < top.length; i += 6) {
+      const x = top[i] + g.U * rand();
+      const y = top[i + 1] + g.U * (1 + rand() * 2);
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + (rand() - 0.5) * g.U * 2, y + g.U * (3 + rand() * 3));
+      ctx.lineTo(x + (rand() - 0.5) * g.U * 3, y + g.U * (7 + rand() * 5));
+      ctx.stroke();
+    }
+  }
+
+  function snowCap(ctx, g, rand, top) {
+    ctx.fillStyle = '#eeede3';
+    ctx.beginPath();
+    ctx.moveTo(top[0], top[1] + g.U * 0.6);
+    for (let i = 0; i < top.length; i += 2) ctx.lineTo(top[i], top[i + 1] - g.U * (0.4 + rand() * 0.5));
+    for (let i = top.length - 2; i >= 0; i -= 2) ctx.lineTo(top[i], top[i + 1] + g.U * (0.5 + rand() * 1.3));
+    ctx.fill();
+    // snow caught in the ledges below the crest
+    for (let i = 0; i < top.length; i += 6) {
+      if (rand() < 0.35) continue;
+      const x = top[i] + g.U * rand() * 3;
+      const y = top[i + 1] + g.U * (3 + rand() * 9);
+      const w = g.U * (0.8 + rand() * 2.2);
+      poly(ctx, [x - w, y, x + w, y - g.U * (0.2 + rand() * 0.6), x + w * 0.6, y + g.U * 0.4, x - w * 0.7, y + g.U * 0.3]);
+    }
+  }
+
+  // snow banked against the foot of the crag, so it sits in the slope
+  function drift(ctx, g, rand) {
+    ctx.fillStyle = '#d8d6ca';
+    ctx.beginPath();
+    ctx.moveTo(g.W * 0.18, g.H);
+    for (let x = g.W * 0.18; x <= g.W * 0.97; x += 4) {
+      const f = (x - g.W * 0.18) / (g.W * 0.79);
+      ctx.lineTo(x, g.H * (0.93 - Math.sin(f * Math.PI) * 0.03) + fbm(x / (g.U * 5), 5, 3, 19) * g.U * 2.4);
+    }
+    ctx.lineTo(g.W * 0.97, g.H);
+    ctx.fill();
+    ctx.fillStyle = '#bdbfb7';
+    for (let i = 0; i < 7; i++) blob(ctx, g.W * (0.25 + rand() * 0.65), g.H * (0.955 + rand() * 0.03), g.U * (2 + rand() * 3), g.U * 0.3);
+  }
+
   function paintLedge(g, rand) {
     const c = layer(g.W, g.H);
     const ctx = c.getContext('2d');
-    const x0 = g.W * 0.26;
-    const x1 = g.W * 0.9;
-    const edge = (x) => g.gy + Math.sin(x / (g.U * 5)) * g.U * 0.5 + fbm(x / (g.U * 9), 8, 3, 77) * g.U * 1.6;
+    // snow bank sloping in from the left
     ctx.fillStyle = '#d6d4c8';
     ctx.beginPath();
-    ctx.moveTo(0, g.H * 0.8);
-    ctx.lineTo(0, g.gy + g.U * 3);
-    for (let x = 0; x <= x0; x += 4) ctx.lineTo(x, g.gy + g.U * 3 - (x / x0) * g.U * 3);
-    ctx.lineTo(x0, g.H);
+    ctx.moveTo(0, g.H);
+    ctx.lineTo(0, g.gy + g.U * 2);
+    for (let x = 0; x <= g.W * 0.34; x += 4) ctx.lineTo(x, g.gy + g.U * (2 + (x / (g.W * 0.34)) * 7) + fbm(x / (g.U * 8), 6, 2, 3) * g.U);
+    ctx.lineTo(g.W * 0.34, g.H);
     ctx.fill();
-    ctx.fillStyle = '#464847';
-    ctx.beginPath();
-    ctx.moveTo(x0, g.gy + g.U * 0.5);
-    for (let x = x0; x <= x1; x += 3) ctx.lineTo(x, edge(x));
-    const rx = x1 + g.U * 2;
-    ctx.lineTo(rx, g.H);
-    ctx.lineTo(x0 - g.U * 4, g.H);
-    ctx.lineTo(x0 - g.U * 2, g.gy + g.U * 7);
+    const top = crestPoints(g, rand);
+    ctx.fillStyle = '#4b4c46';
+    crag(ctx, g, rand, top);
     ctx.fill();
-    ctx.fillStyle = '#5b5d59';
-    for (let i = 0; i < 24; i++) {
-      const x = x0 + rand() * (x1 - x0);
-      const y = g.gy + g.U * (3 + rand() * 20);
-      poly(ctx, [x, y, x + g.U * (1 + rand() * 3), y + g.U * (0.5 + rand()), x + g.U * rand() * 2, y + g.U * (3 + rand() * 5)]);
-    }
-    ctx.strokeStyle = '#2f3130';
-    ctx.lineWidth = Math.max(0.7, g.U * 0.35);
-    for (let i = 0; i < 9; i++) {
-      const x = x0 + rand() * (x1 - x0);
-      const y = g.gy + g.U * (4 + rand() * 12);
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x + (rand() - 0.5) * g.U * 3, y + g.U * (3 + rand() * 5));
-      ctx.stroke();
-    }
-    ctx.fillStyle = '#ecebe2';
-    ctx.beginPath();
-    ctx.moveTo(x0, g.gy + g.U * 1);
-    for (let x = x0; x <= x1; x += 3) ctx.lineTo(x, edge(x) - g.U * (0.6 + fbm(x / (g.U * 4), 2, 2, 5) * 1.6));
-    for (let x = x1; x >= x0; x -= 3) ctx.lineTo(x, edge(x) + g.U * (0.7 + fbm(x / (g.U * 3), 6, 2, 9) * 2.2));
-    ctx.fill();
-    ctx.fillStyle = '#b9bcb8';
-    for (let x = x0 + 4; x < x1; x += 7 + rand() * 9) {
-      ctx.fillRect(x, edge(x) + g.U * 2.2, Math.max(1, g.U * 0.35), g.U * (1 + rand() * 2.5));
-    }
-    nanten(ctx, g, rand, g.W * 0.33, g.gy - g.U * 0.5);
+    ctx.save();
+    crag(ctx, g, rand, top);
+    ctx.clip();
+    facets(ctx, g, rand, top);
+    ctx.restore();
+    snowCap(ctx, g, rand, top);
+    drift(ctx, g, rand);
+    // a boulder at the crag's foot
+    ctx.fillStyle = '#585952';
+    poly(ctx, [g.W * 0.3, g.H * 0.93, g.W * 0.31, g.H * 0.87, g.W * 0.335, g.H * 0.855, g.W * 0.36, g.H * 0.88, g.W * 0.365, g.H * 0.93]);
+    ctx.fillStyle = '#eeede3';
+    blob(ctx, g.W * 0.333, g.H * 0.86, g.W * 0.02, g.U * 0.6);
+    nanten(ctx, g, rand, g.W * 0.31, top[1] - g.U * 0.2);
     return c;
   }
 
@@ -313,94 +382,172 @@
   }
 
   // ---- serow ---------------------------------------------------------------
+  // Units: s per unit, ground at y = 0, the serow faces left and turns its
+  // head to look out at the viewer, the way they do.
 
-  const FUR = '#4b453e';
-  const FUR_HI = '#6d645a';
-  const BELLY = '#857b6c';
-  const LEG = '#8e8576';
-  const THROAT = '#dcd6c4';
+  const FUR = '#4a443d';
+  const FUR_DK = '#2e2b27';
+  const FUR_HI = '#6e655a';
+  const PALE = '#d9d2bf';
+  const HOOF = '#1c1a17';
+  const HEAD_PIVOT = [-11, -24];
+  const BODY_BOX = { w: 38, h: 40, ox: 20, oy: 38 };
+  const HEAD_BOX = { w: 26, h: 24, ox: 13, oy: 14 };
 
-  function leg(ctx, x, top, w, fur, sock) {
+  function bodyPath() {
+    const p = new Path2D();
+    p.moveTo(-9.5, -12.5);
+    p.bezierCurveTo(-11.5, -16, -12.5, -19.5, -12.6, -23);
+    p.lineTo(-9.5, -27.2);
+    p.bezierCurveTo(-7, -28.6, -4, -28, -1.6, -26.2);
+    p.bezierCurveTo(2, -24.2, 6.5, -22.6, 10, -22);
+    p.bezierCurveTo(13.6, -21.4, 15.4, -18.4, 14.8, -15);
+    p.bezierCurveTo(14.6, -12, 13.6, -9.8, 12, -9.4);
+    p.lineTo(8, -9.8);
+    p.bezierCurveTo(4, -8.2, -2, -8, -5.4, -8.6);
+    p.bezierCurveTo(-7.8, -9, -9.2, -10.4, -9.5, -12.5);
+    p.closePath();
+    return p;
+  }
+
+  // a short tapering leg: wide at the body, a knee or hock, thin pastern, hoof
+  function leg(ctx, x, top, w0, w1, bend, fur) {
+    const kneeY = top + (-1.5 - top) * 0.55;
     ctx.fillStyle = fur;
-    poly(ctx, [x, top, x + w * 1.5, top, x + w * 1.15, -6, x + w * 1.05, 0, x + w * 0.05, 0, x, -6]);
-    ctx.fillStyle = sock;
-    poly(ctx, [x + w * 0.1, -6.5, x + w * 1.1, -6.5, x + w * 1.05, 0, x + w * 0.05, 0]);
-    ctx.fillStyle = '#26241f';
-    ctx.fillRect(x, -0.8, w * 1.1, 0.8);
+    poly(ctx, [
+      x - w0 / 2, top, x + w0 / 2, top,
+      x + w1 * 0.75 + bend, kneeY,
+      x + w1 / 2, -1.3,
+      x - w1 / 2, -1.3,
+      x - w1 * 0.75 + bend * 0.6, kneeY,
+    ]);
+    ctx.fillStyle = HOOF;
+    poly(ctx, [x - w1 / 2, -1.4, x + w1 / 2, -1.4, x + w1 / 2 + 0.3, 0, x - w1 / 2 - 0.5, 0]);
+  }
+
+  function shadeBody(ctx, body) {
+    ctx.save();
+    ctx.clip(body);
+    ctx.fillStyle = FUR_DK;
+    blob(ctx, 2, -8, 16, 4.2);
+    blob(ctx, 13.5, -13, 3.5, 6);
+    ctx.fillStyle = FUR_HI;
+    ctx.globalAlpha = 0.7;
+    blob(ctx, -5, -24, 6, 3.2);
+    blob(ctx, 4, -20, 7, 2.6);
+    blob(ctx, 11.5, -18, 2.6, 2.6);
+    ctx.globalAlpha = 1;
+    // mane: long hair falling over the neck and shoulders
+    ctx.strokeStyle = '#7b7165';
+    ctx.lineWidth = 0.45;
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 12; i++) {
+      const x = -10 + i * 0.95;
+      const y = -27.4 + Math.abs(i - 5) * 0.12;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.quadraticCurveTo(x + 1.4, y + 2.4, x + 1.1, y + 4.2 + (i % 3) * 0.6);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   function paintBody(g) {
     const s = g.s;
-    const c = layer(40 * s, 30 * s);
+    const B = BODY_BOX;
+    const c = layer(B.w * s, B.h * s);
     const ctx = c.getContext('2d');
-    ctx.translate(26 * s, 28 * s);
+    ctx.translate(B.ox * s, B.oy * s);
     ctx.scale(s, s);
-    leg(ctx, -5.2, -14, 1.5, '#2d2b28', '#70685a');
-    leg(ctx, 7, -15, 1.5, '#2d2b28', '#70685a');
-    ctx.save();
-    ctx.translate(0, -5);
+    // far legs, in shadow
+    leg(ctx, -4.6, -11, 3.8, 1.9, -0.2, FUR_DK);
+    leg(ctx, 9.4, -12, 4.2, 1.9, 0.9, FUR_DK);
+    const body = bodyPath();
     ctx.fillStyle = FUR;
-    poly(ctx, [-9.5, -14, -7, -16.6, -3, -17.6, 3, -17.8, 8, -17, 11.6, -14.6, 13.2, -11.2, 12.4, -8.8, 7, -7.8, -1, -8.2, -6, -8.4, -9.8, -9.6, -10.6, -12]);
-    ctx.fillStyle = BELLY;
-    poly(ctx, [-6, -8.8, -1, -8.6, 7, -8, 11.8, -8.7, 11, -10, 4, -10, -2, -10.5, -6, -10.5]);
-    ctx.fillStyle = FUR_HI;
-    poly(ctx, [-6, -16.5, 0, -17.4, 7, -17, 11, -15.4, 6, -15.8, -1, -16.4]);
+    ctx.fill(body);
+    shadeBody(ctx, body);
+    // pale bib down the throat to the chest
+    ctx.fillStyle = PALE;
+    poly(ctx, [-12.4, -23, -10.6, -22.4, -10, -18.5, -10.4, -15.5, -11.3, -17.2, -12.2, -19.8]);
+    // near legs: thick forearm, hind leg with a thigh and hock
+    leg(ctx, -8, -12, 4.6, 2.1, -0.3, FUR);
     ctx.fillStyle = FUR;
-    poly(ctx, [12.4, -15, 14.4, -13.4, 14, -10.6, 12.8, -12]);
-    ctx.strokeStyle = FUR_HI;
-    ctx.lineWidth = 0.4;
-    for (let i = 0; i < 14; i++) {
-      const x = -7 + i * 1.4;
-      ctx.beginPath();
-      ctx.moveTo(x, -16.6 + Math.sin(i) * 0.3);
-      ctx.lineTo(x + 0.6, -14.2);
-      ctx.stroke();
-    }
-    ctx.fillStyle = '#e9e8de';
-    poly(ctx, [-4, -17.1, 1, -17.9, 7, -17.3, 10.5, -15.8, 6, -16.6, 0, -17, -3, -16.6]);
-    ctx.restore();
-    leg(ctx, -8.4, -14, 1.7, FUR, LEG);
-    leg(ctx, 7.8, -15, 1.7, FUR, LEG);
+    blob(ctx, 12, -13, 3.4, 4.4);
+    leg(ctx, 12, -11, 4.4, 2, 1.1, FUR);
+    // snow dusting along the back
+    ctx.strokeStyle = '#efeee5';
+    ctx.lineWidth = 0.75;
+    ctx.beginPath();
+    ctx.moveTo(-7.5, -28.2);
+    ctx.bezierCurveTo(-4, -28.3, -1.5, -26.6, 2, -24.6);
+    ctx.bezierCurveTo(5, -23.2, 8, -22.6, 11, -22.2);
+    ctx.stroke();
     return c;
   }
 
+  // head painted relative to the neck pivot, facing the viewer
   function paintHead(g) {
     const s = g.s;
-    const c = layer(20 * s, 20 * s);
+    const B = HEAD_BOX;
+    const c = layer(B.w * s, B.h * s);
     const ctx = c.getContext('2d');
-    ctx.translate(14 * s, 12 * s);
+    ctx.translate(B.ox * s, B.oy * s);
     ctx.scale(s, s);
+    // far ear (the near one flicks and is drawn per frame)
     ctx.fillStyle = FUR;
-    poly(ctx, [7, 7.5, 7.5, 1, 3, -5.2, -2.8, -6.6, -5.5, -6.1, -8.8, -3.7, -10.4, -1.7, -10.3, -0.3, -8.6, 0.3, -5.2, 2.2, -3.6, 4.6, -4.2, 7.5]);
-    ctx.fillStyle = THROAT;
-    poly(ctx, [-3.4, 4.6, -3.2, 3.2, -5.2, 2, -7.6, 0.8, -6.2, 2.8, -4.8, 4.8]);
-    ctx.fillStyle = FUR_HI;
-    poly(ctx, [-2.8, -6.4, -5.4, -5.9, -8.6, -3.5, -6, -4.2, -3.4, -5.2]);
-    ctx.fillStyle = '#a79d8b';
-    poly(ctx, [-10.3, -0.2, -9.6, -2.6, -6.8, -3.2, -5.6, 0, -7.2, 2.2, -9.2, 1]);
-    ctx.fillStyle = '#25231f';
-    blob(ctx, -9.9, -1.4, 0.9, 0.7);
-    ctx.fillStyle = '#17150f';
-    blob(ctx, -5.8, -2.8, 0.45, 0.4);
+    poly(ctx, [0.2, -6.8, 4.8, -9.2, 4.6, -7.1, 0.4, -4.9]);
+    ctx.fillStyle = '#8c8272';
+    poly(ctx, [1, -6.5, 4, -8.3, 3.9, -7.2, 1, -5.6]);
+    // horns: short, ringed, sweeping back
     ctx.strokeStyle = '#1b1915';
-    ctx.lineWidth = 0.95;
     ctx.lineCap = 'round';
+    ctx.lineWidth = 1.1;
     ctx.beginPath();
-    ctx.moveTo(-3.6, -6.2);
-    ctx.quadraticCurveTo(-2.4, -9.6, 1.2, -9.8);
+    ctx.moveTo(-4.4, -7.6);
+    ctx.quadraticCurveTo(-4.9, -10.4, -3.6, -12);
+    ctx.moveTo(-1.6, -7.6);
+    ctx.quadraticCurveTo(-1.3, -10.4, 0.2, -11.6);
     ctx.stroke();
-    ctx.fillStyle = '#e9e8de';
-    blob(ctx, -3.6, -6.9, 1.1, 0.4);
+    // skull and face
+    ctx.fillStyle = FUR;
+    ctx.beginPath();
+    ctx.moveTo(-6.8, -5.4);
+    ctx.bezierCurveTo(-6.4, -8.4, 0.4, -8.4, 0.8, -5.4);
+    ctx.bezierCurveTo(1.2, -2.2, 0.2, 2, -1.2, 4.6);
+    ctx.bezierCurveTo(-2, 5.6, -4, 5.6, -4.8, 4.6);
+    ctx.bezierCurveTo(-6.2, 2, -7.2, -2.2, -6.8, -5.4);
+    ctx.fill();
+    ctx.fillStyle = FUR_HI;
+    blob(ctx, -3, -5.6, 2.6, 1.6);
+    // pale cheeks, lips and chin
+    ctx.fillStyle = PALE;
+    poly(ctx, [-6.6, -1.2, -5, 0.4, -4.4, 3.6, -5, 4.4, -6.2, 1.8]);
+    poly(ctx, [0.6, -1.2, -1, 0.4, -1.6, 3.6, -1, 4.4, 0.2, 1.8]);
+    blob(ctx, -3, 4.6, 1.9, 1.1);
+    ctx.fillStyle = '#7d7365';
+    blob(ctx, -3, 2.6, 1.5, 1.6);
+    ctx.fillStyle = HOOF;
+    blob(ctx, -3, 3.2, 1.1, 0.6);
+    // eyes and the dark gland below each
+    ctx.fillStyle = '#14120e';
+    blob(ctx, -5.1, -3, 0.7, 0.6);
+    blob(ctx, -0.9, -3, 0.7, 0.6);
+    ctx.fillStyle = '#26231f';
+    blob(ctx, -5.3, -1.6, 0.5, 0.8);
+    blob(ctx, -0.7, -1.6, 0.5, 0.8);
+    ctx.fillStyle = '#efeee5';
+    blob(ctx, -3, -7.3, 2.2, 0.5);
     return c;
   }
 
-  function drawEar(ctx, s, flick) {
-    ctx.fillStyle = FUR;
+  function drawEar(ctx, flick) {
     ctx.save();
-    ctx.rotate(flick * 0.5);
-    poly(ctx, [-0.8, -5.2, 3.4, -7.6, 1.4, -3.8]);
-    ctx.fillStyle = BELLY;
-    poly(ctx, [0.2, -5, 2.4, -6.4, 1.2, -4.2]);
+    ctx.translate(-6.4, -6);
+    ctx.rotate(flick * 0.45);
+    ctx.fillStyle = FUR;
+    poly(ctx, [0, -0.8, -5, -3.2, -4.8, -1.1, -0.2, 1.1]);
+    ctx.fillStyle = '#8c8272';
+    poly(ctx, [-0.8, -0.5, -4.1, -2.3, -4, -1.2, -0.8, 0.4]);
     ctx.restore();
   }
 
@@ -481,29 +628,32 @@
   function drawSerow(ctx, g, t, breath) {
     const s = g.s;
     const bx = g.sx;
-    const by = g.gy + g.U * 0.4;
-    const rise = Math.sin(t * 1.1) * 0.12 * breath;
-    ctx.drawImage(state.body, bx - 26 * s, by - 28 * s + rise * s * 0.3);
-    const pivx = bx - 9 * s;
-    const pivy = by - 17.5 * s + rise * s;
-    const sway = Math.sin(t * 0.35) * 0.05 + Math.sin(t * 0.9) * 0.02;
+    const by = g.gy + g.U * 0.5;
+    const rise = Math.sin(t * 1.1) * 0.15 * breath;
+    ctx.drawImage(state.body, bx - BODY_BOX.ox * s, by - BODY_BOX.oy * s + rise * s * 0.3);
+    const pivx = bx + HEAD_PIVOT[0] * s;
+    const pivy = by + HEAD_PIVOT[1] * s + rise * s * 0.5;
+    const sway = Math.sin(t * 0.35) * 0.06 + Math.sin(t * 0.9) * 0.015;
     ctx.save();
     ctx.translate(pivx, pivy);
     ctx.rotate(sway);
-    ctx.drawImage(state.head, -14 * s, -12 * s);
+    ctx.drawImage(state.head, -HEAD_BOX.ox * s, -HEAD_BOX.oy * s);
     const phase = (t % 7) / 7;
     const flick = phase < 0.06 ? Math.sin((phase / 0.06) * TAU) : 0;
     ctx.scale(s, s);
-    drawEar(ctx, s, flick);
+    drawEar(ctx, flick);
     ctx.restore();
-    const nx = pivx - 10.3 * s * Math.cos(sway);
-    const ny = pivy - 1.4 * s - 10.3 * s * Math.sin(sway);
+    // breath from the muzzle at (-3, 5) in head units
+    const cs = Math.cos(sway);
+    const sn = Math.sin(sway);
+    const nx = pivx + (-3 * cs - 5 * sn) * s;
+    const ny = pivy + (-3 * sn + 5 * cs) * s;
+    const on = Math.sin(t * 0.45) > -0.1 ? 1 : 0.4;
     ctx.fillStyle = '#f2f0e6';
     for (let i = 0; i < PUFFS; i++) {
-      const ph = ((t * 0.22 + i / PUFFS) % 1);
-      const on = Math.sin(t * 0.45) > -0.1 ? 1 : 0.4;
+      const ph = (t * 0.22 + i / PUFFS) % 1;
       ctx.globalAlpha = 0.5 * (1 - ph) * Math.min(1, breath) * on;
-      blob(ctx, nx - ph * g.U * 5, ny - ph * g.U * 3, g.U * (0.5 + ph * 1.6), g.U * (0.4 + ph));
+      blob(ctx, nx - ph * g.U * 5, ny - ph * g.U * 2.5, g.U * (0.5 + ph * 1.6), g.U * (0.4 + ph));
     }
     ctx.globalAlpha = 1;
   }
