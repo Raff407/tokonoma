@@ -62,6 +62,9 @@ uniform float uDither;
 uniform float uBoost;
 uniform float uTint;
 uniform bool uInvert;
+// Ink coverage of each glyph, and how far to lift the wash where a glyph is thin.
+uniform float uCov[96];
+uniform float uLift;
 out vec4 outColor;
 
 const float BAYER[16] = float[16](0., 8., 2., 10., 12., 4., 14., 6., 3., 11., 1., 9., 15., 7., 13., 5.);
@@ -81,9 +84,16 @@ void main() {
   l = clamp(l * uGain + threshold * uDither / uGlyphs, 0.0, 1.0);
 
   float a;
+  float wash = 0.3;
   if (uMode == 0) {
     float gi = floor(l * (uGlyphs - 1.0) + 0.5);
     a = texture(uAtlas, vec2((gi + local.x) / uGlyphs, local.y)).r;
+    // Thin glyphs leave most of the cell as wash, so the picture goes dull.
+    // Raise the wash until the cell is about as bright as a full ramp would make it.
+    float cov = uCov[int(gi)];
+    float want = l + (1.0 - l) * 0.3 * uTint;
+    float need = (want - cov) / max((1.0 - cov) * uTint, 0.05);
+    wash = mix(0.3, clamp(need, 0.3, 0.8), uLift);
   } else if (uMode == 1) {
     vec2 q = abs(local - 0.5);
     float edge = 0.5 - max(1.2 / uCell, 0.1);
@@ -98,7 +108,7 @@ void main() {
   vec3 ink = uInvert ? col : min(mix(col, vivid * mix(0.55, 1.0, l), uBoost), 1.0);
   if (uMode == 1) ink = col;
   // Each cell sits on a dim wash of its own colour, like dyed thread under the weave.
-  vec3 ground = mix(uBg, uInvert ? mix(uBg, col, 0.35) : col * 0.3, uTint);
+  vec3 ground = mix(uBg, uInvert ? mix(uBg, col, 0.35) : col * wash, uTint);
   outColor = vec4(mix(ground, ink, a), 1.0);
 }`;
 
@@ -124,7 +134,15 @@ void main() {
       ctx.fillText(g, 0, 0);
       ctx.restore();
     });
-    return { canvas: atlas, count: glyphs.length };
+    const px = ctx.getImageData(0, 0, atlas.width, atlas.height).data;
+    const coverage = glyphs.map((_, i) => {
+      let sum = 0;
+      for (let y = 0; y < cellPx; y++) {
+        for (let x = i * cellPx; x < (i + 1) * cellPx; x++) sum += px[(y * atlas.width + x) * 4];
+      }
+      return sum / (255 * cellPx * cellPx);
+    });
+    return { canvas: atlas, count: glyphs.length, coverage };
   }
 
   function compile(gl, type, src) {
@@ -174,7 +192,7 @@ void main() {
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
 
     const u = {};
-    for (const name of ['uScene', 'uAtlas', 'uRes', 'uCell', 'uGlyphs', 'uMode', 'uBg', 'uGain', 'uDither', 'uBoost', 'uTint', 'uInvert']) {
+    for (const name of ['uScene', 'uAtlas', 'uRes', 'uCell', 'uGlyphs', 'uMode', 'uBg', 'uGain', 'uDither', 'uBoost', 'uTint', 'uInvert', 'uCov', 'uLift']) {
       u[name] = gl.getUniformLocation(program, name);
     }
     const sceneTex = texture(gl);
@@ -182,12 +200,17 @@ void main() {
     gl.uniform1i(u.uScene, 0);
     gl.uniform1i(u.uAtlas, 1);
     let glyphCount = 1;
+    let lift = 0;
 
     return {
       kind: 'webgl2',
-      setAtlas(chars, cellPx) {
+      setAtlas(chars, cellPx, rampLift) {
         const atlas = buildAtlas(chars, cellPx);
         glyphCount = atlas.count;
+        lift = rampLift || 0;
+        const cov = new Float32Array(96);
+        cov.set(atlas.coverage.slice(0, 96));
+        gl.uniform1fv(u.uCov, cov);
         gl.activeTexture(gl.TEXTURE1);
         gl.bindTexture(gl.TEXTURE_2D, atlasTex);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.canvas);
@@ -208,6 +231,7 @@ void main() {
         gl.uniform1f(u.uBoost, props.boost);
         gl.uniform1f(u.uTint, props.tint);
         gl.uniform1i(u.uInvert, props.invert ? 1 : 0);
+        gl.uniform1f(u.uLift, props.invert ? 0 : lift);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
       },
     };
@@ -312,7 +336,7 @@ void main() {
       api.rows = grid.rows;
       api.cell = grid.cell;
       api.cellPx = cellPx;
-      renderer.setAtlas(C.RAMPS[props.ramp] || C.RAMPS.ascii, Math.round(cellPx));
+      renderer.setAtlas(C.RAMPS[props.ramp] || C.RAMPS.ascii, Math.round(cellPx), C.RAMP_LIFT[props.ramp] || 0);
       ctx.imageSmoothingEnabled = true;
       if (spec.setup) spec.setup(ctx, api);
     }

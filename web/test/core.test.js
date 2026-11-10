@@ -29,6 +29,16 @@ test('every ramp starts with a blank cell', () => {
   }
 });
 
+test('ramp lift names real ramps and fits the shader', () => {
+  assert.ok(K.RAMP_LIFT.dense > 0, 'dense should lift its wash');
+  assert.equal(K.RAMP_LIFT.lines, undefined, 'lines fills the cell and needs no lift');
+  for (const [name, lift] of Object.entries(K.RAMP_LIFT)) {
+    assert.ok(name in K.RAMPS, `${name} is not a ramp`);
+    assert.ok(lift > 0 && lift <= 1, `${name} lift out of range`);
+    assert.ok([...K.RAMPS[name]].length <= 96, `${name} has more glyphs than uCov holds`);
+  }
+});
+
 test('parseColor reads long and short hex', () => {
   assert.deepEqual(K.parseColor('#d1432f'), [209, 67, 47]);
   assert.deepEqual(K.parseColor('#fff'), [255, 255, 255]);

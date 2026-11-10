@@ -23,6 +23,10 @@
     sparse: ' ..::',
   });
 
+  // Ramps whose glyphs stay thin even at full brightness. kasuri lifts the
+  // dyed wash under them so the scene keeps its colour (lines fills the cell, so it needs none).
+  const RAMP_LIFT = Object.freeze({ dense: 0.75 });
+
   const BAYER4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
 
   const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
@@ -207,7 +211,7 @@
   }
 
   const api = Object.freeze({
-    MIN_CELL, MAX_CELL, RAMPS,
+    MIN_CELL, MAX_CELL, RAMPS, RAMP_LIFT,
     clamp, lerp, smoothstep, gridSize, rampIndex,
     parseColor, toHex, mixColor, luminance,
     rng, hash2, noise2, fbm, bayer4, frameGate,
