@@ -1,0 +1,17 @@
+{
+  "id": "biwako",
+  "name": "Lake Biwa",
+  "title": "琵琶湖",
+  "description": "A vast lake at dawn with a lone vermilion torii standing in the shallows. Mist lifts off the water, far mountains fade into the haze, and the light follows your clock.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "time", "label": "time of day", "type": "choice", "options": ["auto", "dawn", "day", "dusk", "night"], "default": "dawn"},
+    {"key": "mist", "label": "mist", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "birds", "label": "birds", "type": "toggle", "default": true},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
