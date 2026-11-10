@@ -1,0 +1,17 @@
+{
+  "id": "miho",
+  "name": "Miho",
+  "title": "三保",
+  "description": "A black sand beach lined with old pines curves toward Mount Fuji across the bay. Slow surf rolls in, clouds drift past the cone, and the light follows your clock.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "time", "label": "time of day", "type": "choice", "options": ["auto", "dawn", "day", "dusk", "night"], "default": "auto"},
+    {"key": "surf", "label": "surf", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "clouds", "label": "clouds", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
