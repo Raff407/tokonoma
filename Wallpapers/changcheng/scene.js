@@ -1,9 +1,9 @@
 /*
  * 长城 Great Wall — the wall climbing a mountain ridge in autumn.
  *
- * Sky, far ridges, the wall with its watchtowers and the maple slopes are
+ * Sky, far ridges, the wall with its watchtowers and the maple woods are
  * baked into layers and repainted once a minute from the clock. Between
- * repaints only mist banks, a thin beacon smoke and a few leaves move.
+ * repaints only two mist banks, the beacon smoke and a few leaves move.
  */
 (function () {
   'use strict';
@@ -13,10 +13,18 @@
   const { fbm, lerp, mixColor, toHex, parseColor, smoothstep } = K;
 
   const RETINT_SECONDS = 60;
-  const MAX_SMOKE = 10;
-  const MAX_LEAVES = 24;
-  const TOWERS = [0.1, 0.27, 0.47, 0.66, 0.84];
-  const LEAF_INK = ['#b8472e', '#c99a3a', '#9a3a28', '#d0a64a'];
+  const MAX_SMOKE = 12;
+  const MAX_LEAVES = 30;
+  const TOWERS = [0.1, 0.29, 0.5, 0.7, 0.88];
+  const BEACON = 3;
+  const LEAF_INK = ['#c4482c', '#d0a040', '#a8382a', '#d8b050'];
+  // Tree kinds: crown colour, highlight colour, share of the woods.
+  const KINDS = [
+    { ink: '#3a5636', hi: '#62804e', pine: true, p: 0.26 },
+    { ink: '#9c3626', hi: '#c95a38', p: 0.34 },
+    { ink: '#a87a2c', hi: '#d2a64a', p: 0.22 },
+    { ink: '#7a4a2a', hi: '#a86a3a', p: 0.18 },
+  ];
   const state = {};
 
   const rgb = (h) => parseColor(h);
@@ -32,7 +40,7 @@
   // Tint a colour by the light of the hour.
   function lit(sky, c, amount) {
     const base = mixColor(rgb(c), sky.amb, amount === undefined ? 0.18 : amount);
-    return hex(mixColor(base, rgb('#10131e'), sky.night * 0.68));
+    return hex(mixColor(base, rgb('#10131e'), sky.night * 0.62));
   }
 
   // ---- shapes ------------------------------------------------------------
@@ -46,7 +54,7 @@
 
   function farRidge(g, x, k) {
     const u = x / g.W;
-    return g.H * (0.5 - 0.12 * k) + Math.sin(u * (5 + k * 3) + k * 2) * g.H * (0.06 - k * 0.012)
+    return g.H * (0.46 - 0.1 * k) + Math.sin(u * (5 + k * 3) + k * 2) * g.H * (0.05 - k * 0.01)
       + (fbm(x * 0.02, k * 7, 4, 17) - 0.5) * g.H * 0.08;
   }
 
@@ -76,7 +84,7 @@
     const night = sky.night > 0.5;
     const t = night ? S.moonT(sky.hour) : S.sunT(sky.hour);
     const px = g.W * (0.12 + 0.5 * t);
-    const py = g.H * (0.3 - 0.2 * Math.sin(Math.PI * t));
+    const py = g.H * (0.26 - 0.16 * Math.sin(Math.PI * t));
     const r = g.U * (night ? 3.2 : 3.8);
     const halo = ctx.createRadialGradient(px, py, 0, px, py, r * 5);
     halo.addColorStop(0, night ? 'rgba(220,226,240,0.28)' : 'rgba(250,224,170,0.4)');
@@ -91,12 +99,13 @@
 
   // ---- far ridges --------------------------------------------------------
 
+  // Indigo ranges, darker toward the front, so the pale wall stands off them.
   function paintFar(g, sky) {
     const c = layer(g.W, g.H);
     const ctx = c.getContext('2d');
     for (let k = 2; k >= 0; k--) {
-      const tone = mixColor(mixColor(rgb('#5d6f8a'), sky.haze, 0.55), sky.low, 0.15 + k * 0.2);
-      ctx.fillStyle = hex(mixColor(tone, rgb('#141828'), sky.night * 0.6));
+      const tone = mixColor(mixColor(rgb('#3e4c66'), sky.haze, 0.18 + k * 0.16), sky.low, 0.06 + k * 0.12);
+      ctx.fillStyle = hex(mixColor(tone, rgb('#141828'), sky.night * 0.55));
       ctx.beginPath();
       ctx.moveTo(0, g.H);
       for (let x = 0; x <= g.W; x += 2) ctx.lineTo(x, farRidge(g, x, k) + k * g.U * 2);
@@ -106,136 +115,218 @@
     return c;
   }
 
-  // ---- main ridge, wall and towers ----------------------------------------
+  // ---- main ridge and woods ----------------------------------------------
 
   function paintSlope(ctx, g, sky, rand) {
-    const top = lit(sky, '#5a6248');
-    const low = lit(sky, '#2f3a2e');
     const grad = ctx.createLinearGradient(0, g.H * 0.3, 0, g.H);
-    grad.addColorStop(0, top);
-    grad.addColorStop(1, low);
+    grad.addColorStop(0, lit(sky, '#56623f'));
+    grad.addColorStop(1, lit(sky, '#253026'));
     ctx.fillStyle = grad;
     ctx.beginPath();
     ctx.moveTo(0, g.H);
     for (let x = 0; x <= g.W; x += 2) ctx.lineTo(x, crest(g, x));
     ctx.lineTo(g.W, g.H);
     ctx.fill();
-    // Rock bands, then maple and pine crowns below the crest.
-    ctx.fillStyle = lit(sky, '#6d6a60');
-    ctx.globalAlpha = 0.45;
-    for (let i = 0; i < 90; i++) {
-      const x = rand() * g.W;
-      ctx.fillRect(x, crest(g, x) + g.U * (2 + rand() * 10), g.U * (1 + rand() * 3), Math.max(1, g.U * 0.5));
-    }
-    ctx.globalAlpha = 1;
-    const count = Math.floor(g.W * 2.2);
-    for (let i = 0; i < count; i++) {
-      const x = rand() * g.W;
-      const depth = rand();
-      const y = crest(g, x) + g.U * 3 + Math.pow(depth, 1.6) * (g.H - crest(g, x));
-      const pine = rand() < 0.3;
-      const ink = pine ? ['#3d5238', '#2f4430'][i % 2] : LEAF_INK[Math.floor(rand() * LEAF_INK.length)];
-      ctx.fillStyle = lit(sky, ink, 0.12);
+    // Soft gullies running down from the crest.
+    ctx.fillStyle = lit(sky, '#1c241e');
+    ctx.globalAlpha = 0.35;
+    for (let i = 0; i < 9; i++) {
+      const x = (i + 0.3 + rand() * 0.4) * g.W / 9;
+      const y = crest(g, x) + g.U * 3;
       ctx.beginPath();
-      ctx.arc(x, y, g.U * (0.8 + rand() * 1.0 + depth * 1.6), 0, 6.3);
+      ctx.moveTo(x - g.U, y);
+      ctx.quadraticCurveTo(x + g.U * 3, y + g.H * 0.2, x - g.U * 2, g.H);
+      ctx.lineTo(x + g.U * 4, g.H);
+      ctx.quadraticCurveTo(x + g.U * 5, y + g.H * 0.2, x + g.U, y);
       ctx.fill();
     }
-    // A few bare grey trunks and pale grass dashes in the lowest slope.
-    ctx.fillStyle = lit(sky, '#8a8366');
-    ctx.globalAlpha = 0.5;
-    for (let i = 0; i < 40; i++) ctx.fillRect(rand() * g.W, g.H * (0.82 + rand() * 0.18), g.U * 1.2, 1);
     ctx.globalAlpha = 1;
   }
 
+  function pickKind(r) {
+    let acc = 0;
+    for (const k of KINDS) {
+      acc += k.p;
+      if (r < acc) return k;
+    }
+    return KINDS[KINDS.length - 1];
+  }
+
+  // One tree: shadow, trunk, a clumped crown and a lit top-left side.
+  function paintTree(ctx, sky, rand, t) {
+    const { x, y, r, kind } = t;
+    ctx.fillStyle = lit(sky, '#161c18', 0.05);
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    ctx.ellipse(x + r * 0.3, y + r * 0.45, r * 1.15, r * 0.8, 0, 0, 6.3);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    if (r > 1.6) {
+      ctx.fillStyle = lit(sky, '#2a2420', 0.05);
+      ctx.fillRect(x - Math.max(0.5, r * 0.08), y, Math.max(1, r * 0.16), r * 1.3);
+    }
+    const base = lit(sky, kind.ink, 0.12);
+    const hi = lit(sky, kind.hi, 0.12);
+    if (kind.pine) {
+      ctx.fillStyle = base;
+      for (let k = 0; k < 3; k++) {
+        const ty = y + r * 0.5 - k * r * 0.6;
+        const tw = r * (1.1 - k * 0.28);
+        ctx.beginPath();
+        ctx.moveTo(x - tw, ty);
+        ctx.lineTo(x + tw, ty);
+        ctx.lineTo(x, ty - r * 0.95);
+        ctx.fill();
+      }
+      ctx.fillStyle = hi;
+      ctx.fillRect(x - r * 0.5, y - r * 0.3, Math.max(1, r * 0.35), Math.max(1, r * 0.2));
+      return;
+    }
+    ctx.fillStyle = base;
+    for (let k = 0; k < 5; k++) {
+      const a = rand() * 6.3;
+      const d = r * 0.45 * rand();
+      ctx.beginPath();
+      ctx.arc(x + Math.cos(a) * d, y + Math.sin(a) * d * 0.7, r * (0.5 + rand() * 0.25), 0, 6.3);
+      ctx.fill();
+    }
+    ctx.fillStyle = hi;
+    for (let k = 0; k < 2; k++) {
+      ctx.beginPath();
+      ctx.arc(x - r * (0.2 + rand() * 0.25), y - r * (0.25 + rand() * 0.2), r * (0.28 + rand() * 0.12), 0, 6.3);
+      ctx.fill();
+    }
+  }
+
+  // Plan the woods once: smaller, denser near the crest; fewer, larger below,
+  // left in clumps (groves) so moss and shadow show between them.
+  function planWoods(g) {
+    const rand = K.rng(91);
+    const trees = [];
+    const groves = Math.max(30, Math.round(g.W * 0.36));
+    for (let i = 0; i < groves; i++) {
+      const gx = rand() * g.W;
+      const depth = Math.pow(rand(), 1.4);
+      const n = 3 + Math.floor(rand() * 4 + (1 - depth) * 4);
+      for (let k = 0; k < n; k++) {
+        const x = gx + (rand() - 0.5) * g.U * (5 + depth * 10);
+        const c = crest(g, x);
+        const y = c + g.U * 3.5 + depth * (g.H - c) * 0.95 + (rand() - 0.5) * g.U * 2;
+        trees.push({ x, y, r: g.U * (0.9 + depth * 2.6 + rand() * 0.6), kind: pickKind(rand()) });
+      }
+    }
+    // A fringe of small crowns just under the wall.
+    for (let i = 0; i < g.W * 0.5; i++) {
+      const x = rand() * g.W;
+      if (fbm(x * 0.05, 1, 2, 33) < 0.45) continue;
+      trees.push({ x, y: crest(g, x) + g.U * (4 + rand() * 6), r: g.U * (0.7 + rand() * 0.5), kind: pickKind(rand()) });
+    }
+    // Two big maples close by in the lower corners frame the view.
+    const corner = [[0.04, 0.95, 6.5, 1], [0.13, 1.0, 5, 2], [0.95, 0.94, 6, 1], [0.86, 1.0, 5, 3], [0.99, 0.84, 4, 2]];
+    for (const [fx, fy, s, kind] of corner) trees.push({ x: g.W * fx, y: g.H * fy, r: g.U * s, kind: KINDS[kind] });
+    trees.sort((a, b) => a.y - b.y);
+    return trees;
+  }
+
+  // ---- wall and towers ----------------------------------------------------
+
   function paintWall(ctx, g, sky) {
-    const wh = g.U * 4.4;
-    const stone = lit(sky, '#8e8c82', 0.2);
-    const shade = lit(sky, '#5c5a56', 0.2);
-    const cap = lit(sky, '#b4b0a2', 0.22);
-    const step = Math.max(1, Math.round(g.U * 0.5));
-    let n = 0;
-    for (let x = 0; x < g.W; x += step, n++) {
-      const y = crest(g, x);
-      const y2 = crest(g, x + step);
-      const lo = Math.max(y, y2);
+    const U = g.U;
+    const face = U * 3.6;
+    const above = U * 1.6;
+    const stone = lit(sky, '#a9a493', 0.2);
+    const shade = lit(sky, '#4c4a46', 0.15);
+    const dark = lit(sky, '#262628', 0.08);
+    const cap = lit(sky, '#d6d0bc', 0.22);
+    const step = 1;
+    const period = Math.max(3, Math.round(U * 1.8));
+    const merH = Math.max(2, Math.round(U * 1.2));
+    for (let x = 0; x < g.W; x += step) {
+      const y = crest(g, x) - above;
+      // Shadow cast onto the slope, then the shaded lower face, then the lit upper face.
+      ctx.fillStyle = dark;
+      ctx.fillRect(x, y, step, face + U * 1.4);
       ctx.fillStyle = shade;
-      ctx.fillRect(x, y - wh * 0.4, step, lo - y + wh * 0.4 + wh * 0.45);
+      ctx.fillRect(x, y, step, face);
       ctx.fillStyle = stone;
-      ctx.fillRect(x, y - wh * 0.4, step, lo - y + wh * 0.7);
+      ctx.fillRect(x, y, step, face * 0.45);
       ctx.fillStyle = cap;
-      ctx.fillRect(x, y - wh * 0.45, step, Math.max(1, g.U * 0.35));
-      if (n % 2 === 0) {
+      ctx.fillRect(x, y, step, Math.max(1, U * 0.45));
+      // Merlons: solid teeth with clear gaps.
+      if (x % period < period * 0.55) {
         ctx.fillStyle = stone;
-        ctx.fillRect(x, y - wh * 0.4 - Math.max(1, g.U * 0.8), step, Math.max(1, g.U * 0.8) + 1);
+        ctx.fillRect(x, y - merH, step, merH);
         ctx.fillStyle = cap;
-        ctx.fillRect(x, y - wh * 0.4 - Math.max(1, g.U * 0.8), step, 1);
+        ctx.fillRect(x, y - merH, step, 1);
+      } else {
+        ctx.fillStyle = dark;
+        ctx.fillRect(x, y - 1, step, 1);
       }
     }
   }
 
   function paintTower(ctx, g, sky, cx) {
     const U = g.U;
-    const w = U * 8;
+    const w = U * 9;
     const h = U * 9;
-    const base = crest(g, cx) + U * 1.2;
+    const base = crest(g, cx) + U * 2;
     const x0 = cx - w / 2;
-    const stone = lit(sky, '#98958a', 0.2);
-    const edge = lit(sky, '#66645e', 0.2);
-    const dark = lit(sky, '#1f2128', 0.1);
+    const stone = lit(sky, '#b0ab9a', 0.2);
+    const edge = lit(sky, '#5e5c56', 0.15);
+    const dark = lit(sky, '#1a1c22', 0.06);
+    ctx.fillStyle = dark;
+    ctx.fillRect(x0 - 1, base - h, w + 2, h + U);
     ctx.fillStyle = stone;
     ctx.fillRect(x0, base - h, w, h);
     ctx.fillStyle = edge;
-    ctx.fillRect(x0 + w * 0.72, base - h, w * 0.28, h);
-    ctx.fillStyle = lit(sky, '#b8b4a4', 0.22);
-    ctx.fillRect(x0 - U * 0.4, base - h, w + U * 0.8, Math.max(1, U * 0.55));
-    // Crenellations along the top.
-    const merlon = Math.max(1, U * 0.7);
+    ctx.fillRect(x0 + w * 0.7, base - h, w * 0.3, h);
+    ctx.fillStyle = lit(sky, '#d6d0bc', 0.22);
+    ctx.fillRect(x0 - U * 0.5, base - h, w + U, Math.max(1, U * 0.6));
+    const merlon = Math.max(1, Math.round(U * 0.9));
     ctx.fillStyle = stone;
-    for (let mx = x0 - U * 0.4; mx < x0 + w + U * 0.4; mx += merlon * 2) ctx.fillRect(mx, base - h - merlon, merlon, merlon + 1);
+    for (let mx = x0 - U * 0.5; mx < x0 + w + U * 0.5; mx += merlon * 2) ctx.fillRect(mx, base - h - merlon, merlon, merlon + 1);
     // Arched windows.
     ctx.fillStyle = dark;
     for (let k = 0; k < 2; k++) {
-      const wx = x0 + w * (0.2 + k * 0.4);
-      ctx.fillRect(wx, base - h * 0.7, w * 0.18, h * 0.3);
+      const wx = x0 + w * (0.18 + k * 0.42);
+      ctx.fillRect(wx, base - h * 0.62, w * 0.2, h * 0.32);
       ctx.beginPath();
-      ctx.arc(wx + w * 0.09, base - h * 0.7, w * 0.09, Math.PI, 0);
+      ctx.arc(wx + w * 0.1, base - h * 0.62, w * 0.1, Math.PI, 0);
       ctx.fill();
     }
-    // Small tiled room with up-curved eaves.
-    const rw = w * 0.62;
+    // Tiled room with a broad roof and up-turned eaves.
+    const rw = w * 0.66;
     const rx = cx - rw / 2;
     const rt = base - h - merlon;
-    ctx.fillStyle = lit(sky, '#a8a396', 0.2);
-    ctx.fillRect(rx, rt - U * 1.8, rw, U * 1.8);
-    ctx.fillStyle = lit(sky, '#b8472e', 0.12);
-    ctx.fillRect(rx + rw * 0.12, rt - U * 1.3, rw * 0.76, U * 0.9);
-    const tile = lit(sky, '#3b4048', 0.12);
-    ctx.fillStyle = tile;
+    ctx.fillStyle = lit(sky, '#a8382a', 0.12);
+    ctx.fillRect(rx, rt - U * 2.2, rw, U * 2.2);
+    ctx.fillStyle = dark;
+    ctx.fillRect(rx + rw * 0.4, rt - U * 1.6, rw * 0.2, U * 1.6);
+    ctx.fillStyle = lit(sky, '#2c3038', 0.1);
     ctx.beginPath();
-    ctx.moveTo(rx - U * 1.4, rt - U * 2.9);
-    ctx.quadraticCurveTo(rx + U * 0.2, rt - U * 1.7, rx + U * 0.6, rt - U * 1.8);
-    ctx.lineTo(rx + rw - U * 0.6, rt - U * 1.8);
-    ctx.quadraticCurveTo(rx + rw - U * 0.2, rt - U * 1.7, rx + rw + U * 1.4, rt - U * 2.9);
-    ctx.lineTo(cx, rt - U * 4.4);
+    ctx.moveTo(rx - U * 2.4, rt - U * 3.8);
+    ctx.quadraticCurveTo(rx - U * 0.4, rt - U * 2.0, rx + U * 0.6, rt - U * 2.2);
+    ctx.lineTo(rx + rw - U * 0.6, rt - U * 2.2);
+    ctx.quadraticCurveTo(rx + rw + U * 0.4, rt - U * 2.0, rx + rw + U * 2.4, rt - U * 3.8);
+    ctx.lineTo(cx + rw * 0.25, rt - U * 5.6);
+    ctx.lineTo(cx - rw * 0.25, rt - U * 5.6);
     ctx.fill();
+    ctx.fillStyle = lit(sky, '#5a5e66', 0.15);
+    ctx.fillRect(cx - rw * 0.32, rt - U * 5.8, rw * 0.64, Math.max(1, U * 0.5));
   }
 
   function paintFront(g, sky, rand) {
     const c = layer(g.W, g.H);
     const ctx = c.getContext('2d');
     paintSlope(ctx, g, sky, rand);
+    const trees = state.trees;
+    const crestLine = (t) => t.y < crest(g, t.x) + g.U * 8;
+    const treeRand = K.rng(5);
+    // Trees close under the crest sit behind the wall's cast shadow; the rest in front.
+    for (const t of trees) if (crestLine(t)) paintTree(ctx, sky, treeRand, t);
     paintWall(ctx, g, sky);
     for (const f of TOWERS) paintTower(ctx, g, sky, g.W * f);
-    // Foreground maples crowd the lower left and right corners.
-    for (let i = 0; i < 46; i++) {
-      const left = i % 2 === 0;
-      const x = left ? rand() * g.W * 0.22 : g.W * (0.8 + rand() * 0.2);
-      const y = g.H * (0.86 + rand() * 0.14);
-      ctx.fillStyle = lit(sky, LEAF_INK[Math.floor(rand() * LEAF_INK.length)], 0.1);
-      ctx.beginPath();
-      ctx.arc(x, y, g.U * (2 + rand() * 2.4), 0, 6.3);
-      ctx.fill();
-    }
+    for (const t of trees) if (!crestLine(t)) paintTree(ctx, sky, treeRand, t);
     return c;
   }
 
@@ -254,7 +345,7 @@
         img.data[i] = 232;
         img.data[i + 1] = 234;
         img.data[i + 2] = 236;
-        img.data[i + 3] = smoothstep(0.36, 0.62, v) * band * 210;
+        img.data[i + 3] = smoothstep(0.42, 0.68, v) * band * 220;
       }
     }
     ctx.putImageData(img, 0, 0);
@@ -265,19 +356,32 @@
     const c = layer(24, 24);
     const ctx = c.getContext('2d');
     const grad = ctx.createRadialGradient(12, 12, 0, 12, 12, 12);
-    grad.addColorStop(0, 'rgba(226,224,216,0.55)');
-    grad.addColorStop(1, 'rgba(226,224,216,0)');
+    grad.addColorStop(0, 'rgba(232,228,218,0.85)');
+    grad.addColorStop(0.5, 'rgba(232,228,218,0.45)');
+    grad.addColorStop(1, 'rgba(232,228,218,0)');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 24, 24);
     return c;
   }
 
+  // A small five-point maple leaf.
   function paintLeaf(ink) {
-    const c = layer(7, 5);
+    const c = layer(9, 9);
     const ctx = c.getContext('2d');
     ctx.fillStyle = ink;
-    ctx.fillRect(1, 1, 5, 3);
-    ctx.fillRect(0, 2, 7, 1);
+    ctx.beginPath();
+    ctx.moveTo(4.5, 0);
+    ctx.lineTo(6, 3);
+    ctx.lineTo(9, 2.5);
+    ctx.lineTo(7, 5.5);
+    ctx.lineTo(8, 8);
+    ctx.lineTo(4.5, 6.5);
+    ctx.lineTo(1, 8);
+    ctx.lineTo(2, 5.5);
+    ctx.lineTo(0, 2.5);
+    ctx.lineTo(3, 3);
+    ctx.fill();
+    ctx.fillRect(4, 6, 1, 3);
     return c;
   }
 
@@ -289,7 +393,7 @@
     state.sky = paintSky(g, sky, rand);
     state.far = paintFar(g, sky);
     state.front = paintFront(g, sky, rand);
-    state.mistAlpha = 0.7 - sky.night * 0.45;
+    state.mistAlpha = 0.75 - sky.night * 0.4;
     state.dim = sky.night;
     state.choice = choice;
     state.retintIn = RETINT_SECONDS;
@@ -300,35 +404,39 @@
   function drawMist(ctx, g, t, amount, which) {
     if (amount <= 0) return;
     const c = state.mist[which];
-    const speed = which === 0 ? 2.4 : 4;
+    const speed = which === 0 ? 3.2 : 5;
     const off = -((t * g.U * speed) % c.width);
-    const y = which === 0 ? g.H * 0.4 : g.H * 0.58;
-    ctx.globalAlpha = Math.min(1, state.mistAlpha * amount * (which === 0 ? 0.9 : 1));
+    const y = which === 0 ? g.H * 0.42 : g.H * 0.8;
+    ctx.globalAlpha = Math.min(1, state.mistAlpha * amount * (which === 0 ? 0.95 : 0.6));
     ctx.drawImage(c, off, y);
     ctx.drawImage(c, off + c.width, y);
     ctx.globalAlpha = 1;
   }
 
-  // A thin beacon smoke from the highest tower.
+  // Beacon smoke rising and leaning from the tower roof.
   function drawSmoke(ctx, g, t) {
-    const sx = g.W * TOWERS[3];
-    const sy = crest(g, sx) - g.U * 12;
+    const U = g.U;
+    const sx = g.W * TOWERS[BEACON];
+    const sy = crest(g, sx) + U * 2 - U * 9 - U * 7;
     for (let i = 0; i < MAX_SMOKE; i++) {
-      const a = (t * 0.06 + i / MAX_SMOKE) % 1;
-      const size = g.U * (1.4 + a * 5);
-      ctx.globalAlpha = (1 - a) * 0.7 * (1 - state.dim * 0.4);
-      ctx.drawImage(state.puff, sx + Math.sin(t * 0.5 + i) * g.U * 0.5 + a * g.U * 4 - size / 2, sy - a * g.H * 0.18 - size / 2, size, size);
+      const a = (t * 0.07 + i / MAX_SMOKE) % 1;
+      const size = U * (2 + a * 8);
+      ctx.globalAlpha = (1 - a) * Math.min(1, a * 8) * 0.85 * (1 - state.dim * 0.3);
+      ctx.drawImage(state.puff, sx + Math.sin(t * 0.5 + i) * U * 0.8 + a * a * U * 14 - size / 2, sy - a * g.H * 0.2 - size / 2, size, size);
     }
     ctx.globalAlpha = 1;
   }
 
   function drawLeaves(ctx, g, t) {
+    const size = Math.max(6, g.U * 4.2);
     for (let i = 0; i < MAX_LEAVES; i++) {
-      const a = (t * 0.07 + i * 0.37) % 1;
-      const lx = ((i * 0.173 + 0.05) % 1) * g.W + a * g.W * 0.12 + Math.sin(t * 0.9 + i * 2) * g.U * 1.5;
-      const ly = g.H * (0.25 + a * 0.7);
-      ctx.globalAlpha = 0.85 * Math.min(1, a * 6) * (1 - state.dim * 0.4);
-      ctx.drawImage(state.leaf[i % state.leaf.length], lx, ly);
+      const a = (t * 0.045 + i * 0.381) % 1;
+      const lx = ((i * 0.173 + 0.05) % 1) * g.W + a * g.W * 0.14 + Math.sin(t * 0.8 + i * 2) * g.U * 2.5;
+      const ly = g.H * (0.12 + a * 0.92);
+      const flip = 0.3 + 0.7 * Math.abs(Math.sin(t * 1.6 + i));
+      const w = size * flip;
+      ctx.globalAlpha = Math.min(1, a * 8) * (1 - state.dim * 0.35);
+      ctx.drawImage(state.leaf[i % state.leaf.length], lx - w / 2, ly, w, size);
     }
     ctx.globalAlpha = 1;
   }
@@ -336,9 +444,10 @@
   function setup(ctx, api) {
     const g = { W: api.cols, H: api.rows, U: api.rows / 100 };
     state.g = g;
-    state.mist = [paintMist(Math.ceil(g.W * 1.4), Math.ceil(g.H * 0.22), 23), paintMist(Math.ceil(g.W * 1.4), Math.ceil(g.H * 0.2), 61)];
+    state.mist = [paintMist(Math.ceil(g.W * 1.4), Math.ceil(g.H * 0.2), 23), paintMist(Math.ceil(g.W * 1.4), Math.ceil(g.H * 0.16), 61)];
     state.puff = paintPuff();
     state.leaf = LEAF_INK.map(paintLeaf);
+    state.trees = planWoods(g);
     repaint(g, api.props.time);
   }
 
