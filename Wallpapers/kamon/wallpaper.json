@@ -1,0 +1,16 @@
+{
+  "id": "kamon",
+  "name": "Kamon",
+  "title": "家紋",
+  "description": "A field of family crests in ink and gold on indigo. Each round crest turns slowly, and a soft gold shimmer passes from one to the next in sequence.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "shimmer", "label": "shimmer", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "spin", "label": "turning", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
