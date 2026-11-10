@@ -1,8 +1,8 @@
 /*
  * 玉 Yu — a jade bi disc and a carved pendant on a vermilion cord, against dark lacquer.
  *
- * The stone is baked twice: once as the dim body with grain studs, and once as a pale
- * clouded copy. Each frame lays the pale copy through two slow slanted bands so light
+ * Backdrop, cord, stone and knot bake into one layer. A pale clouded copy of the stone,
+ * cropped to its box, shows through two soft slanted bands (masks baked once) so light
  * seems to travel inside the jade. A halo breathes and the tassel strands sway.
  */
 (function () {
@@ -125,14 +125,15 @@
 
   // ---- stone ---------------------------------------------------------------
 
-  function cloudMap(g, lo, hi, base, seed) {
-    const c = layer(g.W, g.H);
+  // alpha map of fbm cloud, w x h, sampled at offset (ox, oy) in scene space
+  function cloudMap(g, w, h, ox, oy, lo, hi, base, seed) {
+    const c = layer(w, h);
     const ctx = c.getContext('2d');
     const img = ctx.createImageData(c.width, c.height);
     const d = img.data;
     for (let y = 0; y < c.height; y++) {
       for (let x = 0; x < c.width; x++) {
-        const v = fbm(x / (g.S * 8), y / (g.S * 8), 4, seed);
+        const v = fbm((x + ox) / (g.S * 8), (y + oy) / (g.S * 8), 4, seed);
         const i = (y * c.width + x) * 4;
         d[i] = 255;
         d[i + 1] = 255;
@@ -144,34 +145,39 @@
     return c;
   }
 
+  // low raised bosses of the grain pattern: small, sparse, jittered, soft
   function grainStuds(ctx, g, rand) {
-    const step = g.S * 2.9;
-    const inner = g.hole * 1.55;
-    const outer = g.R * 0.84;
-    const r = Math.max(0.9, g.S * 0.95);
+    const step = g.S * 4.2;
+    const inner = g.hole * 1.7;
+    const outer = g.R * 0.82;
+    const r = Math.max(0.8, g.S * 0.6);
     for (let row = -g.R / step; row < g.R / step; row++) {
       for (let col = -g.R / step; col < g.R / step; col++) {
-        const x = g.cx + (col + (row & 1 ? 0.5 : 0)) * step;
-        const y = g.cy + row * step * 0.87;
+        const x = g.cx + (col + (row & 1 ? 0.5 : 0)) * step + (rand() - 0.5) * step * 0.35;
+        const y = g.cy + row * step * 0.87 + (rand() - 0.5) * step * 0.35;
         const d = Math.hypot(x - g.cx, y - g.cy);
-        if (d < inner || d > outer) continue;
-        const a = Math.atan2(y - g.cy, x - g.cx);
-        ctx.fillStyle = JADE.deep;
+        if (d < inner || d > outer || rand() < 0.2) continue;
+        const a = rand() * TAU;
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = JADE.dark;
         ctx.beginPath();
-        ctx.ellipse(x + r * 0.35, y + r * 0.4, r, r * 0.85, a, 0, TAU);
+        ctx.arc(x + r * 0.3, y + r * 0.35, r, 0, TAU);
         ctx.fill();
-        ctx.fillStyle = rand() < 0.5 ? JADE.light : JADE.mid;
+        ctx.globalAlpha = 0.4;
+        ctx.fillStyle = JADE.light;
         ctx.beginPath();
-        ctx.ellipse(x - r * 0.1, y - r * 0.12, r * 0.8, r * 0.68, a, 0, TAU);
+        ctx.arc(x - r * 0.15, y - r * 0.15, r * 0.7, 0, TAU);
         ctx.fill();
+        // a faint curl, as in carved grain
+        ctx.globalAlpha = 0.3;
         ctx.strokeStyle = JADE.dark;
-        ctx.lineWidth = Math.max(1, r * 0.5);
+        ctx.lineWidth = Math.max(0.8, r * 0.35);
         ctx.beginPath();
-        ctx.moveTo(x + Math.cos(a) * r * 0.5, y + Math.sin(a) * r * 0.5);
-        ctx.lineTo(x + Math.cos(a + 0.6) * r * 1.6, y + Math.sin(a + 0.6) * r * 1.6);
+        ctx.arc(x, y, r * 1.5, a, a + 2.2);
         ctx.stroke();
       }
     }
+    ctx.globalAlpha = 1;
   }
 
   function rings(ctx, g) {
@@ -194,7 +200,6 @@
     penPath(ctx, g, 0.78);
     ctx.stroke();
     const cy = g.penY + g.penRy * 0.12;
-    // a small cloud head and two curled lobes cut into the face
     ctx.beginPath();
     ctx.arc(g.cx, cy, g.S * 2.6, Math.PI, TAU);
     ctx.arc(g.cx + g.S * 2.6, cy + g.S * 1.6, g.S * 2.6, Math.PI * 1.5, Math.PI * 0.5, false);
@@ -208,42 +213,47 @@
     ctx.stroke();
   }
 
-  function paintStone(g, rand, lit) {
-    const c = layer(g.W, g.H);
-    const ctx = c.getContext('2d');
-    if (lit) {
-      shapes(ctx, g, JADE.pale);
-      ctx.globalCompositeOperation = 'destination-in';
-      ctx.drawImage(cloudMap(g, 0.25, 0.95, 0.6, 91), 0, 0);
-      ctx.globalCompositeOperation = 'source-over';
-      return c;
-    }
+  function paintStone(ctx, g, rand) {
     const gr = ctx.createLinearGradient(g.cx - g.R, g.cy - g.R, g.cx + g.R, g.cy + g.R * 1.9);
-    gr.addColorStop(0, JADE.light);
-    gr.addColorStop(0.45, JADE.mid);
-    gr.addColorStop(1, JADE.dark);
-    shapes(ctx, g, gr);
-    ctx.globalCompositeOperation = 'source-atop';
-    ctx.drawImage(cloudMap(g, 0.1, 0.5, 0.2, 37), 0, 0);
+    gr.addColorStop(0, JADE.mid);
+    gr.addColorStop(0.45, JADE.dark);
+    gr.addColorStop(1, JADE.deep);
+    const s = layer(g.W, g.H);
+    const sc = s.getContext('2d');
+    shapes(sc, g, gr);
+    sc.globalCompositeOperation = 'source-atop';
+    const cm = cloudMap(g, g.box.w, g.box.h, g.box.x, g.box.y, 0.05, 0.35, 0.12, 37);
+    sc.drawImage(cm, g.box.x, g.box.y);
+    sc.globalCompositeOperation = 'source-over';
+    rings(sc, g);
+    grainStuds(sc, g, rand);
+    pendantCarving(sc, g);
+    sc.strokeStyle = JADE.deep;
+    sc.lineWidth = Math.max(1, g.S * 0.8);
+    discPath(sc, g);
+    sc.stroke();
+    penPath(sc, g, 1);
+    sc.stroke();
+    ctx.drawImage(s, 0, 0);
+  }
+
+  // pale clouded copy of the stone, cropped to the stone's box
+  function paintLit(g) {
+    const b = g.box;
+    const c = layer(b.w, b.h);
+    const ctx = c.getContext('2d');
+    ctx.translate(-b.x, -b.y);
+    shapes(ctx, g, JADE.pale);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.drawImage(cloudMap(g, b.w, b.h, b.x, b.y, 0.45, 1, 0.8, 91), 0, 0);
     ctx.globalCompositeOperation = 'source-over';
-    rings(ctx, g);
-    grainStuds(ctx, g, rand);
-    pendantCarving(ctx, g);
-    // dark rim to give the stone thickness
-    ctx.strokeStyle = JADE.deep;
-    ctx.lineWidth = Math.max(1, g.S * 0.8);
-    discPath(ctx, g);
-    ctx.stroke();
-    penPath(ctx, g, 1);
-    ctx.stroke();
     return c;
   }
 
   // ---- cord and tassel -----------------------------------------------------
 
-  function paintCord(g) {
-    const c = layer(g.W, g.H);
-    const ctx = c.getContext('2d');
+  function paintCord(ctx, g) {
     const w = Math.max(2, g.S * 1.5);
     ctx.lineCap = 'round';
     ctx.strokeStyle = CORD.dark;
@@ -261,12 +271,9 @@
     ctx.moveTo(g.cx - w * 0.2, 0);
     ctx.lineTo(g.cx - w * 0.2, g.penY - g.penRy * 0.62);
     ctx.stroke();
-    return c;
   }
 
-  function paintKnot(g) {
-    const c = layer(g.W, g.H);
-    const ctx = c.getContext('2d');
+  function paintKnot(ctx, g) {
     const k = g.S;
     ctx.fillStyle = CORD.dark;
     ctx.beginPath();
@@ -292,7 +299,6 @@
     ctx.fill();
     ctx.fillStyle = CORD.dark;
     ctx.fillRect(g.cx - k * 1.1, by + k * 1.1, k * 2.2, k * 1.4);
-    return c;
   }
 
   function drawTassel(ctx, g, t, sway) {
@@ -314,32 +320,44 @@
 
   // ---- light ---------------------------------------------------------------
 
-  function band(ctx, g, x, w, slant) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x + w, 0);
-    ctx.lineTo(x + w - slant, g.H);
-    ctx.lineTo(x - slant, g.H);
-    ctx.closePath();
+  // a soft slanted band, white at its centre, fading to clear on both sides
+  function paintBand(g, w) {
+    const h = g.box.h;
+    const slant = h * 0.3;
+    const c = layer(w + slant, h);
+    const ctx = c.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, w, 0);
+    grad.addColorStop(0, 'rgba(255,255,255,0)');
+    grad.addColorStop(0.5, 'rgba(255,255,255,1)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = grad;
+    for (let y = 0; y < h; y++) {
+      ctx.setTransform(1, 0, 0, 1, slant * (1 - y / h), y);
+      ctx.fillRect(0, 0, w, 1);
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    return c;
   }
 
   function drawLight(ctx, g, t, glow) {
     if (glow <= 0) return;
-    const slant = g.H * 0.28;
-    const span = g.W * 0.7 + slant * 2;
-    const x0 = g.cx - g.W * 0.35;
-    for (let b = 0; b < 2; b++) {
-      const w = g.S * (16 + b * 8);
-      const x = x0 + ((t * g.S * (2.2 + b * 1.1) + b * span * 0.5) % span);
-      for (let k = 0; k < 3; k++) {
-        ctx.save();
-        band(ctx, g, x - k * g.S * 0, w * (1 - k * 0.3), slant);
-        ctx.clip();
-        ctx.globalAlpha = Math.min(1, glow) * (b ? 0.4 : 0.6) * (0.35 + k * 0.3);
-        ctx.drawImage(state.lit, 0, 0);
-        ctx.restore();
-      }
+    const b = g.box;
+    const sc = state.scratchCtx;
+    sc.globalCompositeOperation = 'source-over';
+    sc.clearRect(0, 0, b.w, b.h);
+    for (let i = 0; i < 2; i++) {
+      const m = state.bands[i];
+      const span = b.w + m.width;
+      const x = ((t * g.S * (2.6 + i * 1.3) + i * span * 0.5) % span) - m.width;
+      sc.globalAlpha = i ? 0.75 : 1;
+      sc.drawImage(m, x, 0);
     }
+    sc.globalAlpha = 1;
+    sc.globalCompositeOperation = 'source-in';
+    sc.drawImage(state.lit, 0, 0);
+    sc.globalCompositeOperation = 'source-over';
+    ctx.globalAlpha = Math.min(1, glow * 0.9);
+    ctx.drawImage(state.scratch, b.x, b.y);
     ctx.globalAlpha = 1;
   }
 
@@ -353,27 +371,51 @@
 
   // ---- run -----------------------------------------------------------------
 
+  // halo with the stone and cord cut out, so it only lights the lacquer behind
+  function cutHalo(g, halo) {
+    const ctx = halo.getContext('2d');
+    const ox = halo.width / 2 - g.cx;
+    const oy = halo.height / 2 - g.cy;
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.translate(ox, oy);
+    shapes(ctx, g, '#000');
+    const w = Math.max(2, g.S * 1.5) + 2;
+    ctx.fillRect(g.cx - w / 2, -oy, w, g.penY + oy);
+    ctx.beginPath();
+    ctx.ellipse(g.cx, g.knotY, g.S * 2.8, g.S * 2.3, 0, 0, TAU);
+    ctx.fill();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalCompositeOperation = 'source-over';
+    return halo;
+  }
+
   function setup(ctx, api) {
     const g = geometry(api);
+    const pad = 2;
+    const bx = Math.floor(g.cx - g.R - pad);
+    const by = Math.floor(g.cy - g.R - pad);
+    g.box = { x: bx, y: by, w: Math.ceil(g.R * 2 + pad * 2) + 1, h: Math.ceil(g.penY + g.penRy + pad - by) + 1 };
     const rand = K.rng(api.seed);
     state.g = g;
-    state.back = paintBackdrop(g);
-    state.halo = paintHalo(g);
-    state.cord = paintCord(g);
-    state.knot = paintKnot(g);
-    state.stone = paintStone(g, rand, false);
-    state.lit = paintStone(g, rand, true);
+    const base = paintBackdrop(g);
+    const bctx = base.getContext('2d');
+    paintCord(bctx, g);
+    paintStone(bctx, g, rand);
+    paintKnot(bctx, g);
+    state.base = base;
+    state.halo = cutHalo(g, paintHalo(g));
+    state.lit = paintLit(g);
+    state.bands = [paintBand(g, g.S * 14), paintBand(g, g.S * 22)];
+    state.scratch = layer(g.box.w, g.box.h);
+    state.scratchCtx = state.scratch.getContext('2d');
   }
 
   function draw(ctx, t, dt, api) {
     const g = state.g;
     const { glow, sway } = api.props;
-    ctx.drawImage(state.back, 0, 0);
+    ctx.drawImage(state.base, 0, 0);
     drawHalo(ctx, g, t, glow);
-    ctx.drawImage(state.cord, 0, 0);
-    ctx.drawImage(state.stone, 0, 0);
     drawLight(ctx, g, t, glow);
-    ctx.drawImage(state.knot, 0, 0);
     drawTassel(ctx, g, t, sway);
   }
 
