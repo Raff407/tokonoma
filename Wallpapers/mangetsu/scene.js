@@ -1,9 +1,10 @@
 /*
  * 満月 Mangetsu — a big full moon rising over tiled rooftops.
  *
- * Sky with moon, and the roofs, are baked into layers and repainted once a
- * minute from the clock. Between repaints only a thin cloud drifts across the
- * moon and a second wisp passes lower down.
+ * Sky with moon, the roofs and the window light are baked into layers and
+ * repainted once a minute from the clock. Each frame a soft cloud bank drifts
+ * across the moon, two fainter wisps pass higher and lower, and the paper
+ * windows breathe.
  */
 (function () {
   'use strict';
@@ -88,21 +89,37 @@
     return c;
   }
 
-  // A long thin streak that tiles sideways.
-  function paintStreak(w, h, seed, tone) {
+  // A soft cloud bank built from overlapping puffs along a flat-ish base:
+  // rounded tops, a soft underside, tapered ends, broken up by noise.
+  function paintCloud(w, h, seed, tone, peak) {
     const c = layer(w, h);
     const ctx = c.getContext('2d');
     const img = ctx.createImageData(c.width, c.height);
-    const dens = (x, y) => fbm(x * 0.012, y * 0.09, 4, seed);
+    const rand = K.rng(seed);
+    const puffs = [];
+    const n = 7;
+    for (let k = 0; k < n; k++) {
+      const f = (k + 0.5) / n;
+      const mid = 1 - Math.abs(f * 2 - 1);
+      const ry = c.height * (0.18 + 0.22 * mid + rand() * 0.08);
+      puffs.push({ x: c.width * (0.08 + f * 0.84), y: c.height * 0.62 - ry * 0.35, rx: c.width * (0.07 + 0.05 * mid + rand() * 0.03), ry });
+    }
     for (let y = 0; y < c.height; y++) {
-      const band = Math.pow(Math.sin(((y + 0.5) / c.height) * Math.PI), 1.5);
       for (let x = 0; x < c.width; x++) {
-        const v = lerp(dens(x, y), dens(x - c.width, y), x / c.width);
+        let f = 0;
+        for (const p of puffs) {
+          const dx = (x - p.x) / p.rx;
+          const dy = (y - p.y) / (y > p.y ? p.ry * 0.6 : p.ry);
+          f = Math.max(f, Math.exp(-(dx * dx + dy * dy)));
+        }
+        const d = fbm(x * 0.06, y * 0.12, 4, seed);
+        const a = smoothstep(0.08, 0.85, f * (0.55 + d * 0.8));
         const i = (y * c.width + x) * 4;
-        img.data[i] = tone[0];
-        img.data[i + 1] = tone[1];
-        img.data[i + 2] = tone[2];
-        img.data[i + 3] = smoothstep(0.42, 0.68, v) * band * 230;
+        const shade = 0.8 + 0.2 * (1 - y / c.height);
+        img.data[i] = tone[0] * shade;
+        img.data[i + 1] = tone[1] * shade;
+        img.data[i + 2] = tone[2] * shade;
+        img.data[i + 3] = Math.min(255, a * peak);
       }
     }
     ctx.putImageData(img, 0, 0);
@@ -152,8 +169,8 @@
       ctx.lineTo(cx + (f * 2 - 1) * hw * 1.02, by + rise * 0.06);
       ctx.stroke();
     }
-    ctx.strokeStyle = hex(mixColor(body, rim, 0.6));
-    ctx.globalAlpha = 0.55;
+    ctx.strokeStyle = hex(mixColor(body, rim, 0.45));
+    ctx.globalAlpha = 0.8;
     const rows = Math.max(3, Math.round(rise / (u * 1.8)));
     for (let k = 1; k < rows; k++) {
       const yy = by - rise + (rise * k) / rows;
@@ -176,51 +193,76 @@
     ctx.fillRect(cx - hw, by + rise * 0.04, hw * 2, Math.max(1, u * 0.7));
   }
 
-  function paintWindow(ctx, g, wx, wy, w, h, glow) {
+  // Window frame and lattice; the panes stay a dim warm paper here and the
+  // light itself lives in a separate layer so it can breathe.
+  function paintWindowFrame(ctx, g, win) {
+    const { x, y, w, h } = win;
     const u = g.U;
-    if (glow) {
-      const halo = ctx.createRadialGradient(wx + w / 2, wy + h / 2, 0, wx + w / 2, wy + h / 2, u * 14);
-      halo.addColorStop(0, 'rgba(232,170,80,0.32)');
-      halo.addColorStop(1, 'rgba(232,170,80,0)');
-      ctx.fillStyle = halo;
-      ctx.fillRect(wx - u * 14, wy - u * 14, w + u * 28, h + u * 28);
-    }
-    ctx.fillStyle = glow ? '#f0c474' : '#4a4a62';
-    ctx.fillRect(wx, wy, w, h);
-    ctx.fillStyle = '#1a1624';
-    const bar = Math.max(1, u * 0.45);
-    ctx.fillRect(wx - bar, wy - bar, w + bar * 2, bar);
-    ctx.fillRect(wx - bar, wy + h, w + bar * 2, bar);
-    ctx.fillRect(wx - bar, wy, bar, h);
-    ctx.fillRect(wx + w, wy, bar, h);
-    ctx.fillRect(wx + w / 2 - bar / 2, wy, bar, h);
-    for (let k = 1; k < 4; k++) ctx.fillRect(wx, wy + (h * k) / 4, w, 1);
+    ctx.fillStyle = '#6a4a30';
+    ctx.fillRect(x, y, w, h);
+    paintLattice(ctx, u, x, y, w, h, '#1a1624');
   }
 
-  function paintFront(g, sky, glow) {
+  function paintLattice(ctx, u, x, y, w, h, col) {
+    ctx.fillStyle = col;
+    const bar = Math.max(1, u * 0.5);
+    ctx.fillRect(x - bar, y - bar, w + bar * 2, bar);
+    ctx.fillRect(x - bar, y + h, w + bar * 2, bar);
+    ctx.fillRect(x - bar, y, bar, h);
+    ctx.fillRect(x + w, y, bar, h);
+    for (let k = 1; k < 4; k++) ctx.fillRect(x + (w * k) / 4 - bar / 2, y, bar, h);
+    for (let k = 1; k < 3; k++) ctx.fillRect(x, y + (h * k) / 3 - bar / 2, w, bar);
+  }
+
+  function paintGlow(g, wins) {
     const c = layer(g.W, g.H);
     const ctx = c.getContext('2d');
     const u = g.U;
-    const dim = sky.night;
-    const far = mixColor(rgb('#586088'), sky.haze, 0.3);
-    const mid = mixColor(rgb('#2c3256'), rgb('#1e2342'), dim * 0.4);
-    const near = mixColor(rgb('#161a34'), rgb('#0e1126'), dim * 0.4);
-    const rim = mixColor(rgb('#c4c0b0'), rgb('#efe6c4'), 0.5);
-    const wallC = mixColor(rgb('#50536e'), rgb('#363955'), dim * 0.4);
-    // Far roofs, hazy and low.
-    const farRoofs = [[0.05, 0.76, 0.1, 0.05], [0.3, 0.74, 0.12, 0.06], [0.56, 0.77, 0.1, 0.05], [0.8, 0.75, 0.13, 0.06], [0.98, 0.77, 0.08, 0.04]];
-    for (const r of farRoofs) {
-      paintRoof(ctx, g, { cx: g.W * r[0], by: g.H * r[1], hw: g.W * r[2], rise: g.H * r[3], flat: 0.5, body: far, rim: mixColor(far, rim, 0.3), wall: far, wallH: g.H * 0.25 });
+    for (const win of wins) {
+      const { x, y, w, h, s } = win;
+      const cx = x + w / 2;
+      const cy = y + h / 2;
+      const R = u * 26 * s;
+      const halo = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+      halo.addColorStop(0, 'rgba(232,170,80,0.45)');
+      halo.addColorStop(0.4, 'rgba(214,140,60,0.16)');
+      halo.addColorStop(1, 'rgba(214,140,60,0)');
+      ctx.fillStyle = halo;
+      ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
+      ctx.fillStyle = '#f4cf7e';
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = 'rgba(255,236,180,0.6)';
+      ctx.fillRect(x + w * 0.1, y + h * 0.12, w * 0.8, h * 0.76);
+      paintLattice(ctx, u, x, y, w, h, '#2a1c18');
     }
-    // Big roof, left of centre.
-    paintRoof(ctx, g, { cx: g.W * 0.27, by: g.H * 0.76, hw: g.W * 0.27, rise: g.H * 0.17, flat: 0.4, body: mid, rim, wall: wallC, wallH: g.H * 0.3 });
-    // Smaller house on the right with the lit window.
-    const hx = g.W * 0.77;
-    paintRoof(ctx, g, { cx: hx, by: g.H * 0.8, hw: g.W * 0.2, rise: g.H * 0.13, flat: 0.45, body: mid, rim, wall: wallC, wallH: g.H * 0.25 });
-    paintWindow(ctx, g, hx - g.W * 0.035, g.H * 0.855, g.W * 0.07, g.H * 0.085, glow);
-    // Foreground eaves along the bottom.
-    paintRoof(ctx, g, { cx: g.W * 0.56, by: g.H * 0.97, hw: g.W * 0.7, rise: g.H * 0.1, flat: 0.55, body: near, rim: mixColor(near, rim, 0.4), wall: near, wallH: 0 });
     return c;
+  }
+
+  function paintFront(g, sky, wins) {
+    const c = layer(g.W, g.H);
+    const ctx = c.getContext('2d');
+    const dim = sky.night;
+    const far = mixColor(rgb('#5a6290'), sky.haze, 0.3);
+    const mid = mixColor(rgb('#343c68'), rgb('#2a3058'), dim * 0.4);
+    const near = mixColor(rgb('#1e2342'), rgb('#161a34'), dim * 0.4);
+    const rim = mixColor(rgb('#d4cfb8'), rgb('#efe6c4'), 0.5);
+    const wallC = mixColor(rgb('#5e6282'), rgb('#474a68'), dim * 0.4);
+    const farRoofs = [[0.05, 0.74, 0.1, 0.05], [0.3, 0.72, 0.12, 0.06], [0.56, 0.75, 0.1, 0.05], [0.8, 0.73, 0.13, 0.06], [0.98, 0.75, 0.08, 0.04]];
+    for (const r of farRoofs) {
+      paintRoof(ctx, g, { cx: g.W * r[0], by: g.H * r[1], hw: g.W * r[2], rise: g.H * r[3], flat: 0.5, body: far, rim: mixColor(far, rim, 0.35), wall: far, wallH: g.H * 0.25 });
+    }
+    paintRoof(ctx, g, { cx: g.W * 0.27, by: g.H * 0.72, hw: g.W * 0.27, rise: g.H * 0.17, flat: 0.4, body: mid, rim, wall: wallC, wallH: g.H * 0.3 });
+    paintRoof(ctx, g, { cx: g.W * 0.77, by: g.H * 0.77, hw: g.W * 0.2, rise: g.H * 0.13, flat: 0.45, body: mid, rim, wall: wallC, wallH: g.H * 0.25 });
+    for (const w of wins) paintWindowFrame(ctx, g, w);
+    paintRoof(ctx, g, { cx: g.W * 0.56, by: g.H * 1.05, hw: g.W * 0.7, rise: g.H * 0.08, flat: 0.55, body: near, rim: mixColor(near, rim, 0.45), wall: near, wallH: 0 });
+    return c;
+  }
+
+  function windows(g) {
+    return [
+      { x: g.W * 0.715, y: g.H * 0.8, w: g.W * 0.12, h: g.H * 0.11, s: 1 },
+      { x: g.W * 0.14, y: g.H * 0.76, w: g.W * 0.07, h: g.H * 0.08, s: 0.6 },
+    ];
   }
 
   function repaint(g, props) {
@@ -229,30 +271,33 @@
     const rand = K.rng(17);
     const r = g.H * 0.17;
     const my = g.H * moonHeight(h);
+    const wins = windows(g);
     state.sky = paintSky(g, sky, rand, my, r);
-    state.front = paintFront(g, sky, props.glow);
+    state.front = paintFront(g, sky, wins);
+    state.glowLayer = paintGlow(g, wins);
     state.moonY = my;
     state.moonR = r;
     state.choice = props.time;
-    state.glow = props.glow;
-    state.alpha = 0.55 + 0.25 * sky.night;
     state.retintIn = RETINT_SECONDS;
   }
 
   // ---- motion ------------------------------------------------------------
 
-  function drawStreak(ctx, c, off, y, alpha) {
+  // A cloud drifting left to right, wrapping off-screen; phase in seconds.
+  function drawCloud(ctx, g, c, speed, phase, y, alpha, t) {
+    const span = g.W + c.width;
+    const x = ((t + phase) * speed) % span - c.width;
     ctx.globalAlpha = alpha;
-    ctx.drawImage(c, off, y);
-    ctx.drawImage(c, off + c.width, y);
+    ctx.drawImage(c, x, y);
     ctx.globalAlpha = 1;
   }
 
   function setup(ctx, api) {
     const g = { W: api.cols, H: api.rows, U: api.rows / 100 };
     state.g = g;
-    state.cloud = paintStreak(g.W * 1.6, g.H * 0.16, 41, [214, 218, 232]);
-    state.wisp = paintStreak(g.W * 1.4, g.H * 0.07, 77, [150, 158, 190]);
+    state.cloud = paintCloud(g.W * 0.42, g.H * 0.2, 41, [122, 124, 156], 255);
+    state.wisp = paintCloud(g.W * 0.36, g.H * 0.12, 77, [160, 160, 184], 220);
+    state.high = paintCloud(g.W * 0.32, g.H * 0.1, 93, [120, 122, 152], 210);
     repaint(g, api.props);
   }
 
@@ -260,16 +305,26 @@
     const g = state.g;
     const props = api.props;
     state.retintIn -= dt;
-    if (state.retintIn <= 0 || state.choice !== props.time || state.glow !== props.glow) repaint(g, props);
+    if (state.retintIn <= 0 || state.choice !== props.time) repaint(g, props);
     ctx.drawImage(state.sky, 0, 0);
     const a = props.clouds;
     if (a > 0) {
-      const off1 = -((t * g.U * 4.5) % state.cloud.width);
-      drawStreak(ctx, state.cloud, off1, state.moonY - state.cloud.height * 0.5 + g.H * 0.01, Math.min(1, state.alpha * a));
-      const off2 = -((t * g.U * 2.5 + g.W * 0.4) % state.wisp.width);
-      drawStreak(ctx, state.wisp, off2, g.H * 0.44, Math.min(1, 0.4 * a));
+      const sp = g.U * 8;
+      // Phase puts the main cloud's middle on the moon soon after start.
+      const ph = (g.W * 0.64 + state.cloud.width * 0.5) / sp - 6;
+      drawCloud(ctx, g, state.high, g.U * 3.5, 40, g.H * 0.12, Math.min(1, 0.9 * a), t);
+      const cy = state.moonY - state.cloud.height * 0.6;
+      const half = (g.W + state.cloud.width) / sp / 2;
+      drawCloud(ctx, g, state.cloud, sp, ph, cy, Math.min(1, a), t);
+      drawCloud(ctx, g, state.cloud, sp, ph + half, cy + g.H * 0.08, Math.min(1, 0.8 * a), t);
+      drawCloud(ctx, g, state.wisp, g.U * 5, 20, g.H * 0.44, Math.min(1, 0.8 * a), t);
     }
     ctx.drawImage(state.front, 0, 0);
+    if (props.glow) {
+      ctx.globalAlpha = 0.72 + 0.28 * Math.sin(t * 0.8) * Math.sin(t * 0.31 + 1);
+      ctx.drawImage(state.glowLayer, 0, 0);
+      ctx.globalAlpha = 1;
+    }
   }
 
   Kasuri.run({
