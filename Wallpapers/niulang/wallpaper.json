@@ -1,0 +1,17 @@
+{
+  "id": "niulang",
+  "name": "Qixi",
+  "title": "七夕",
+  "description": "The milky way arches over a dark summer sky, and below it a bridge of magpies glows as a pale arc between two bright stars. Stars twinkle slowly, the river of light shimmers, and a pavilion roof waits on the hill.",
+  "entry": "index.html",
+  "version": 1,
+  "culture": "chinese",
+  "properties": [
+    {"key": "twinkle", "label": "twinkle", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "glow", "label": "bridge glow", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
