@@ -16,11 +16,12 @@
   const SKY = ['#cfd0cb', '#dcd8cd', '#e8e0d0', '#efe5d3'];
   const STONE = ['#9a9788', '#837f72', '#aaa696', '#6f6c62'];
   const PETAL = ['#f0dcd6', '#e8cac6', '#f4e8e0', '#d9b0ae'];
-  const BOUGH = '#3a2e28';
-  const BLOOM = ['#e6c0bd', '#efd4cf', '#f6e8e2', '#d3a6a6'];
+  const BOUGH = '#2e2420';
+  const BLOOM = ['#dca3a3', '#ebbfba', '#f5e0da', '#c4848a'];
   const VERM = '#c24a32';
   const VERM_DARK = '#8e3326';
-  const MAX_FALL = 56;
+  const MAX_FALL = 80;
+  const FALL_INK = ['#e3aeb0', '#d08f95', '#f2d6d2'];
   const MAX_DRIFT = 36;
   const GLINTS = 14;
   const state = {};
@@ -120,20 +121,30 @@
   function paintWall(ctx, g, rand) {
     const top = g.wallTop;
     const bottom = g.wy;
-    ctx.fillStyle = '#5c5a50';
+    // dark mortar behind big dressed stones laid in courses
+    ctx.fillStyle = '#3e3c35';
     ctx.fillRect(0, top, g.W, bottom - top);
-    const rowH = Math.max(1.4, g.U * 1.5);
-    let y = top;
+    const rowH = Math.max(3, g.U * 3.4);
+    let y = top + 0.5;
     let row = 0;
     while (y < bottom) {
-      const h = rowH * (0.8 + rand() * 0.4);
-      let x = -(row % 2) * rowH * 1.4 - rand() * rowH;
+      const h = Math.min(bottom - y, rowH * (0.85 + rand() * 0.3));
+      const shade = (y - top) / (bottom - top);
+      let x = -(row % 2) * rowH * 1.1 - rand() * rowH;
       while (x < g.W) {
-        const w = rowH * (1.5 + rand() * 1.8);
-        ctx.fillStyle = STONE[Math.floor(rand() * STONE.length)];
-        ctx.fillRect(x + 0.3, y + 0.3, w - 0.6, h - 0.5);
+        const w = rowH * (1.6 + rand() * 1.6);
+        const tone = STONE[Math.floor(rand() * 3)];
+        ctx.fillStyle = tone;
+        ctx.fillRect(x + 0.6, y + 0.6, w - 1.2, h - 1.2);
+        ctx.fillStyle = '#c3bfae';
+        ctx.fillRect(x + 0.6, y + 0.6, w - 1.2, Math.max(0.8, h * 0.2));
+        ctx.fillStyle = 'rgba(40,38,34,0.35)';
+        ctx.fillRect(x + 0.6, y + h * 0.7, w - 1.2, h * 0.3 - 0.6);
         x += w;
       }
+      // courses darken toward the waterline
+      ctx.fillStyle = 'rgba(46,52,52,' + (shade * 0.4).toFixed(3) + ')';
+      ctx.fillRect(0, y, g.W, h);
       y += h;
       row++;
     }
@@ -213,39 +224,43 @@
     const c = layer(g.W, g.H);
     const ctx = c.getContext('2d');
     const h = g.H - g.wy;
-    // dark moat water with a faint flipped wall reflection
-    ctx.fillStyle = '#3b4a4c';
+    // calm grey-green moat holding a clear mirror of the wall and keep
+    ctx.fillStyle = '#71878a';
     ctx.fillRect(0, g.wy, g.W, h);
+    // the mirror is squashed a little so the keep lands in the open water
+    const top = g.H * 0.18;
+    const squash = 0.62;
     ctx.save();
-    ctx.globalAlpha = 0.35;
-    ctx.translate(0, g.wy * 2);
-    ctx.scale(1, -1);
-    ctx.drawImage(wallImg, 0, 0, g.W, g.wy, 0, 0, g.W, g.wy);
+    ctx.globalAlpha = 0.75;
+    ctx.translate(0, g.wy);
+    ctx.scale(1, -squash);
+    ctx.drawImage(wallImg, 0, top, g.W, g.wy - top, 0, -(g.wy - top), g.W, g.wy - top);
     ctx.restore();
-    ctx.globalAlpha = 0.45;
-    ctx.fillStyle = '#2d3b3f';
+    ctx.globalAlpha = 0.25;
+    ctx.fillStyle = '#7d9496';
     ctx.fillRect(0, g.wy, g.W, h);
     ctx.globalAlpha = 1;
-    // the carpet of petals, denser nearer the wall and thinning at the near edge
+    // hanaikada: rafts of fallen petals, a thin lace by the wall, a near-solid
+    // carpet nearer the viewer, combed into long streaks by the slow current
     const img = ctx.getImageData(0, g.wy, g.W, h);
     const d = img.data;
     const pal = PETAL.map(K.parseColor);
     for (let y = 0; y < h; y++) {
       const f = y / h;
-      const sy = 1 + f * 0.9;
+      const sy = 1 + f * 1.2;
+      const dens = 0.12 + 0.45 * smoothstep(0.35, 1, f);
       for (let x = 0; x < g.W; x++) {
-        const n = fbm(x / (g.U * 2.6 * sy), y / (g.U * 1.8 * sy), 3, 71);
-        const thresh = 0.43 + f * 0.06;
-        if (n > thresh && rand() < 0.97) {
-          const grain = rand();
-          const ink = pal[grain < 0.55 ? 0 : grain < 0.8 ? 1 : grain < 0.92 ? 2 : 3];
-          const edge = smoothstep(thresh, thresh + 0.08, n);
-          const i = (y * g.W + x) * 4;
-          const k = 0.35 + 0.65 * edge;
-          d[i] = d[i] + (ink[0] - d[i]) * k;
-          d[i + 1] = d[i + 1] + (ink[1] - d[i + 1]) * k;
-          d[i + 2] = d[i + 2] + (ink[2] - d[i + 2]) * k;
-        }
+        const n = fbm(x / (g.U * 7 * sy), y / (g.U * 1.3 * sy), 4, 71);
+        const fine = fbm(x / (g.U * 1.2), y / (g.U * 0.8), 2, 13);
+        const cover = smoothstep(0.62 - dens * 0.5, 0.72 - dens * 0.5, n * 0.75 + fine * 0.25);
+        if (cover <= 0) continue;
+        const grain = rand();
+        const ink = pal[grain < 0.5 ? 0 : grain < 0.78 ? 1 : grain < 0.9 ? 2 : 3];
+        const i = (y * g.W + x) * 4;
+        const k = cover * (0.7 + 0.2 * rand());
+        d[i] = d[i] + (ink[0] - d[i]) * k;
+        d[i + 1] = d[i + 1] + (ink[1] - d[i + 1]) * k;
+        d[i + 2] = d[i + 2] + (ink[2] - d[i + 2]) * k;
       }
     }
     ctx.putImageData(img, 0, g.wy);
@@ -325,63 +340,74 @@
   // ---- blossoms overhead ---------------------------------------------------
 
   function cluster(ctx, x, y, r, rand) {
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 7; i++) {
       const a = rand() * TAU;
       const d = Math.sqrt(rand()) * r;
-      const px = x + Math.cos(a) * d;
-      const py = y + Math.sin(a) * d * 0.75;
       ctx.fillStyle = BLOOM[Math.floor(rand() * BLOOM.length)];
-      blob(ctx, px, py, r * (0.28 + rand() * 0.22), r * (0.22 + rand() * 0.18));
+      blob(ctx, x + Math.cos(a) * d, y + Math.sin(a) * d * 0.8, r * (0.32 + rand() * 0.2), r * (0.28 + rand() * 0.16));
     }
     ctx.fillStyle = BLOOM[2];
-    blob(ctx, x - r * 0.25, y - r * 0.3, r * 0.3, r * 0.2);
+    blob(ctx, x - r * 0.2, y - r * 0.25, r * 0.28, r * 0.22);
   }
 
-  function bough(ctx, g, rand, sx, sy, dirx, len, bend) {
-    const u = g.u;
+  // A limb as a list of points: starts at the frame edge, sags as it reaches in.
+  function limb(rand, sx, sy, a, len, sag, steps) {
+    const pts = [];
     let x = sx;
     let y = sy;
-    let a = dirx > 0 ? 0.12 : Math.PI - 0.12;
-    const steps = 18;
-    const pts = [];
-    for (let i = 0; i < steps; i++) {
+    for (let i = 0; i <= steps; i++) {
       pts.push([x, y]);
-      a += bend * (rand() - 0.4) * 0.18;
+      a += sag + (rand() - 0.5) * 0.35;
       x += Math.cos(a) * len / steps;
       y += Math.sin(a) * len / steps;
     }
+    return pts;
+  }
+
+  function strokeLimb(ctx, pts, w0, w1) {
     ctx.strokeStyle = BOUGH;
+    ctx.lineCap = 'round';
     for (let i = 1; i < pts.length; i++) {
-      ctx.lineWidth = Math.max(0.8, u * 1.5 * (1 - i / pts.length) + 0.6);
+      const f = i / pts.length;
+      ctx.lineWidth = Math.max(0.9, w0 + (w1 - w0) * f);
       ctx.beginPath();
       ctx.moveTo(pts[i - 1][0], pts[i - 1][1]);
       ctx.lineTo(pts[i][0], pts[i][1]);
       ctx.stroke();
     }
-    for (let i = 3; i < pts.length; i++) {
-      const [px, py] = pts[i];
-      cluster(ctx, px, py + u * 0.6, u * (4.5 + rand() * 3), rand);
-      cluster(ctx, px + u * 2, py + u * 3, u * (3 + rand() * 2), rand);
-      if (i % 2) {
-        const tx = px + (rand() - 0.5) * u * 5;
-        const ty = py + u * (2.5 + rand() * 4);
-        ctx.strokeStyle = BOUGH;
-        ctx.lineWidth = Math.max(0.7, u * 0.35);
-        ctx.beginPath();
-        ctx.moveTo(px, py);
-        ctx.lineTo(tx, ty);
-        ctx.stroke();
-        cluster(ctx, tx, ty, u * (2 + rand() * 1.5), rand);
-      }
+  }
+
+  function bough(ctx, g, rand, sx, sy, dir, len) {
+    const u = g.u;
+    const a0 = dir > 0 ? 0.25 : Math.PI - 0.25;
+    const sag = dir > 0 ? 0.035 : -0.035;
+    const main = limb(rand, sx, sy, a0, len, sag, 14);
+    strokeLimb(ctx, main, u * 3.2, u * 0.8);
+    const tips = [];
+    // twigs fork off alternately up and down
+    for (let i = 3; i < main.length - 1; i += 2) {
+      const [px, py] = main[i];
+      const side = (i >> 1) % 2 ? 1 : -1;
+      const ta = (dir > 0 ? 0 : Math.PI) + side * (0.7 + rand() * 0.4) * dir;
+      const tl = len * (0.12 + rand() * 0.1) * (1 - i / main.length * 0.5);
+      const twig = limb(rand, px, py, ta, tl, sag, 5);
+      strokeLimb(ctx, twig, u * 1.2, u * 0.5);
+      for (let k = 2; k < twig.length; k += 2) tips.push(twig[k]);
+    }
+    tips.push(main[main.length - 1]);
+    // blossoms gather on twigs and the outer limb, leaving the dark limb readable
+    for (const [tx, ty] of tips) cluster(ctx, tx, ty, u * (2.8 + rand() * 1.6), rand);
+    for (let i = 7; i < main.length; i += 2) {
+      const [px, py] = main[i];
+      cluster(ctx, px, py + u * (rand() < 0.5 ? 2.4 : -2.4), u * (1.6 + rand() * 1), rand);
     }
   }
 
   function paintBoughs(g, rand) {
     const c = layer(g.W, g.H);
     const ctx = c.getContext('2d');
-    bough(ctx, g, rand, -g.u * 2, g.H * 0.04, 1, g.W * 0.52, 1);
-    bough(ctx, g, rand, g.W + g.u * 2, g.H * 0.02, -1, g.W * 0.38, -1);
-    bough(ctx, g, rand, g.W * 0.35, -g.u * 2, 1, g.W * 0.2, 1);
+    bough(ctx, g, rand, -g.u * 2, g.H * 0.08, 1, g.W * 0.42);
+    bough(ctx, g, rand, g.W + g.u * 2, g.H * 0.03, -1, g.W * 0.32);
     return c;
   }
 
@@ -402,7 +428,7 @@
     P.vy[i] = g.U * (3 + r() * 3);
     P.vx[i] = g.U * (1.2 + r() * 1.5);
     P.p[i] = r() * TAU;
-    P.s[i] = Math.max(1.6, g.U * (0.8 + r() * 0.7));
+    P.s[i] = Math.max(2, g.U * (1.1 + r() * 0.8));
     P.tone[i] = Math.floor(r() * 3);
   }
 
@@ -432,7 +458,7 @@
     for (let i = 0; i < count; i++) {
       const s = P.s[i];
       const sq = flutter ? 0.4 + 0.6 * Math.abs(Math.sin(t * 2 + P.p[i])) : 0.7;
-      ctx.fillStyle = PETAL[P.tone[i]];
+      ctx.fillStyle = flutter ? FALL_INK[P.tone[i]] : PETAL[3 - P.tone[i] % 2];
       ctx.fillRect(P.x[i], P.y[i], s * (flutter ? sq + 0.5 : 1.4), s * (flutter ? 1 : 0.7));
     }
   }
@@ -463,7 +489,7 @@
   function draw(ctx, t, dt, api) {
     const g = state.g;
     const { petals, drift } = api.props;
-    const nf = Math.min(MAX_FALL, Math.round(40 * petals));
+    const nf = Math.min(MAX_FALL, Math.round(60 * petals));
     const nd = Math.min(MAX_DRIFT, Math.round(28 * drift));
     const step = Math.min(dt, 0.1);
     for (let i = 0; i < nf; i++) stepFall(g, state.fall, i, t, step);
