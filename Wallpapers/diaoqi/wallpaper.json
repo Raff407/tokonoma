@@ -1,0 +1,17 @@
+{
+  "id": "diaoqi",
+  "name": "Carved Lacquer",
+  "title": "雕漆",
+  "culture": "chinese",
+  "description": "A panel of carved red lacquer: ruyi cloud scrolls rising from a dark ground inside a key-fret border, with a soft highlight sliding slowly across the relief.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "sheen", "label": "sheen", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "sweep", "label": "sweep width", "type": "range", "min": 0.5, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
