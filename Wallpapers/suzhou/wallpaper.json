@@ -1,0 +1,18 @@
+{
+  "id": "suzhou",
+  "name": "Suzhou",
+  "title": "苏州",
+  "description": "A scholar garden at first light. Koi shadows drift under a zigzag stone bridge, a tiled pavilion with upturned eaves and a Taihu rockery stand beside a whitewashed cloud wall with a moon gate, and willow strands sway over the pond.",
+  "entry": "index.html",
+  "version": 1,
+  "culture": "chinese",
+  "properties": [
+    {"key": "ripple", "label": "ripples", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "koi", "label": "koi", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mist", "label": "mist", "type": "range", "min": 0, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["lines", "ascii", "kana", "dense"], "default": "lines"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 24, "step": 1, "default": 7},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
