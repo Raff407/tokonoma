@@ -1,0 +1,16 @@
+{
+  "id": "kuroana",
+  "name": "Kuroana",
+  "title": "黒穴",
+  "description": "A black hole and its glowing disk, ray-traced through curved space. The far side of the disk bends up over the shadow and under it, and the sky behind is lensed into a ring.",
+  "entry": "index.html",
+  "version": 1,
+  "properties": [
+    {"key": "tilt", "label": "view above disk", "type": "range", "min": 2, "max": 25, "step": 1, "default": 7},
+    {"key": "stars", "label": "stars", "type": "range", "min": 0.3, "max": 2, "step": 0.1, "default": 1},
+    {"key": "mode", "label": "weave", "type": "choice", "options": ["glyph", "block", "dot"], "default": "glyph"},
+    {"key": "ramp", "label": "glyphs", "type": "choice", "options": ["dense", "ascii", "lines", "kana"], "default": "dense"},
+    {"key": "cell", "label": "cell size", "type": "range", "min": 4, "max": 16, "step": 1, "default": 6},
+    {"key": "speed", "label": "speed", "type": "range", "min": 0.1, "max": 3, "step": 0.1, "default": 1}
+  ]
+}
