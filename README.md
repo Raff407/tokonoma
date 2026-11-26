@@ -344,6 +344,7 @@ whenever nobody can see them.
 | **Oribe** 織部 | A green-glazed Oribe tea bowl and square dish on a dark table, with checker and wave patterns painted in iron brown. Soft light slides slowly over the glaze. |
 | **Satoyama** 里山 | Terraced hills above a village: flooded paddies, cedar and bamboo, a thatched farmhouse with a thread of smoke, and light that follows your clock. |
 | **Hamabe** 浜辺 | A pine-backed shore at evening. Glass fishing floats rest on the sand beside a net hung to dry, gentle surf slides up the beach, and the long light follows your clock. |
+| **Kuroana** 黒穴 | A black hole ray-traced through curved space. Its turning disk glows ember to gold, the far side bends up over the shadow and under it, and the stars behind are pulled into rings. |
 | **Yours** | Drop any video, gif or picture (png, jpg, webp, heic, avif, tiff…) into the library and it gets woven the same way. Gifs play as looping clips. |
 | **Great Wall** 长城 | The Great Wall climbing a mountain ridge in autumn, grey battlements and tiled watchtowers among red and gold maples, with mist drifting through the valleys and the light following your clock. |
 | **Gugong** 故宫 | A corner tower of the Forbidden City in falling snow: yellow glazed roofs, crimson walls, white marble and the moat below. Snow drifts down, lanterns sway, and the light follows your clock. |
