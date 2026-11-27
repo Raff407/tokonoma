@@ -9,8 +9,10 @@ APP=build/Tokonoma.app
 SWIFT="xcrun swift"
 
 echo "› compiling"
-$SWIFT build -c release --product Tokonoma
-BIN="$($SWIFT build -c release --show-bin-path)/Tokonoma"
+# Universal: one download runs on Apple silicon and Intel Macs.
+ARCHS="--arch arm64 --arch x86_64"
+$SWIFT build -c release --product Tokonoma $ARCHS
+BIN="$($SWIFT build -c release $ARCHS --show-bin-path)/Tokonoma"
 
 echo "› assembling $APP"
 rm -rf "$APP"
