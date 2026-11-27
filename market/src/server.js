@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 /*
  * Tokonoma MCP server — lets an AI assistant (or anyone with an MCP client)
- * design, check, package, publish, browse and install woven wallpapers.
+ * design, check and package woven wallpapers on this Mac.
  *
- * Every path through it runs the same validator the registry and the app
- * run. Publishing never marks anything verified, and installing always hands
- * the package to the app, which shows the third-party warning and asks first.
+ * Every path through it runs the same validator the app runs, and trying a
+ * wallpaper always hands it to the app, which shows the checks and asks first.
  *
  * Two ways in:
  *   stdio  (Claude Code/Desktop, Codex, Cursor, Gemini CLI…)
@@ -32,13 +31,10 @@ const R = require('./rules.js');
 const V = require('./validate.js');
 const P = require('./package.js');
 const S = require('./studio.js');
-const { LocalRegistry } = require('./registry.js');
 const KASURI_GUIDE = require('./guide.js');
 
 const SCENES = path.join(__dirname, '..', '..', 'Wallpapers');
 const EXAMPLES = ['torii', 'koi', 'fuji', 'kaze', 'take', 'sakura', 'yuki', 'hotaru', 'tsuki', 'nami', 'momiji', 'hoshi', 'toro', 'unkai', 'tsuru', 'neko', 'hanabi', 'shoji', 'hasu', 'kiri', 'densha', 'kurage', 'suisha', 'yokocho', 'ajisai', 'tanada', 'shika', 'fukuro', 'usagi', 'nagisa', 'isaribi', 'taki', 'kazan', 'onsen', 'tsuyu', 'kaki', 'kamo', 'himawari', 'shiro', 'icho', 'tako', 'koinobori', 'furin', 'kingyo', 'chawan', 'jihanki', 'kintsugi', 'tombo', 'kaeru', 'komorebi', 'suzume', 'tanuki', 'kitsune', 'iruka', 'kujira', 'umigame', 'sango', 'todai', 'minato', 'hashi', 'gojunoto', 'yamadera', 'kane', 'koke', 'shishi', 'bonsai', 'ikebana', 'maneki', 'orizuru', 'yatai', 'kotatsu', 'kissaten', 'fumikiri', 'basutei', 'yakei', 'kasa', 'matsuri', 'uma', 'hakucho', 'sagi', 'tsubame', 'ume', 'tsubaki', 'ayame', 'higan', 'fujidana', 'matsu', 'kakashi', 'kamakura', 'tsurara', 'ryuhyo', 'tanabata', 'niji', 'meoto', 'sakyu', 'kabuto', 'jizo', 'enso', 'asanoha', 'konbini', 'kinkaku', 'itsukushima', 'inari', 'shinkansen', 'sento', 'ramen', 'chochin', 'karesansui', 'kodo', 'hanaikada', 'nanohana', 'susuki', 'juhyo', 'shirakawa', 'kiyomizu', 'tawa', 'kosaten', 'izakaya', 'sakagura', 'kadomatsu', 'hatsuhinode', 'sansui', 'byobu', 'aizome', 'saru', 'cho', 'medaka', 'kani', 'inoshishi', 'mejiro', 'kawasemi', 'yudachi', 'oboro', 'kogarashi', 'karasu', 'danchi', 'kanransha', 'sakamichi', 'inaho', 'chabatake', 'uzushio', 'ryusei', 'teruteru', 'temari', 'koma', 'sensu', 'irori', 'andon', 'tsukubai', 'shodo', 'engawa', 'mikan', 'ginkaku', 'matsumoto', 'todaiji', 'nikko', 'kegon', 'kenrokuen', 'togetsukyo', 'kintaikyo', 'yakushima', 'kamikochi', 'ashinoko', 'shuri', 'ishigaki', 'asakusa', 'yukimatsuri', 'otaru', 'takayama', 'kurashiki', 'kawagoe', 'tsumago', 'ginzan', 'gion', 'kotohira', 'nachi', 'aso', 'sakurajima', 'oirase', 'nemophila', 'furano', 'kazurabashi', 'ropeway', 'hatsuyuki', 'tsuyukusa', 'kinmokusei', 'sazanka', 'nadeshiko', 'kikyo', 'hagi', 'suisen', 'yamabuki', 'fuyubotan', 'tsutsuji', 'asagao', 'shigure', 'nyudogumo', 'yuyake', 'akatsuki', 'shimobashira', 'tsuyuake', 'kitsutsuki', 'hibari', 'uguisu', 'semi', 'takotsubo', 'ayu', 'umineko', 'washi', 'kamoshika', 'risu', 'suzumushi', 'oshidori', 'momonga', 'kiji', 'tokonoma', 'furoshiki', 'kokeshi', 'hinadan', 'koto', 'nabe', 'wagashi', 'tokkuri', 'shippo', 'uroko', 'kikko', 'kasuri', 'ichimatsu', 'dojo', 'kyoshitsu', 'minka', 'shotengai', 'hiraizumi', 'izumo', 'yoshino', 'daibutsu', 'rishiri', 'yukinootani', 'hanamizuki', 'kohan', 'kasumi', 'chinden', 'kakigori', 'enoshima', 'tsuwano', 'kushiro', 'aoiike', 'nohbutai', 'komainu', 'emaki', 'senko', 'hikokigumo', 'taue', 'himeji', 'shirakami', 'ouchijuku', 'inuyama', 'hakone', 'ine', 'amanohashidate', 'hirosaki', 'matsushima', 'akiyoshi', 'hakuba', 'biwako', 'shimanami', 'sado', 'tsunoshima', 'chureito', 'onomichi', 'tomonoura', 'tokyo', 'osaka', 'biei', 'bandai', 'shirakaba', 'miho', 'hokusai', 'bokashi', 'yuzen', 'sashiko', 'kumiko', 'kamifusen', 'kamisuki', 'urushi', 'kiriko', 'noren', 'tatami', 'fusuma', 'kama', 'mokuhan', 'ranma', 'mizuhiki', 'yukata', 'tenugui', 'shoin', 'kamon', 'yagasuri', 'tsuboniwa', 'harusame', 'natsuyasumi', 'akikusa', 'yukiakari', 'haruichiban', 'mangetsu', 'obon', 'hatsumode', 'kagero', 'nowaki', 'tsukiyo', 'asagiri', 'tasogare', 'sakurafubuki', 'shiosai', 'aozora', 'kirisame', 'ryokan', 'eki', 'ishidoro', 'chashitsu', 'toge', 'kawara', 'kusaridoi', 'yukimi', 'hanami', 'sudare', 'seto', 'daimonji', 'nebuta', 'imari', 'oribe', 'satoyama', 'hamabe', 'kuroana', 'changcheng', 'gugong', 'xihu', 'guilin', 'huangshan', 'zhangjiajie', 'lijiang', 'sanxia', 'jiuzhaigou', 'suzhou', 'longji', 'yuanyang', 'dunhuang', 'shamo', 'pingyao', 'hongcun', 'wuzhen', 'tulou', 'shanghai', 'hukou', 'taishan', 'emeishan', 'shilin', 'chengqiang', 'yihe', 'tiantan', 'lugou', 'wuyi', 'shuimo', 'gongbi', 'qinghua', 'qingci', 'jingtailan', 'diaoqi', 'jianzhi', 'piying', 'fengzheng', 'denglong', 'sichou', 'yunjin', 'suxiu', 'zhuanke', 'tuanshan', 'chuanghua', 'yuemen', 'wajian', 'qingtong', 'yubi', 'yantai', 'bimo', 'gongfucha', 'zisha', 'chunjie', 'yuanxiao', 'qingming', 'longzhou', 'zhongqiu', 'chongyang', 'dongzhi', 'niulang', 'helian', 'meihua', 'mudan', 'zhulin', 'songshi', 'xiongmao', 'yunlong', 'fenghuang', 'xiangyun', 'jiangnan', 'chayuan', 'baota', 'yuhuo', 'fengqiao', 'xuezhong', 'hanshan', 'taiji', 'kongming', 'shuiyue', 'chaguan'];
-
-const registry = () => new LocalRegistry(S.registryRoot());
 
 const text = (t) => ({ content: [{ type: 'text', text: t }] });
 const fail = (e) => ({ isError: true, content: [{ type: 'text', text: String(e.message || e) }] });
@@ -158,82 +154,6 @@ function buildServer() {
     }
   });
 
-  server.registerTool('tokonoma_publish', {
-    title: 'Publish to the registry',
-    description: 'Upload a .tokonoma package. The registry re-checks everything; published wallpapers are always listed as community, never verified.',
-    inputSchema: { package: z.string().describe('path to a .tokonoma file') },
-  }, async ({ package: file }) => {
-    try {
-      const packed = fs.readFileSync(file, 'utf8');
-      const pkg = P.unpack(packed);
-      // Nothing from an uploaded package touches the disk until every rule has
-      // passed, and then only at paths that stay inside the scratch folder.
-      const checked = V.validatePackage(pkg, { packageBytes: Buffer.byteLength(packed, 'utf8') });
-      if (!checked.ok) throw new Error('Upload refused:\n' + checked.errors.map((e) => `- ${e.code}: ${e.message}`).join('\n'));
-      if (pkg.manifest && pkg.manifest.kind === 'media') {
-        throw new Error('Media wallpapers (your own clips and pictures) are published from the Tokonoma app, which screens every frame first.');
-      }
-      // Render from a scratch copy so the registry judges what was uploaded, not a local folder.
-      const scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'tokonoma-publish-'));
-      fs.writeFileSync(path.join(scratch, 'wallpaper.json'), JSON.stringify(pkg.manifest));
-      for (const [p, f] of Object.entries(pkg.files)) {
-        const target = insideFolder(scratch, p);
-        fs.mkdirSync(path.dirname(target), { recursive: true });
-        fs.writeFileSync(target, f.text ?? Buffer.from(f.bytes));
-      }
-      const render = S.inspect(scratch);
-      fs.rmSync(scratch, { recursive: true, force: true });
-      const preview = render && render.image && fs.existsSync(render.image) ? fs.readFileSync(render.image) : null;
-      if (render && render.image) fs.rmSync(render.image, { force: true });
-      const entry = registry().publish(packed, { render: render && render.metrics, preview });
-      return text(`Published ${entry.name} ${entry.version} by ${entry.author} (${kb(entry.bytes)}) as a community wallpaper.\nRender checks: ${entry.checks.render}. Nudity screen: ${entry.checks.screen}.`);
-    } catch (e) {
-      return fail(e);
-    }
-  });
-
-  server.registerTool('tokonoma_browse', {
-    title: 'Browse community wallpapers',
-    description: 'List wallpapers in the registry with who made them, size and grid.',
-    inputSchema: { query: z.string().optional() },
-    annotations: { readOnlyHint: true },
-  }, async ({ query }) => {
-    try {
-      const entries = registry().list({ query });
-      if (!entries.length) return text('Nothing found.');
-      const lines = entries.map((e) => [
-        `${e.name}${e.title ? ' ' + e.title : ''} (${e.id} v${e.version})`,
-        `  ${e.kind === 'media' ? 'media' : 'scene'} by ${e.author}${e.authorURL ? ' · ' + e.authorURL : ''} · ${kb(e.bytes)} · ${
-          e.facts.media ? `${e.facts.media.type} ${e.facts.media.width}×${e.facts.media.height}` : e.facts.grid}`,
-        `  ${e.verified ? 'verified by Tokonoma' : 'community: made by a third party, checked automatically, not reviewed by hand'}`,
-        e.description ? `  ${e.description}` : null,
-      ].filter(Boolean).join('\n'));
-      return text(lines.join('\n\n'));
-    } catch (e) {
-      return fail(e);
-    }
-  });
-
-  server.registerTool('tokonoma_install', {
-    title: 'Install a community wallpaper',
-    description: 'Download a wallpaper from the registry and hand it to the Tokonoma app, which shows who made it, its size and checks, and asks before installing.',
-    inputSchema: { id: z.string() },
-  }, async ({ id }) => {
-    try {
-      const packed = registry().download(id);
-      P.unpack(packed); // refuse early if it doesn't verify
-      const target = path.join(os.homedir(), 'Downloads', `${id}.tokonoma`);
-      fs.writeFileSync(target, packed);
-      const opened = spawnSync('open', ['-a', 'Tokonoma', target]);
-      const how = opened.status === 0
-        ? 'Opened it in Tokonoma: review the details and warning there, then choose Install.'
-        : `Open ${target} with Tokonoma to review and install it.`;
-      return text(`Saved ${target}.\n${how}`);
-    } catch (e) {
-      return fail(e);
-    }
-  });
-
   server.registerResource('kasuri', 'tokonoma://kasuri', {
     title: 'kasuri scene API',
     description: 'How to write scene.js: the run loop, helpers, props and tips',
@@ -280,14 +200,6 @@ function buildServer() {
   });
 
   return server;
-}
-
-/** `rel` resolved under `root`, or an error if it would land anywhere else. */
-function insideFolder(root, rel) {
-  const base = path.resolve(root);
-  const target = path.resolve(base, rel);
-  if (!target.startsWith(base + path.sep)) throw new Error(`Refused a file path outside the package: ${rel}`);
-  return target;
 }
 
 // ---- transports -----------------------------------------------------------

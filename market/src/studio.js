@@ -18,10 +18,6 @@ function studioRoot() {
   return process.env.TOKONOMA_STUDIO || path.join(os.homedir(), 'Tokonoma Studio');
 }
 
-function registryRoot() {
-  return process.env.TOKONOMA_REGISTRY || path.join(os.homedir(), 'Library', 'Application Support', 'Tokonoma', 'Registry');
-}
-
 /** Creates <folder>/<id> from the template; refuses to overwrite anything. */
 function newWallpaper({ id, name, author, title = '', description = '', folder }) {
   if (!ID.test(id || '')) throw new Error('id must be 3–40 lowercase letters, digits or dashes');
@@ -75,4 +71,4 @@ function inspect(folder) {
   return { metrics: result.metrics, image };
 }
 
-module.exports = { studioRoot, registryRoot, newWallpaper, findApp, inspect };
+module.exports = { studioRoot, newWallpaper, findApp, inspect };

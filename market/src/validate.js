@@ -381,7 +381,7 @@
     if (!screen || !(screen.frames >= SAFETY.minFrames) || typeof screen.nsfw !== 'number') {
       errors.push({ code: 'unscreened', message: 'the safety screen didn\'t run on this wallpaper' });
     } else if (screen.nsfw > SAFETY.maxNsfw) {
-      errors.push({ code: 'nsfw', message: 'it looks like it may show nudity or sexual content, which the marketplace doesn\'t allow' });
+      errors.push({ code: 'nsfw', message: 'it looks like it may show nudity or sexual content, which Tokonoma doesn\'t allow' });
     }
     return { ok: errors.length === 0, errors, warnings: [] };
   }
@@ -397,7 +397,7 @@
     if (metrics.paletteShare < RENDER.minPaletteShare) errors.push({ code: 'off-theme-palette', message: 'too many colours; official scenes use a small ink palette' });
     if (!WOVEN.includes(metrics.mode)) errors.push({ code: 'off-theme-mode', message: 'renders as raw pixels by default' });
     if (typeof metrics.nsfw === 'number' && metrics.nsfw > SAFETY.maxNsfw) {
-      errors.push({ code: 'nsfw', message: 'the render looks like it may show nudity or sexual content, which the marketplace doesn\'t allow' });
+      errors.push({ code: 'nsfw', message: 'the render looks like it may show nudity or sexual content, which Tokonoma doesn\'t allow' });
     }
     return { ok: errors.length === 0, errors, warnings };
   }

@@ -4,7 +4,6 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const P = require('../src/package.js');
-const { LocalRegistry } = require('../src/registry.js');
 
 const SCENE = `Kasuri.run({ defaults: { mode: 'glyph' }, draw(ctx, t, dt, api) { ctx.fillStyle = '#1c1a19'; ctx.fillRect(0, 0, api.cols, api.rows); } });\n`;
 
@@ -65,92 +64,4 @@ test('files are decoded to sizes the validator can trust', () => {
   const pkg = P.unpack(P.pack(dir).text);
   assert.equal(pkg.files['assets/dot.png'].size, 33);
   assert.ok(pkg.files['assets/dot.png'].bytes instanceof Uint8Array);
-});
-
-test('registry publishes, lists and serves packages, always as community', () => {
-  const reg = new LocalRegistry(fs.mkdtempSync(path.join(os.tmpdir(), 'tokonoma-reg-')));
-  const entry = reg.publish(P.pack(folder()).text);
-  assert.equal(entry.verified, false);
-  assert.equal(entry.author, 'Mika');
-  assert.ok(entry.bytes > 0);
-  assert.deepEqual(reg.list().map((e) => e.id), ['paper-moon']);
-  assert.deepEqual(reg.list({ query: 'moon' }).map((e) => e.id), ['paper-moon']);
-  assert.deepEqual(reg.list({ query: 'koi' }), []);
-  const fetched = reg.download('paper-moon');
-  assert.equal(P.unpack(fetched).manifest.name, 'Paper moon');
-});
-
-test('registry refuses someone else taking over an id, and stale versions', () => {
-  const reg = new LocalRegistry(fs.mkdtempSync(path.join(os.tmpdir(), 'tokonoma-reg-')));
-  reg.publish(P.pack(folder({ version: 2 })).text);
-  assert.throws(() => reg.publish(P.pack(folder({ version: 3, author: 'Someone else' })).text), /belongs to Mika/);
-  assert.throws(() => reg.publish(P.pack(folder({ version: 2 })).text), /[Vv]ersion/);
-  assert.equal(reg.publish(P.pack(folder({ version: 3 })).text).version, 3);
-});
-
-test('registry re-checks packages itself instead of trusting the uploader', () => {
-  const reg = new LocalRegistry(fs.mkdtempSync(path.join(os.tmpdir(), 'tokonoma-reg-')));
-  const bad = P.encode({
-    manifest: { id: 'sneaky', name: 'Sneaky', author: { name: 'x' }, properties: [] },
-    files: { 'scene.js': { text: "Kasuri.run({}); fetch('https://x.example')" } },
-  });
-  assert.throws(() => reg.publish(bad), /refused/);
-});
-
-test('registry lists media only after a clean nudity screen', () => {
-  const reg = new LocalRegistry(fs.mkdtempSync(path.join(os.tmpdir(), 'tokonoma-reg-')));
-  const still = Buffer.alloc(33);
-  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(still, 0);
-  still.writeUInt32BE(13, 8);
-  still.write('IHDR', 12, 'ascii');
-  still.writeUInt32BE(1600, 16);
-  still.writeUInt32BE(900, 20);
-  const media = P.encode({
-    manifest: {
-      id: 'lantern-walk', name: 'Lantern walk', author: { name: 'Mika' }, version: 1, kind: 'media', media: 'media.png',
-      properties: [
-        { key: 'mode', label: 'weave', type: 'choice', options: ['glyph', 'block', 'dot'], default: 'block' },
-        { key: 'cell', label: 'cell size', type: 'range', min: 3, max: 24, default: 8 },
-      ],
-    },
-    files: { 'media.png': { bytes: new Uint8Array(still) } },
-  });
-  assert.throws(() => reg.publish(media), /safety screen/);
-  assert.throws(() => reg.publish(media, { screen: { nsfw: 0.93, frames: 1 } }), /nudity/);
-  const entry = reg.publish(media, { screen: { nsfw: 0.02, frames: 1 }, preview: Buffer.from([0xff, 0xd8]) });
-  assert.equal(entry.kind, 'media');
-  assert.equal(entry.checks.screen, 'passed');
-  assert.equal(entry.preview, 'lantern-walk-1.jpg');
-  assert.ok(fs.existsSync(path.join(reg.previews, entry.preview)));
-});
-
-test('registry refuses to serve a package that changed after it was listed', () => {
-  const reg = new LocalRegistry(fs.mkdtempSync(path.join(os.tmpdir(), 'tokonoma-reg-')));
-  const entry = reg.publish(P.pack(folder()).text);
-  const other = P.pack(folder({ version: 9 })).text;
-  fs.writeFileSync(path.join(reg.packages, entry.file), other);
-  assert.throws(() => reg.download('paper-moon'), /tampered/);
-});
-
-test('publishing a package with ../ paths writes nothing outside its scratch folder', async () => {
-  const { Client } = await import('@modelcontextprotocol/sdk/client/index.js');
-  const { StdioClientTransport } = await import('@modelcontextprotocol/sdk/client/stdio.js');
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tokonoma-trav-'));
-  const victim = path.join(dir, 'victim.txt');
-  fs.writeFileSync(victim, 'original');
-  const evil = P.encode({
-    manifest: { id: 'evil-one', name: 'Evil', author: { name: 'x' }, version: 1, properties: [] },
-    files: { 'scene.js': { text: 'Kasuri.run({});' }, ['../'.repeat(12) + victim.slice(1)]: { text: 'PWNED' } },
-  });
-  fs.writeFileSync(path.join(dir, 'evil.tokonoma'), evil);
-  const client = new Client({ name: 'test', version: '1' });
-  await client.connect(new StdioClientTransport({
-    command: process.execPath,
-    args: [path.join(__dirname, '..', 'src', 'server.js')],
-    env: { ...process.env, TOKONOMA_APP: 'none', TOKONOMA_REGISTRY: path.join(dir, 'reg') },
-  }));
-  const result = await client.callTool({ name: 'tokonoma_publish', arguments: { package: path.join(dir, 'evil.tokonoma') } });
-  await client.close();
-  assert.match(result.content[0].text, /refused/);
-  assert.equal(fs.readFileSync(victim, 'utf8'), 'original');
 });
