@@ -8,19 +8,21 @@ when a change contradicts it, update this file in the same commit.
 A free, private Wallpaper Engine for macOS. Animated scenes are painted small
 and woven into glyphs/blocks/dots by **kasuri** (WebGL2), shown behind the
 desktop icons by a native Swift app. Agents can make new scenes through an
-MCP server; shared scenes and your own clips/pictures travel as `.tokonoma` packages
-through a marketplace (the Market tab; a local registry folder for now).
+MCP server; a scene can travel as a `.tokonoma` package file, installed locally
+after the checks. The repo is public. There is no marketplace: publishing and the
+Market tab were removed (still in git history, before `dfda6bb`) until a hosted,
+signed registry exists.
 
 ```
 Wallpapers/_lib/        kasuri.js, kasuri-core.js, sky.js, media.js/.html
 Wallpapers/<scene>/     wallpaper.json + index.html + scene.js (+ helpers)
 Sources/TokonomaCore/   pure logic: manifest, settings, policy, importer, community,
-                        media prep, nudity screen, market registry, publisher
+                        media prep, nudity screen
 Resources/Models/       NSFW.mlmodel (LOVOO NSFWDetector, BSD-3) + its licence
 Sources/Tokonoma/Host/  desktop windows, WebKit bridge, monitors, network lock
 Sources/Tokonoma/App/   model, menus, thumbnails, --inspect, agent server
 Sources/Tokonoma/UI/    SwiftUI library window (Theme.swift holds the tokens)
-market/                 rules.js + validate.js (shared checks), package, registry, MCP server
+market/                 rules.js + validate.js (shared checks), package, MCP server
 web/test, Tests/        node:test and Swift Testing suites
 scripts/                bundle.sh, bench.swift, make-icon.swift
 ```
@@ -30,7 +32,7 @@ scripts/                bundle.sh, bench.swift, make-icon.swift
 ```bash
 xcrun swift test                      # Swift core (plain `swift` is a broken swiftly toolchain)
 cd web && npm test                    # kasuri, marbling, sky
-cd market && npm test                 # validator, packages, registry
+cd market && npm test                 # validator, packages
 xcrun swift scripts/bench.swift       # ms/frame of every scene in real WebKit
 scripts/bundle.sh --install           # build, sign, copy to /Applications
 python3 -m http.server 8765 --directory Wallpapers   # preview scenes; ?mode=raw&cell=4
@@ -76,7 +78,7 @@ python3 -m http.server 8765 --directory Wallpapers   # preview scenes; ?mode=raw
 - Interactive scenes set `"interactive": true` and use `api.pointer` / `onClick`.
 - Adding a built-in: folder + manifest + index.html, then add the id to
   `AppModel.builtInOrder`, `ShippedWallpaperTests`, `market/src/server.js` EXAMPLES,
-  `market/test/validate.test.js` calibration list, `scripts/bench.swift`, README table.
+  `market/test/validate.test.js` calibration list, `scripts/bench.swift`.
 - Official scenes must pass `market/src/validate.js` like any community scene.
 - New built-ins aren't interactive: no `interactive`, `api.pointer` or `onClick`. Raff finds them
   heavy, and any scene marked interactive starts the global mouse monitors (`PointerTracker`).
@@ -102,8 +104,7 @@ python3 -m http.server 8765 --directory Wallpapers   # preview scenes; ?mode=raw
 - `MediaPrep`: animated gif/apng/webp/heics become an H.264 `media.mp4` (WebKit
   freezes an off-screen animated `<img>` on frame one). Stills WebKit can't draw
   (heic, avif, tiff, bmp, psd…) become JPEG/PNG. Clips are capped at 1920px, stills 3840px.
-- Imports are private. One file at a time gets the "Only me / Marketplace" sheet;
-  "Share to market…" in the inspector does the same later.
+- Imports stay on this Mac; nothing can be published.
 
 ## Battery
 
@@ -115,25 +116,24 @@ preview web views are freed when idle. Don't add timers or polling that run whil
 ## Community wallpapers and agents — security model (don't weaken)
 
 1. `market/src/validate.js` + `rules.js` is the single rulebook. It runs in the MCP
-   server, in the registry on upload, and in the app via JavaScriptCore before install.
+   server and in the app via JavaScriptCore before install.
 2. Packages hold only `wallpaper.json`, `scene.js`, `README.md`, small `assets/` images.
    The app writes `index.html` itself. Fingerprint = SHA-256 of the body string.
 3. At runtime every web view has the `NetworkLock` content rules (no http/ws/ftp).
    Community scenes get kasuri injected as user scripts and read access to their own
    folder only. Verified by a hostile test scene: both escapes blocked.
-4. `.origin.json` is written by the app, never taken from a package. Nothing published
-   through the MCP server or registry is ever marked verified.
+4. `.origin.json` is written by the app, never taken from a package. No package is ever
+   marked verified.
 5. Installs always go through the review sheet with the third-party warning, author,
    size, grid, images and checks. Agents can't install silently (`tokonoma_try` opens the sheet).
 6. HTTP MCP listens on 127.0.0.1 only, checks Host, needs the key in
    `~/Library/Application Support/Tokonoma/agent-token`.
 7. Media packages (`"kind": "media"`) hold one `media.mp4|jpg|png|webp` and no code.
    Always woven: their mode choice may only offer glyph/block/dot. ≤ 12 MB, clips
-   ≤ 1920px, 60 s and silent (`Publisher` exports a 1280×720, first-minute, no-audio copy).
+   ≤ 1920px, 60 s and silent.
 8. Nudity screen (`SafetyScreen`, on device): every media frame sampled, every image
    asset, and the `--inspect` render. Threshold is `SAFETY.maxNsfw` in rules.js, judged by
-   `judgeScreen`. It runs at publish and again before install. If the model can't load,
-   nothing is published or installed. The registry refuses media without a clean screen.
+   `judgeScreen`. It runs before every install. If the model can't load, nothing is installed.
 9. Runtime lockdown (`Lockdown.swift`, WallpaperHost): WebRTC, media devices and
    DNS prefetch off in the engine; RTC/WebTransport/Worker constructors removed in
    every frame; NetworkLock blocks every URL except file/data/blob/about; navigation
@@ -145,23 +145,18 @@ preview web views are freed when idle. Don't add timers or polling that run whil
    and capture on native functions captured before scene code, so scenes can't fake checks.
 12. Community pages are watched from outside: `PowerWatch` stops one that keeps a core
    busy (~30 s over budget) and restarts are capped per load.
-13. MCP `tokonoma_publish` validates before writing anything; paths must stay inside
-   scratch. Versions are integers. Downloads must match the listed sha256. An install
+13. Versions are integers. Downloads must match the listed sha256. An install
    never replaces another author's wallpaper. Packages over 24 MB aren't parsed.
 14. `scripts/redteam.sh` runs a hostile scene (network, WebRTC, files, frames, popups,
    replacing inspect, reading the library after a trusted page). Run it after touching
    Host/, kasuri.js or NetworkLock. It must say "every escape blocked".
-15. Registry folder (`~/Library/Application Support/Tokonoma/Registry`) is shared by
-   `registry.js` and `MarketRegistry.swift`; keep their index.json shapes in step.
 
 ## Known limits (not fixed yet)
 
-- The marketplace is a local folder. Author names aren't accounts: a hosted registry
-  needs real sign-in and a signed index before strangers share through it.
+- Bringing back a marketplace needs real accounts and a signed index first.
 - Media and images from packages are decoded by ImageIO/AVFoundation inside the app
   process (not sandboxed). A sandboxed XPC decoder would contain a decoder exploit.
-- Scenes are screened for nudity from one render at publish and their images at
-  install; a scene that draws something explicit later (by date, or after minutes)
+- Scenes are screened for nudity from their images at install; a scene that draws something explicit later (by date, or after minutes)
   isn't caught. The static checker is lint; the runtime lockdown is the real wall.
 - The HTTP MCP key can ride in the query string (for ChatGPT); prefer the header.
 
@@ -174,4 +169,4 @@ preview web views are freed when idle. Don't add timers or polling that run whil
 - The Agents pane needs Node.js on the user's Mac; say so plainly when it's missing.
 - Community media pages get kasuri + media.js injected at document start, so media.js
   waits for DOMContentLoaded before reading `<body data-media>`.
-- Two `.sheet` modifiers sit on LibraryView (install review, share); both work on macOS 14.
+- Two `.sheet` modifiers sit on LibraryView (install review) works on macOS 14.
