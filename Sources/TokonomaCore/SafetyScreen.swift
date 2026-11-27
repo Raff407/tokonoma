@@ -11,7 +11,7 @@ public enum SafetyError: Error, Equatable, CustomStringConvertible {
 
     public var description: String {
         switch self {
-        case let .modelMissing(why): "The safety screen couldn't load (\(why)), so nothing was published or installed."
+        case let .modelMissing(why): "The safety screen couldn't load (\(why)), so nothing was installed."
         case let .unreadable(name): "\(name) couldn't be opened for the safety screen."
         }
     }
@@ -35,8 +35,8 @@ public struct SafetyVerdict: Codable, Equatable, Sendable {
     public static let empty = SafetyVerdict(nsfw: 0, frames: 0)
 }
 
-/// On-device nudity screen for anything going to (or coming from) the
-/// marketplace. A 17 KB Create ML classifier (NSFWDetector by LOVOO, BSD-3)
+/// On-device nudity screen for every wallpaper package installed into the
+/// app. A 17 KB Create ML classifier (NSFWDetector by LOVOO, BSD-3)
 /// on top of Apple's built-in Vision feature print; no image leaves the Mac.
 public final class SafetyScreen: @unchecked Sendable {
     private let model: VNCoreMLModel

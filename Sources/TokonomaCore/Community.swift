@@ -44,7 +44,7 @@ public enum CommunityError: Error, Equatable, CustomStringConvertible {
         case let .badFile(path): "The package contains \(path), which isn't allowed."
         case let .idTaken(id): "\"\(id)\" is already used by a wallpaper that didn't come from the community, so it was left alone."
         case let .validatorBroken(why): "The safety checks couldn't run (\(why)), so nothing was installed."
-        case let .tooBig(bytes): "This package is \(bytes / 1_048_576) MB, far over the marketplace limit, so it wasn't opened."
+        case let .tooBig(bytes): "This package is \(bytes / 1_048_576) MB, far over the package limit, so it wasn't opened."
         case let .otherAuthor(installed, incoming): "You already have this wallpaper from \(installed). This one is by \(incoming), so it wasn't installed over it. Remove the old one first if you want to switch."
         }
     }
@@ -105,22 +105,6 @@ public struct CommunityPackage: Sendable {
             sha256: actual,
             byteCount: data.count
         )
-    }
-
-    /// The other direction, for publishing from the app: manifest + files → package bytes.
-    public static func encode(manifest: [String: Any], files: [String: Data]) throws -> Data {
-        var encoded: [String: Any] = [:]
-        for (path, data) in files {
-            let isText = path.hasSuffix(".js") || path.hasSuffix(".md")
-            encoded[path] = isText
-                ? ["encoding": "utf8", "data": String(decoding: data, as: UTF8.self)]
-                : ["encoding": "base64", "data": data.base64EncodedString()]
-        }
-        let body = String(decoding: try JSONSerialization.data(withJSONObject: ["manifest": manifest, "files": encoded], options: [.sortedKeys]), as: UTF8.self)
-        let hash = SHA256.hash(data: Data(body.utf8)).map { String(format: "%02x", $0) }.joined()
-        return try JSONSerialization.data(withJSONObject: [
-            "format": "tokonoma-package", "formatVersion": 1, "sha256": hash, "body": body,
-        ], options: [.sortedKeys])
     }
 
     /// Media wallpapers: one clip or picture, no code.
@@ -195,7 +179,7 @@ public struct ScreenReport: Decodable, Sendable {
     public let errors: [ValidationReport.Issue]
 }
 
-/// Runs market/src/validate.js, the same file the MCP server and registry
+/// Runs market/src/validate.js, the same file the MCP server
 /// use, inside JavaScriptCore. One set of rules, checked again on this Mac.
 public final class PackageValidator: @unchecked Sendable {
     private let context: JSContext
@@ -223,7 +207,7 @@ public final class PackageValidator: @unchecked Sendable {
         return try JSONDecoder().decode(ValidationReport.self, from: Data(json.utf8))
     }
 
-    /// The threshold lives in rules.js, so the app judges exactly like the registry.
+    /// The threshold lives in rules.js, so the app and agents judge alike.
     public func judge(_ verdict: SafetyVerdict) throws -> ScreenReport {
         context.setObject(String(decoding: try JSONEncoder().encode(verdict), as: UTF8.self), forKeyedSubscript: "__screen" as NSString)
         guard let json = context.evaluateScript("JSON.stringify(TokonomaValidate.judgeScreen(JSON.parse(__screen)))")?.toString(),

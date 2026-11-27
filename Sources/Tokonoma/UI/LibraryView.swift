@@ -3,7 +3,7 @@ import TokonomaCore
 import UniformTypeIdentifiers
 
 enum Tab: String, CaseIterable {
-    case library, chinese, market, agents, settings
+    case library, chinese, agents, settings
 }
 
 /// The one window: a grid of scenes on the left, the chosen one alive on the right.
@@ -21,7 +21,6 @@ struct LibraryView: View {
             switch tab {
             case .library: browser(onlyChinese: false)
             case .chinese: browser(onlyChinese: true)
-            case .market: MarketView()
             case .agents: AgentsView(agents: model.agents)
             case .settings: SettingsView()
             }
@@ -34,9 +33,6 @@ struct LibraryView: View {
             InstallSheet(pending: pending, install: {
                 if let id = model.confirmInstall() { selection = id }
             }, cancel: { model.pendingInstall = nil })
-        }
-        .sheet(item: $model.shareDraft, onDismiss: { model.closeShare() }) { draft in
-            ShareSheet(draft: draft)
         }
     }
 

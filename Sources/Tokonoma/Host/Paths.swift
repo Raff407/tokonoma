@@ -4,7 +4,6 @@ import Foundation
 ///   ~/Library/Application Support/Tokonoma/
 ///     Wallpapers/   built-ins (refreshed each launch) + your imports
 ///     Thumbnails/   cached library stills
-///     Registry/     the marketplace (shared with the MCP server)
 ///     Models/       the compiled nudity-screen model, when not bundled
 ///     settings.json
 struct Paths {
@@ -13,7 +12,7 @@ struct Paths {
     let thumbnails: URL
     let settings: URL
     let bundledWallpapers: URL
-    /// rules.js + validate.js, shared with the MCP server and registry.
+    /// rules.js + validate.js, shared with the MCP server.
     let marketScripts: URL
 
     static func standard() -> Paths {
@@ -54,12 +53,6 @@ struct Paths {
     }
 
     var mcpServer: URL { marketScripts.appendingPathComponent("server.js") }
-
-    /// Same default as market/src/studio.js, so agents and the app share one market.
-    var registry: URL {
-        ProcessInfo.processInfo.environment["TOKONOMA_REGISTRY"].map(URL.init(fileURLWithPath:))
-            ?? support.appendingPathComponent("Registry", isDirectory: true)
-    }
 
     var modelCache: URL { support.appendingPathComponent("Models", isDirectory: true) }
 

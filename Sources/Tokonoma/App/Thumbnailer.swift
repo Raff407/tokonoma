@@ -78,11 +78,6 @@ final class Thumbnailer {
         deliver(wallpaper.id, image)
     }
 
-    /// The cached still, for a marketplace listing's preview.
-    func cachedJPEG(for wallpaper: Wallpaper) -> Data? {
-        try? Data(contentsOf: file(for: wallpaper))
-    }
-
     /// Keyed by version and by when the folder's files last changed, so an edited
     /// scene or a new import that reuses an old name never shows a stale still.
     private func file(for wallpaper: Wallpaper) -> URL {

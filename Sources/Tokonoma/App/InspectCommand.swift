@@ -5,7 +5,7 @@ import TokonomaCore
 ///
 /// Renders a wallpaper folder headless, in the same WebKit and the same
 /// isolation a community install gets, then prints one line of JSON with the
-/// metrics the marketplace judges (motion, flashing, coverage, palette, cost).
+/// metrics the shared checks judge (motion, flashing, coverage, palette, cost).
 /// The MCP server calls this; no windows open, nothing touches your desktop.
 enum InspectError: Error, CustomStringConvertible {
     case neverStarted(String)
@@ -109,7 +109,7 @@ enum InspectCommand {
     }
 
     /// The rendered still and every image asset through the nudity screen.
-    /// nil (no score) when the model can't load, so the registry says "not run".
+    /// nil (no score) when the model can't load, so agents see it as not run.
     private static func screen(still: Data?, assets: URL, paths: Paths) async -> SafetyVerdict? {
         guard let screen = try? await SafetyScreen.load(model: paths.nsfwModel, cache: paths.modelCache) else { return nil }
         var verdict = SafetyVerdict.empty

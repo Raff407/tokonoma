@@ -10,21 +10,6 @@ struct PendingInstall: Identifiable {
     let replaces: Bool
 }
 
-/// One of your imports on its way to the marketplace (or kept private).
-struct ShareDraft: Identifiable {
-    let id = UUID()
-    let wallpaper: Wallpaper
-    /// Shown right after an import, where "keep it private" is the default.
-    let justImported: Bool
-}
-
-enum ShareState: Equatable {
-    case idle
-    case working(String)
-    case failed(String)
-    case published(MarketEntry, trimmed: Bool)
-}
-
 struct DisplayInfo: Identifiable, Equatable {
     let id: String
     let name: String
@@ -43,9 +28,6 @@ final class AppModel: ObservableObject {
     @Published var notice: String?
     @Published private(set) var importing = 0
     @Published var pendingInstall: PendingInstall?
-    @Published private(set) var market: [MarketEntry] = []
-    @Published var shareDraft: ShareDraft?
-    @Published private(set) var shareState: ShareState = .idle
     @Published private(set) var checking: String?
 
     static let builtInOrder = ["torii", "koi", "fuji", "kaze", "take", "sakura", "yuki", "hotaru", "tsuki", "nami", "momiji", "hoshi", "toro", "unkai", "tsuru", "neko", "hanabi", "shoji", "hasu", "kiri", "densha", "kurage", "suisha", "yokocho", "ajisai", "tanada", "shika", "fukuro", "usagi", "nagisa", "isaribi", "taki", "kazan", "onsen", "tsuyu", "kaki", "kamo", "himawari", "shiro", "icho", "tako", "koinobori", "furin", "kingyo", "chawan", "jihanki", "kintsugi", "tombo", "kaeru", "komorebi", "suzume", "tanuki", "kitsune", "iruka", "kujira", "umigame", "sango", "todai", "minato", "hashi", "gojunoto", "yamadera", "kane", "koke", "shishi", "bonsai", "ikebana", "maneki", "orizuru", "yatai", "kotatsu", "kissaten", "fumikiri", "basutei", "yakei", "kasa", "matsuri", "uma", "hakucho", "sagi", "tsubame", "ume", "tsubaki", "ayame", "higan", "fujidana", "matsu", "kakashi", "kamakura", "tsurara", "ryuhyo", "tanabata", "niji", "meoto", "sakyu", "kabuto", "jizo", "enso", "asanoha", "konbini", "kinkaku", "itsukushima", "inari", "shinkansen", "sento", "ramen", "chochin", "karesansui", "kodo", "hanaikada", "nanohana", "susuki", "juhyo", "shirakawa", "kiyomizu", "tawa", "kosaten", "izakaya", "sakagura", "kadomatsu", "hatsuhinode", "sansui", "byobu", "aizome", "saru", "cho", "medaka", "kani", "inoshishi", "mejiro", "kawasemi", "yudachi", "oboro", "kogarashi", "karasu", "danchi", "kanransha", "sakamichi", "inaho", "chabatake", "uzushio", "ryusei", "teruteru", "temari", "koma", "sensu", "irori", "andon", "tsukubai", "shodo", "engawa", "mikan", "ginkaku", "matsumoto", "todaiji", "nikko", "kegon", "kenrokuen", "togetsukyo", "kintaikyo", "yakushima", "kamikochi", "ashinoko", "shuri", "ishigaki", "asakusa", "yukimatsuri", "otaru", "takayama", "kurashiki", "kawagoe", "tsumago", "ginzan", "gion", "kotohira", "nachi", "aso", "sakurajima", "oirase", "nemophila", "furano", "kazurabashi", "ropeway", "hatsuyuki", "tsuyukusa", "kinmokusei", "sazanka", "nadeshiko", "kikyo", "hagi", "suisen", "yamabuki", "fuyubotan", "tsutsuji", "asagao", "shigure", "nyudogumo", "yuyake", "akatsuki", "shimobashira", "tsuyuake", "kitsutsuki", "hibari", "uguisu", "semi", "takotsubo", "ayu", "umineko", "washi", "kamoshika", "risu", "suzumushi", "oshidori", "momonga", "kiji", "tokonoma", "furoshiki", "kokeshi", "hinadan", "koto", "nabe", "wagashi", "tokkuri", "shippo", "uroko", "kikko", "kasuri", "ichimatsu", "dojo", "kyoshitsu", "minka", "shotengai", "hiraizumi", "izumo", "yoshino", "daibutsu", "rishiri", "yukinootani", "hanamizuki", "kohan", "kasumi", "chinden", "kakigori", "enoshima", "tsuwano", "kushiro", "aoiike", "nohbutai", "komainu", "emaki", "senko", "hikokigumo", "taue", "himeji", "shirakami", "ouchijuku", "inuyama", "hakone", "ine", "amanohashidate", "hirosaki", "matsushima", "akiyoshi", "hakuba", "biwako", "shimanami", "sado", "tsunoshima", "chureito", "onomichi", "tomonoura", "tokyo", "osaka", "biei", "bandai", "shirakaba", "miho", "hokusai", "bokashi", "yuzen", "sashiko", "kumiko", "kamifusen", "kamisuki", "urushi", "kiriko", "noren", "tatami", "fusuma", "kama", "mokuhan", "ranma", "mizuhiki", "yukata", "tenugui", "shoin", "kamon", "yagasuri", "tsuboniwa", "harusame", "natsuyasumi", "akikusa", "yukiakari", "haruichiban", "mangetsu", "obon", "hatsumode", "kagero", "nowaki", "tsukiyo", "asagiri", "tasogare", "sakurafubuki", "shiosai", "aozora", "kirisame", "ryokan", "eki", "ishidoro", "chashitsu", "toge", "kawara", "kusaridoi", "yukimi", "hanami", "sudare", "seto", "daimonji", "nebuta", "imari", "oribe", "satoyama", "hamabe", "kuroana", "changcheng", "gugong", "xihu", "guilin", "huangshan", "zhangjiajie", "lijiang", "sanxia", "jiuzhaigou", "suzhou", "longji", "yuanyang", "dunhuang", "shamo", "pingyao", "hongcun", "wuzhen", "tulou", "shanghai", "hukou", "taishan", "emeishan", "shilin", "chengqiang", "yihe", "tiantan", "lugou", "wuyi", "shuimo", "gongbi", "qinghua", "qingci", "jingtailan", "diaoqi", "jianzhi", "piying", "fengzheng", "denglong", "sichou", "yunjin", "suxiu", "zhuanke", "tuanshan", "chuanghua", "yuemen", "wajian", "qingtong", "yubi", "yantai", "bimo", "gongfucha", "zisha", "chunjie", "yuanxiao", "qingming", "longzhou", "zhongqiu", "chongyang", "dongzhi", "niulang", "helian", "meihua", "mudan", "zhulin", "songshi", "xiongmao", "yunlong", "fenghuang", "xiangyun", "jiangnan", "chayuan", "baota", "yuhuo", "fengqiao", "xuezhong", "hanshan", "taiji", "kongming", "shuiyue", "chaguan"]
@@ -65,7 +47,7 @@ final class AppModel: ObservableObject {
     private lazy var thumbnailer = Thumbnailer(paths: paths, isolation: { [weak self] in self?.isolation(for: $0) }) { [weak self] id, image in
         self?.thumbnails[id] = image
     }
-    /// The same validate.js the MCP server and registry run, here in JavaScriptCore.
+    /// The same validate.js the MCP server runs, here in JavaScriptCore.
     private lazy var validator: PackageValidator? = {
         do {
             return try PackageValidator(
@@ -79,7 +61,6 @@ final class AppModel: ObservableObject {
     }()
     private lazy var kasuriSources: [String] = paths.kasuriScripts.compactMap { try? String(contentsOf: $0, encoding: .utf8) }
     private lazy var mediaSource: String? = try? String(contentsOf: paths.mediaScript, encoding: .utf8)
-    private lazy var registry = MarketRegistry(root: paths.registry)
     /// Loaded the first time something is shared or installed, then kept.
     private var safetyScreen: SafetyScreen?
 
@@ -111,7 +92,6 @@ final class AppModel: ObservableObject {
         }
         rescan()
         forgetRetiredScenes()
-        refreshMarket()
         desktop.onChange = { [weak self] in self?.refreshDesks() }
         desktop.onError = { [weak self] message in self?.notice = "A wallpaper hit a problem: \(message)" }
         monitor.onChange = { [weak self] _ in self?.refreshPlayback() }
@@ -254,10 +234,6 @@ final class AppModel: ObservableObject {
         rescan()
         thumbnailer.render(wallpapers.filter { outcome.added.contains($0.id) })
         if !outcome.failures.isEmpty { notice = outcome.failures.joined(separator: "\n") }
-        // One file at a time gets the private-or-publish choice; a batch stays private.
-        if outcome.added.count == 1, let added = wallpaper(outcome.added[0]) {
-            share(added, justImported: true)
-        }
         return outcome.added
     }
 
@@ -272,15 +248,6 @@ final class AppModel: ObservableObject {
             return
         }
         Task { await review(data, label: url.lastPathComponent) }
-    }
-
-    func install(_ entry: MarketEntry) {
-        do {
-            let data = try registry.download(entry)
-            Task { await review(data, label: entry.name) }
-        } catch {
-            notice = (error as? CustomStringConvertible)?.description ?? error.localizedDescription
-        }
     }
 
     private func review(_ data: Data, label: String) async {
@@ -316,62 +283,6 @@ final class AppModel: ObservableObject {
         let screen = try await SafetyScreen.load(model: paths.nsfwModel, cache: paths.modelCache)
         safetyScreen = screen
         return screen
-    }
-
-    // MARK: - Marketplace
-
-    func refreshMarket() {
-        market = registry.list().sorted { $0.publishedAt > $1.publishedAt }
-    }
-
-    func preview(for entry: MarketEntry) -> URL? {
-        registry.previewURL(entry)
-    }
-
-    /// The marketplace copy of one of yours, if you've published it.
-    func listing(for wallpaper: Wallpaper) -> MarketEntry? {
-        let id = Publisher.marketID(for: wallpaper.name)
-        return market.first { $0.isMedia && $0.id == id && $0.author == settings.authorName && !settings.authorName.isEmpty }
-    }
-
-    func share(_ wallpaper: Wallpaper, justImported: Bool = false) {
-        guard wallpaper.isMedia, !wallpaper.isCommunity, !wallpaper.isBuiltIn else { return }
-        shareState = .idle
-        shareDraft = ShareDraft(wallpaper: wallpaper, justImported: justImported)
-    }
-
-    func closeShare() {
-        shareDraft = nil
-        shareState = .idle
-    }
-
-    /// Light copy → nudity screen → package → validate.js → listed. Any no stops it.
-    func publish(_ wallpaper: Wallpaper, name: String, description: String, author: String) {
-        let author = author.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !author.isEmpty, !name.trimmingCharacters(in: .whitespaces).isEmpty else { return }
-        guard let validator else {
-            shareState = .failed(CommunityError.validatorBroken("the checks are missing from this copy of Tokonoma").description)
-            return
-        }
-        update { $0.with(\.authorName, author) }
-        shareState = .working("Making a light copy and screening it")
-        let request = Publisher.Request(
-            wallpaper: wallpaper, name: name, description: description, author: author, values: properties(for: wallpaper)
-        )
-        let registry = registry
-        let preview = thumbnailer.cachedJPEG(for: wallpaper)
-        Task {
-            do {
-                let screen = try await loadSafetyScreen()
-                let result = try await Task.detached(priority: .userInitiated) {
-                    try await Publisher.publish(request, registry: registry, validator: validator, screen: screen, preview: preview)
-                }.value
-                refreshMarket()
-                shareState = .published(result.entry, trimmed: result.trimmed)
-            } catch {
-                shareState = .failed((error as? CustomStringConvertible)?.description ?? error.localizedDescription)
-            }
-        }
     }
 
     @discardableResult

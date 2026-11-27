@@ -18,8 +18,6 @@ public struct Settings: Codable, Equatable, Sendable {
     public var userPaused: Bool
     /// Keep Retina-sharp glyphs on battery (costs GPU time).
     public var sharpOnBattery: Bool
-    /// The name your marketplace uploads are credited to. Empty until you publish.
-    public var authorName: String
     /// Starred wallpaper ids, in the order they were starred.
     public var favourites: [String]
 
@@ -36,7 +34,6 @@ public struct Settings: Codable, Equatable, Sendable {
         followCursor: true,
         userPaused: false,
         sharpOnBattery: false,
-        authorName: "",
         favourites: []
     )
 
@@ -101,7 +98,7 @@ public struct Settings: Codable, Equatable, Sendable {
 extension Settings {
     private enum Keys: String, CodingKey {
         case assignments, fallbackWallpaper, overrides, pauseWhenCovered, pauseOnBattery, pauseInLowPower
-        case fpsCap, batteryFps, rotateMinutes, followCursor, userPaused, sharpOnBattery, authorName, favourites
+        case fpsCap, batteryFps, rotateMinutes, followCursor, userPaused, sharpOnBattery, favourites
     }
 
     // Tolerant decoding: a settings file from an older build fills gaps with defaults.
@@ -120,7 +117,6 @@ extension Settings {
         followCursor = try c.decodeIfPresent(Bool.self, forKey: .followCursor) ?? d.followCursor
         userPaused = try c.decodeIfPresent(Bool.self, forKey: .userPaused) ?? d.userPaused
         sharpOnBattery = try c.decodeIfPresent(Bool.self, forKey: .sharpOnBattery) ?? d.sharpOnBattery
-        authorName = try c.decodeIfPresent(String.self, forKey: .authorName) ?? d.authorName
         favourites = try c.decodeIfPresent([String].self, forKey: .favourites) ?? d.favourites
     }
 }
