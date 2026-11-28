@@ -100,6 +100,10 @@ cd market && npm test           # wallpaper checks
 xcrun swift scripts/bench.swift # ms per frame for every scene
 ```
 
+## Licence
+
+MIT, see [LICENSE](LICENSE).
+
 ## Credits
 
 The nudity check on imported packages uses the
