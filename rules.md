@@ -10,8 +10,10 @@ and woven into glyphs/blocks/dots by **kasuri** (WebGL2), shown behind the
 desktop icons by a native Swift app. Agents can make new scenes through an
 MCP server; a scene can travel as a `.tokonoma` package file, installed locally
 after the checks. The repo is public. There is no marketplace: publishing and the
-Market tab were removed (still in git history, before `dfda6bb`) until a hosted,
-signed registry exists.
+Market tab were removed until a hosted, signed registry exists. That code was
+scrubbed from the public history and lives only locally, in
+`~/Documents/Tokonoma-Marketplace` (branch `marketplace`, no remote: never push it here).
+The repo is MIT licensed.
 
 ```
 Wallpapers/_lib/        kasuri.js, kasuri-core.js, sky.js, media.js/.html
